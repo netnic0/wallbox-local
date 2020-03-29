@@ -1,14 +1,12 @@
-author: mongoose-os
+author: 'Sébastien Savalle'
 description: A Mongoose OS app skeleton
 version: 1.0
+platform: esp8266
+name: switch1pm
 
 libs_version: ${mos.version}
 modules_version: ${mos.version}
 mongoose_os_version: ${mos.version}
-
-# Optional. List of tags for online search.
-tags:
-  - c
 
 # List of files / directories with C sources. No slashes at the end of dir names.
 sources:
@@ -22,11 +20,29 @@ filesystem:
 # Below is a custom firmware configuration example.
 # Uncomment and modify according to your needs:
 
-# config_schema:
-#  - ["my_app", "o", {title: "My app custom settings"}]
-#  - ["my_app.bool_value", "b", false, {title: "Some boolean value"}]
-#  - ["my_app.string_value", "s", "", {title: "Some string value"}]
-#  - ["my_app.int_value", "i", 123, {title: "Some integer value"}]
+config_schema:
+  - ["device.id", "shelly1pm-??????"]
+  - ["wifi.ap.ssid", "shelly1pm-??????"]
+  - ["device.sn", "000000"]
+  - ["http.index_files", "index.html,index.html.gz"]
+  - ["sw", "o", {"Switch settings"}]
+  - ["sw.id", "i", 0, {"ID of the switch"}]
+  - ["sw.name", "s", "", {"Name of the switch"}]
+  - ["sw.enable", "b", true, {"Enable this switch in the accessory"}]
+  - ["sw.out_gpio", "i", -1, {"Output pin"}]
+  - ["sw.out_on_value", "i", 1, {"Active (ON) output for gpio, 1 or 0"}]
+  - ["sw.in_gpio", "i", -1, {"Input sensing pin"}]
+  - ["sw.in_mode", "i", 1, {"0 - Momentary, 1 - Toggle, 2 - Edge, 3 - Detached"}]
+  - ["sw.state", "b", false, {"State of the switch"}]
+  - ["sw.persist_state", "b", false, {"Whether state of the switch should be persisted across reboots."}]
+  - ["sw1", "sw", {"title": "SW settings"}]
+  - ["sw1.id", 0]
+  - ["sw1.name", "Shelly SW"]
+  - ["sw1.out_gpio", 15]
+  - ["sw1.in_gpio", 4]
+  - ["cf_pin", "i", 5, {"CF pin"}]
+  - ["cf1_pin", "i", 13, {"CF1 pin"}]
+  - ["sel_pin", "i", 14, {"SEL pin"}]
 
 # These settings get compiled into the C structure, and can be accessed
 # from the C code this way:
@@ -46,11 +62,38 @@ filesystem:
 #  - ["debug.level", 3]
 
 libs:
-  - origin: https://github.com/mongoose-os-libs/boards
-  - origin: https://github.com/mongoose-os-libs/ca-bundle
+  - origin: https://github.com/mongoose-os-libs/mbedtls
+    variant: esp8266-noatca
+  - origin: https://github.com/mongoose-os-libs/mongoose
+    variant: esp8266-nossl
+  - origin: https://github.com/mongoose-os-libs/core
   - origin: https://github.com/mongoose-os-libs/rpc-service-config
   - origin: https://github.com/mongoose-os-libs/rpc-service-fs
   - origin: https://github.com/mongoose-os-libs/rpc-uart
+  - origin: https://github.com/mongoose-os-libs/http-server
+  - origin: https://github.com/mongoose-os-libs/rpc-ws
+  - origin: https://github.com/ellavas/mongoose-lib-hlw8012
+    name: hlw8012
+
+build_vars:
+  FLASH_SIZE: 2097152
+  FS_SIZE: 262144
+  BOOT_CONFIG_ADDR: 0x1000  # To be compatible with stock firmware.
+  MGOS_ROOT_FS_TYPE: SPIFFS
+  # We don't need the cryptochip support. Saves approx 12K flash.
+  MGOS_MBEDTLS_ENABLE_ATCA: 0
+cdefs:
+  PRODUCT_VENDOR: '"Allterco"'
+  SERVICE_NAME: '"Switch"'
+  LED_GPIO: -1
+  BTN_GPIO: -1
+  PRODUCT_MODEL: '"Shelly1PM"'
+  PRODUCT_HW_REV: '"1.0"'
+  NUM_SWITCHES: 1
+  # We don't use SSL, HomeKit uses its own crypto. This saves ~120K.
+  MG_ENABLE_SSL: 0
+  # This saves quite a bit of space but disables all HAP debug output.
+  # HAP_LOG_LEVEL: 0
 
 # Used by the mos tool to catch mos binaries incompatible with this file format
-manifest_version: 2017-09-29
+manifest_version: 2020-01-29
