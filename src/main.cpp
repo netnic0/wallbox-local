@@ -74,6 +74,16 @@ static void shelly_get_info_handler(struct mg_rpc_request_info *ri,
 }
 
 enum mgos_app_init_result mgos_app_init(void) {
+#ifdef MGOS_HAVE_OTA_COMMON
+  if (mgos_ota_is_first_boot()) {
+    LOG(LL_INFO, ("Performing cleanup"));
+    // In case we're uograding from stock fw, remove its files
+    // with the exception of hwinfo_struct.json.
+    remove("cert.pem");
+    remove("passwd");
+    remove("relaydata");
+  }
+#endif
 #ifdef LED_PIN
   mgos_gpio_setup_output(LED_PIN, 0);
 #endif
