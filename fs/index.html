@@ -90,49 +90,6 @@
       </div>
     </div>
 
-    <div class="container" id="sw2_container" style="display: none">
-      <h1 class="" id="sw2_name">SW2 Name</h1>
-      <div class="form">
-        <div class="">
-          <div class="form-control">
-            <label>State:</label>
-            <span id="sw2_state">off</span>
-          </div>
-          <div class="form-control">
-            <label></label>
-            <button class="btn" id="sw2_set_btn">
-              <span id="sw2_set_spinner"></span>
-              <label id="sw2_btn_label">Turn On</label>
-            </button>
-          </div>
-        </div>
-      </div>
-      <div class="form">
-        <div class="">
-          <div class="form-control">
-            <label>Mode:</label>
-            <select id="sw2_in_mode">
-              <option id="sw2_in_mode_0" value="0">Momentary</option>
-              <option id="sw2_in_mode_1" value="1">Toggle</option>
-              <option id="sw2_in_mode_2" value="2">Edge</option>
-              <option id="sw2_in_mode_3" value="3">Detached</option>
-            </select>
-          </div>
-          <div class="form-control">
-            <label>Persist state:</label>
-            <input type="checkbox" id="sw2_persist">
-          </div>
-          <div class="form-control">
-            <label></label>
-            <button class="btn" id="sw2_save_btn">
-              <span id="sw2_save_spinner"></span>
-              <label>Save</label>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <div class="container" id="wifi_container" style="visibility: hidden">
       <h1 class="">WiFi setup</h1>
       <div class="form">
@@ -266,14 +223,6 @@ document.getElementById("sw1_set_btn").onclick = function() {
   );
 }
 
-document.getElementById("sw2_set_btn").onclick = function() {
-  sw_set_common(
-      document.getElementById("sw2_container").sw_id,
-      !document.getElementById("sw2_container").sw_state,
-      document.getElementById("sw2_set_spinner"),
-  );
-}
-
 function sw_save_common(cfg_key, in_mode, persist, spinner) {
   spinner.className = "spin";
   var data = {
@@ -306,15 +255,6 @@ document.getElementById("sw1_save_btn").onclick = function() {
   );
 }
 
-document.getElementById("sw2_save_btn").onclick = function() {
-  sw_save_common(
-      "sw2",
-      document.getElementById("sw2_in_mode").value,
-      document.getElementById("sw2_persist").checked,
-      document.getElementById("sw2_save_spinner"),
-  );
-}
-
 function getInfo() {
   spinner.className = "spin";
   axios.get(host + "/rpc/Shelly.GetInfo").then(function(res) {
@@ -337,16 +277,6 @@ function getInfo() {
       document.getElementById("sw1_container").sw_id = res.data.sw1.id;
       document.getElementById("sw1_container").sw_state = res.data.sw1.state;
       document.getElementById("sw1_container").style.display = "block";
-    }
-    if (res.data.sw2) {
-      document.getElementById("sw2_name").innerText = res.data.sw2.name;
-      document.getElementById("sw2_state").innerText = (res.data.sw2.state ? "on" : "off");
-      document.getElementById("sw2_btn_label").innerText = "Turn " + (res.data.sw2.state ? "Off" : "On");
-      document.getElementById("sw2_in_mode_" + res.data.sw2.in_mode).selected = true;
-      document.getElementById("sw2_persist").checked = res.data.sw2.persist;
-      document.getElementById("sw2_container").sw_id = res.data.sw2.id;
-      document.getElementById("sw2_container").sw_state = res.data.sw2.state;
-      document.getElementById("sw2_container").style.display = "block";
     }
     document.getElementById("homekit_container").style.visibility = "visible";
     document.getElementById("wifi_container").style.visibility = "visible";

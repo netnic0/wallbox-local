@@ -73,6 +73,22 @@ static void shelly_get_info_handler(struct mg_rpc_request_info *ri,
   (void) args;
 }
 
+static void shelly_set_switch_handler(struct mg_rpc_request_info *ri,
+                                      void *cb_arg,
+                                      struct mg_rpc_frame_info *fi,
+                                      struct mg_str args) {
+  int id = -1;
+  bool state = false;
+
+  json_scanf(args.p, args.len, ri->args_fmt, &id, &state);
+
+  mgos_gpio_write(mgos_sys_config_get_sw1_out_gpio(), state);
+  mg_rpc_send_responsef(ri, NULL);
+
+  (void) cb_arg;
+  (void) fi;
+}
+
 static void shelly_get_conso_handler(struct mg_rpc_request_info *ri,
                                     void *cb_arg, struct mg_rpc_frame_info *fi,
                                     struct mg_str args) {
@@ -108,6 +124,7 @@ enum mgos_app_init_result mgos_app_init(void) {
 
   mg_rpc_add_handler(mgos_rpc_get_global(), "Shelly.GetInfo", "", shelly_get_info_handler, NULL);
   mg_rpc_add_handler(mgos_rpc_get_global(), "Shelly.GetConso", "", shelly_get_conso_handler, NULL);
+  mg_rpc_add_handler(mgos_rpc_get_global(), "Shelly.SetSwitch", "{id: %d, state: %B}", shelly_set_switch_handler, NULL);
 
   return MGOS_APP_INIT_SUCCESS;
 }
