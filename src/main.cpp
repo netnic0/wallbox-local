@@ -59,7 +59,7 @@ static void shelly_get_info_handler(struct mg_rpc_request_info *ri,
       ri,
       "{id: %Q, app: %Q, version: %Q, fw_build: %Q, current: %d, voltage: %d, energy: %d, "
       "sw1: {id: %d, name: %Q, in_mode: %d, persist: %B, state: %B},"
-      "wifi_en: %B, wifi_ssid: %Q, wifi_pass: %Q, ",
+      "wifi_en: %B, wifi_ssid: %Q, wifi_pass: %Q} ",
       mgos_sys_config_get_device_id(), MGOS_APP,
       mgos_sys_ro_vars_get_fw_version(), mgos_sys_ro_vars_get_fw_id(),
       mgos_hlw8012_readCurrent(hlw8012), mgos_hlw8012_readVoltage(hlw8012), mgos_hlw8012_readEnergy(hlw8012),
@@ -68,6 +68,18 @@ static void shelly_get_info_handler(struct mg_rpc_request_info *ri,
       mgos_sys_config_get_sw1_persist_state(), mgos_gpio_read(mgos_sys_config_get_sw1_in_gpio()),
       mgos_sys_config_get_wifi_sta_enable(), (ssid ? ssid : ""),
       (pass ? pass : ""));
+  (void) cb_arg;
+  (void) fi;
+  (void) args;
+}
+
+static void shelly_get_conso_handler(struct mg_rpc_request_info *ri,
+                                    void *cb_arg, struct mg_rpc_frame_info *fi,
+                                    struct mg_str args) {
+  mg_rpc_send_responsef(
+      ri,
+      "{current: %d, voltage: %d, energy: %d} ",
+      mgos_hlw8012_readCurrent(hlw8012), mgos_hlw8012_readVoltage(hlw8012), mgos_hlw8012_readEnergy(hlw8012));
   (void) cb_arg;
   (void) fi;
   (void) args;
@@ -95,6 +107,7 @@ enum mgos_app_init_result mgos_app_init(void) {
   mgos_set_timer(1000 /* ms */, MGOS_TIMER_REPEAT, timer_cb, NULL);
 
   mg_rpc_add_handler(mgos_rpc_get_global(), "Shelly.GetInfo", "", shelly_get_info_handler, NULL);
+  mg_rpc_add_handler(mgos_rpc_get_global(), "Shelly.GetConso", "", shelly_get_conso_handler, NULL);
 
   return MGOS_APP_INIT_SUCCESS;
 }
