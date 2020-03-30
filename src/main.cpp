@@ -86,9 +86,15 @@ static void shelly_get_conso_handler(struct mg_rpc_request_info *ri,
                                     void *cb_arg, struct mg_rpc_frame_info *fi,
                                     struct mg_str args) {
   mg_rpc_send_responsef(
-    ri,
-    "{status: %Q, current: %d, voltage: %d, energy: %d} ", (hlw8012 == NULL) ? "failed" : "ok",
-    mgos_hlw8012_readCurrent(hlw8012), mgos_hlw8012_readVoltage(hlw8012), mgos_hlw8012_readEnergy(hlw8012));
+      ri,
+      "{status: %Q,Current: %d, Voltage: %d, Energy: %d, ActivePower: %d, ApparentPower: %d, PowerFactor: %d, ReactivePower: %d}", (hlw8012 == NULL) ? "failed" : "ok",
+      mgos_hlw8012_readCurrent(hlw8012), 
+      mgos_hlw8012_readVoltage(hlw8012), 
+      mgos_hlw8012_readEnergy(hlw8012),
+      mgos_hlw8012_readActivePower(hlw8012),
+      mgos_hlw8012_readApparentPower(hlw8012),
+      mgos_hlw8012_readPowerFactor(hlw8012),
+      mgos_hlw8012_readReactivePower(hlw8012));
   (void) cb_arg;
   (void) fi;
   (void) args;
