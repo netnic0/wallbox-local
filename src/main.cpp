@@ -53,21 +53,18 @@ static void timer_cb(void *arg) {
 static void shelly_get_info_handler(struct mg_rpc_request_info *ri,
                                     void *cb_arg, struct mg_rpc_frame_info *fi,
                                     struct mg_str args) {
-  const char *ssid = mgos_sys_config_get_wifi_sta_ssid();
-  const char *pass = mgos_sys_config_get_wifi_sta_pass();
   mg_rpc_send_responsef(
       ri,
       "{id: %Q, app: %Q, version: %Q, fw_build: %Q, current: %d, voltage: %d, energy: %d, "
-      "sw1: {id: %d, name: %Q, in_mode: %d, persist: %B, state: %B},"
-      "wifi_en: %B, wifi_ssid: %Q, wifi_pass: %Q} ",
+      "sw1: {id: %d, name: %Q, in_mode: %d, persist: %B, state: %B}"
+      "} ",
       mgos_sys_config_get_device_id(), MGOS_APP,
       mgos_sys_ro_vars_get_fw_version(), mgos_sys_ro_vars_get_fw_id(),
       mgos_hlw8012_readCurrent(hlw8012), mgos_hlw8012_readVoltage(hlw8012), mgos_hlw8012_readEnergy(hlw8012),
       mgos_sys_config_get_sw1_id(), mgos_sys_config_get_sw1_name(),
       mgos_sys_config_get_sw1_in_mode(),
-      mgos_sys_config_get_sw1_persist_state(), mgos_gpio_read(mgos_sys_config_get_sw1_in_gpio()),
-      mgos_sys_config_get_wifi_sta_enable(), (ssid ? ssid : ""),
-      (pass ? pass : ""));
+      mgos_sys_config_get_sw1_persist_state(), mgos_gpio_read(mgos_sys_config_get_sw1_in_gpio())
+      );
   (void) cb_arg;
   (void) fi;
   (void) args;

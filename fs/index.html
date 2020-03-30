@@ -272,13 +272,12 @@ function getInfo() {
       document.getElementById("sw1_name").innerText = res.data.sw1.name;
       document.getElementById("sw1_state").innerText = (res.data.sw1.state ? "on" : "off");
       document.getElementById("sw1_btn_label").innerText = "Turn " + (res.data.sw1.state ? "Off" : "On");
-      document.getElementById("sw1_in_mode_" + res.data.sw1.in_mode).selected = true;
+//      document.getElementById("sw1_in_mode_" + res.data.sw1.in_mode).selected = true;
       document.getElementById("sw1_persist").checked = res.data.sw1.persist;
       document.getElementById("sw1_container").sw_id = res.data.sw1.id;
       document.getElementById("sw1_container").sw_state = res.data.sw1.state;
       document.getElementById("sw1_container").style.display = "block";
     }
-    document.getElementById("homekit_container").style.visibility = "visible";
     document.getElementById("wifi_container").style.visibility = "visible";
     document.getElementById("fw_container").style.visibility = "visible";
     document.getElementById("device_id").style.visibility = "visible";
