@@ -78,8 +78,8 @@ libs:
   - origin: https://github.com/mongoose-os-libs/wifi
   - origin: https://github.com/mongoose-os-libs/sntp
   # - origin: https://github.com/mongoose-os-libs/mjs
-  # - origin: https://github.com/ellavas/mongoose-lib-hlw8012
-  - origin: ../mongoose-lib-hlw8012
+  - origin: https://github.com/ellavas/mongoose-lib-hlw8012
+  # - origin: ../mongoose-lib-hlw8012
     name: hlw8012
 
 build_vars:
