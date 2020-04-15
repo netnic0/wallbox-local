@@ -23,6 +23,20 @@
 #include "mgos_ota.h"
 #endif
 
+#define OCPP_STATUS_AVAILABLE "Available"
+#define OCPP_STATUS_CHARGING "Charging"
+#define OCPP_RESPONSE_ACCEPTED "{\"status\": \"Accepted\"}"
+#define OCPP_RESPONSE_REJECTED "{\"status\": \"Rejected\"}"
+#define OCPP_REQUEST_BOOT_NOTIFICATION "BootNotification"
+#define OCPP_REQUEST_GET_CONFIGURATION "GetConfiguration"
+#define OCPP_REQUEST_REMOTE_START_TRANSACTION "RemoteStartTransaction"
+#define OCPP_REQUEST_REMOTE_STOP_TRANSACTION "RemoteStopTransaction"
+#define OCPP_REQUEST_START_TRANSACTION "StartTransaction"
+#define OCPP_REQUEST_STOP_TRANSACTION "StopTransaction"
+#define OCPP_REQUEST_HEARTBEAT "Heartbeat"
+#define OCPP_REQUEST_STATUS_NOTIFICATION "StatusNotification"
+
+
 #ifndef MGOS_HAVE_WIFI
 const char *mgos_sys_config_get_wifi_sta_ssid(void)
 {
@@ -40,6 +54,9 @@ bool mgos_sys_config_get_wifi_sta_enable(void)
 
 static struct HLW8012 *hlw8012 = NULL;
 static bool ws_connected = false;
+static bool ws_charging = false;
+static char *tag_id = NULL;
+static int transaction_id = 0;
 static struct mg_connection *ws_connection;
 
 static void shelly_get_info_handler(struct mg_rpc_request_info *ri,
@@ -67,8 +84,8 @@ static void shelly_set_switch_handler(struct mg_rpc_request_info *ri,
                                       struct mg_rpc_frame_info *fi,
                                       struct mg_str args)
 {
-  bool currentValue = mgos_gpio_read(mgos_sys_config_get_sw1_in_gpio());
-  mgos_gpio_write(mgos_sys_config_get_sw1_out_gpio(), !currentValue);
+  bool currentValue = mgos_gpio_read(mgos_sys_config_get_sw1_out_gpio());
+  mgos_gpio_toggle(mgos_sys_config_get_sw1_out_gpio());
   mg_rpc_send_responsef(ri, "{currentValue: %B, newValue: %B}", currentValue, !currentValue);
 
   (void)cb_arg;
@@ -127,10 +144,10 @@ static void get_current_date(char *buffer)
 
 static void send_ocpp_heartbeat()
 {
-  send_ocpp_request(ws_connection, "Heartbeat", "12121213", mg_mk_str("{}"));
+  send_ocpp_request(ws_connection, OCPP_REQUEST_HEARTBEAT, "12121213", mg_mk_str("{}"));
 }
 
-static void send_ocpp_status_notification()
+static void send_ocpp_status_notification(const char *status)
 {
   char buf[200];
   int length;
@@ -138,20 +155,77 @@ static void send_ocpp_status_notification()
   char date_buffer[30];
   get_current_date(date_buffer);
 
-  length = sprintf(buf, "{\"connectorId\": 1,\"errorCode\": \"NoError\",\"status\": \"%s\",\"timestamp\": \"%s\"}", "Available", date_buffer);
+  length = sprintf(buf, "{\"connectorId\": 1,\"errorCode\": \"NoError\",\"status\": \"%s\",\"timestamp\": \"%s\"}", status, date_buffer);
   struct mg_str content = mg_mk_str_n(buf, length);
   LOG(LL_INFO, ("Sending status notification %.*s", length, buf));
-  send_ocpp_request(ws_connection, "StatusNotification", "12121212", content);
+  send_ocpp_request(ws_connection, OCPP_REQUEST_STATUS_NOTIFICATION, "12121212", content);
 }
 
-static void handle_ocpp_cmd(struct mg_connection *nc, const char *cmd, const char *id)
-{
-  LOG(LL_INFO, ("Handle ocpp cmd %d, %s", strcmp(cmd, "GetConfiguration"), cmd));
-  if (strcmp(cmd, "GetConfiguration") == 0)
-  {
-    struct mg_str data = mg_mk_str("{}");
-    send_ocpp_response(nc, id, data);
+static mg_str stopTransaction(const char *payload) {
+  if (json_scanf(payload, strlen(payload), "{ transactionId:%d }", &transaction_id) > 0) {
+    LOG(LL_INFO, ("Stop transaction %d for tag with id %s", transaction_id, tag_id));
+    mgos_gpio_write(mgos_sys_config_get_sw1_out_gpio(), 0);
+
+    char buf[200];
+    int length;
+
+    char date_buffer[30];
+    get_current_date(date_buffer);
+
+    length = sprintf(buf, "{\"meterStop\": 10000,\"transactionId\": \"%d\",\"idTag\": \"%s\",\"timestamp\": \"%s\"}", transaction_id, tag_id, date_buffer);
+    struct mg_str content = mg_mk_str_n(buf, length);
+    LOG(LL_INFO, ("Sending start transaction %.*s", length, buf));
+    send_ocpp_request(ws_connection, OCPP_REQUEST_STOP_TRANSACTION, "12121212", content);
+
+    send_ocpp_status_notification(OCPP_STATUS_AVAILABLE);
+    ws_charging = false;
+    return mg_mk_str(OCPP_RESPONSE_ACCEPTED);
+  } else {
+    LOG(LL_INFO, ("Unable to find transaction id in payload %s", payload));
+    return mg_mk_str(OCPP_RESPONSE_REJECTED);
   }
+}
+
+static mg_str startTransaction(const char *payload) {
+  if (json_scanf(payload, strlen(payload), "{ idTag:%Q }", &tag_id) > 0) {
+    LOG(LL_INFO, ("Starting transaction for tag with id %s", tag_id));
+    mgos_gpio_write(mgos_sys_config_get_sw1_out_gpio(), 1);
+
+    char buf[200];
+    int length;
+
+    char date_buffer[30];
+    get_current_date(date_buffer);
+
+    length = sprintf(buf, "{\"connectorId\": 1, \"meterStart\": 0, \"idTag\": \"%s\",\"timestamp\": \"%s\"}", tag_id, date_buffer);
+    struct mg_str content = mg_mk_str_n(buf, length);
+    LOG(LL_INFO, ("Sending start transaction %.*s", length, buf));
+    send_ocpp_request(ws_connection, OCPP_REQUEST_START_TRANSACTION, "12121212", content);
+
+    send_ocpp_status_notification(OCPP_STATUS_CHARGING);
+    ws_charging = true;
+    return mg_mk_str(OCPP_RESPONSE_ACCEPTED);
+  } else {
+    LOG(LL_INFO, ("Unable to find tag id in payload %s", payload));
+    return mg_mk_str(OCPP_RESPONSE_REJECTED);
+  }
+}
+
+static void handle_ocpp_cmd(struct mg_connection *nc, const char *cmd, const char *id, const char *payload)
+{
+  LOG(LL_INFO, ("Handle ocpp cmd %s with id %s", cmd, id));
+  struct mg_str data;
+  if (strcmp(cmd, OCPP_REQUEST_GET_CONFIGURATION) == 0)
+  {
+    data = mg_mk_str("{}");
+  } else if (strcmp(cmd, OCPP_REQUEST_REMOTE_START_TRANSACTION) == 0) {
+    data = startTransaction(payload);
+  } else if (strcmp(cmd, OCPP_REQUEST_REMOTE_STOP_TRANSACTION) == 0) {
+    data = stopTransaction(payload);
+  } else {
+    data = mg_mk_str("{}");
+  }
+  send_ocpp_response(nc, id, data);
 }
 
 static void ev_handler(struct mg_connection *nc, int ev, void *ev_data, void *user_data)
@@ -183,20 +257,14 @@ static void ev_handler(struct mg_connection *nc, int ev, void *ev_data, void *us
       LOG(LL_INFO, ("-- Connected"));
       ws_connected = true;
       struct mg_str content = mg_mk_str("{\"chargeBoxSerialNumber\": \"EV.534150204C616273204672616E6365\",\"chargePointModel\": \"SHELLY\",\"chargePointSerialNumber\": \"3N4453686F70204361656E\",\"chargePointVendor\": \"SAP Labs DShop Caen\",\"firmwareVersion\": \"0.0.1\"}");
-      send_ocpp_request(nc, "BootNotification", "1212121", content);
-      send_ocpp_status_notification();
+      send_ocpp_request(nc, OCPP_REQUEST_BOOT_NOTIFICATION, "1212121", content);
+      send_ocpp_status_notification(OCPP_STATUS_AVAILABLE);
     }
     else
     {
       LOG(LL_ERROR, ("-- Connection failed! HTTP code %d", hm->resp_code));
       /* Connection will be closed after this. */
     }
-    break;
-  }
-  case MG_EV_WEBSOCKET_CONTROL_FRAME:
-  {
-    struct websocket_message *wmf = (struct websocket_message *)ev_data;
-    LOG(LL_INFO, ("-- Control Frame %.*s", (int)wmf->size, wmf->data));
     break;
   }
   case MG_EV_WEBSOCKET_FRAME:
@@ -208,13 +276,11 @@ static void ev_handler(struct mg_connection *nc, int ev, void *ev_data, void *us
       const char *msg = reinterpret_cast<const char *>(wm->data);
       char cmd[50];
       char uuid[50];
-      LOG(LL_INFO, ("Parsing cmd msg %.*s", (int)wm->size, wm->data));
-
+      char payload[500];
       struct json_token token;
       if (json_scanf_array_elem(msg, (int)wm->size, "", 1, &token) > 0)
       {
         sprintf(uuid, "%.*s", token.len, token.ptr);
-        LOG(LL_INFO, ("Msg id %s", uuid));
       }
       else
       {
@@ -223,7 +289,6 @@ static void ev_handler(struct mg_connection *nc, int ev, void *ev_data, void *us
       if (json_scanf_array_elem(msg, (int)wm->size, "", 2, &token) > 0)
       {
         sprintf(cmd, "%.*s", token.len, token.ptr);
-        LOG(LL_INFO, ("Msg cmd %s", cmd));
       }
       else
       {
@@ -231,38 +296,14 @@ static void ev_handler(struct mg_connection *nc, int ev, void *ev_data, void *us
       }
       if (json_scanf_array_elem(msg, (int)wm->size, "", 3, &token) > 0)
       {
-        LOG(LL_INFO, ("Msg content %.*s", token.len, token.ptr));
-        handle_ocpp_cmd(nc, cmd, uuid);
+        sprintf(payload, "%.*s", token.len, token.ptr);
+        handle_ocpp_cmd(nc, cmd, uuid, payload);
       }
       else
       {
         break;
       }
     }
-    break;
-  }
-  case MG_EV_RECV:
-  {
-    LOG(LL_INFO, ("-- WS MG_EV_RECV"));
-    break;
-  }
-  case MG_EV_ACCEPT:
-  {
-    LOG(LL_INFO, ("-- WS MG_EV_ACCEPT"));
-    break;
-  }
-  case MG_EV_POLL:
-  {
-    break;
-  }
-  case MG_EV_SEND:
-  {
-    LOG(LL_INFO, ("-- WS MG_EV_SEND"));
-    break;
-  }
-  case MG_EV_TIMER:
-  {
-    LOG(LL_INFO, ("-- WS MG_EV_TIMER"));
     break;
   }
   case MG_EV_CLOSE:
@@ -297,6 +338,16 @@ static void timer_cb(void *arg)
   (void)arg;
 }
 
+static void button_handler(int pin, void *arg) {
+  LOG(LL_INFO, ("Click from %d !", pin));
+  bool currentValue = mgos_gpio_read(mgos_sys_config_get_sw1_out_gpio());
+  LOG(LL_INFO, ("Previous Value %d !", currentValue));
+  mgos_gpio_write(mgos_sys_config_get_sw1_out_gpio(), !currentValue);
+  bool newValue = mgos_gpio_read(mgos_sys_config_get_sw1_out_gpio());
+  LOG(LL_INFO, ("New Value %d !", newValue));
+  (void) arg;
+}
+
 enum mgos_app_init_result mgos_app_init(void)
 {
 #ifdef MGOS_HAVE_OTA_COMMON
@@ -326,7 +377,13 @@ enum mgos_app_init_result mgos_app_init(void)
   mgos_hlw8012_setPowerMultiplier(hlw8012, 3414290.0);
 
   mgos_set_timer(60000 /* ms */, MGOS_TIMER_REPEAT, timer_cb, NULL);
+
   mgos_gpio_set_mode(mgos_sys_config_get_sw1_out_gpio(), MGOS_GPIO_MODE_OUTPUT);
+  mgos_gpio_write(mgos_sys_config_get_sw1_out_gpio(), 0);
+
+  mgos_gpio_set_mode(mgos_sys_config_get_sw1_in_gpio(), MGOS_GPIO_MODE_OUTPUT);
+  mgos_gpio_set_pull(mgos_sys_config_get_sw1_in_gpio(), MGOS_GPIO_PULL_NONE);
+  mgos_gpio_set_button_handler(mgos_sys_config_get_sw1_in_gpio(), MGOS_GPIO_PULL_NONE, MGOS_GPIO_INT_EDGE_POS, 100, button_handler, NULL);
 
   mg_rpc_add_handler(mgos_rpc_get_global(), "Shelly.GetInfo", "", shelly_get_info_handler, NULL);
   mg_rpc_add_handler(mgos_rpc_get_global(), "Shelly.GetConso", "", shelly_get_conso_handler, NULL);
