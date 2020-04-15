@@ -125,6 +125,11 @@ static void get_current_date(char *buffer)
   strftime(buffer, 21, "%FT%TZ", timeinfo);
 }
 
+static void send_ocpp_heartbeat()
+{
+  send_ocpp_request(ws_connection, "Heartbeat", "12121213", mg_mk_str("{}"));
+}
+
 static void send_ocpp_status_notification()
 {
   char buf[200];
@@ -282,7 +287,7 @@ static void timer_cb(void *arg)
   LOG(LL_INFO, ("Timer callback connected ? %d", ws_connected));
   if (ws_connected == true)
   {
-    send_ocpp_status_notification();
+    send_ocpp_heartbeat();
   }
   else
   {
