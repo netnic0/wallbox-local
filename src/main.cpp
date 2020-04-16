@@ -25,17 +25,19 @@
 
 #define OCPP_STATUS_AVAILABLE "Available"
 #define OCPP_STATUS_CHARGING "Charging"
+#define OCPP_STATUS_FINISHING "Finishing"
+#define OCPP_STATUS_PREPARING "Preparing"
 #define OCPP_RESPONSE_ACCEPTED "{\"status\": \"Accepted\"}"
 #define OCPP_RESPONSE_REJECTED "{\"status\": \"Rejected\"}"
 #define OCPP_REQUEST_BOOT_NOTIFICATION "BootNotification"
 #define OCPP_REQUEST_GET_CONFIGURATION "GetConfiguration"
+#define OCPP_REQUEST_METER_VALUES "MeterValues"
 #define OCPP_REQUEST_REMOTE_START_TRANSACTION "RemoteStartTransaction"
 #define OCPP_REQUEST_REMOTE_STOP_TRANSACTION "RemoteStopTransaction"
 #define OCPP_REQUEST_START_TRANSACTION "StartTransaction"
 #define OCPP_REQUEST_STOP_TRANSACTION "StopTransaction"
 #define OCPP_REQUEST_HEARTBEAT "Heartbeat"
 #define OCPP_REQUEST_STATUS_NOTIFICATION "StatusNotification"
-
 
 #ifndef MGOS_HAVE_WIFI
 const char *mgos_sys_config_get_wifi_sta_ssid(void)
@@ -56,8 +58,16 @@ static struct HLW8012 *hlw8012 = NULL;
 static bool ws_connected = false;
 static bool ws_charging = false;
 static char *tag_id = NULL;
+static char start_transaction_uuid[50];
+static char stop_transaction_uuid[50];
+static char default_uuid[50];
 static int transaction_id = 0;
 static struct mg_connection *ws_connection;
+
+static void generate_uuid(char *uuid) {
+  int random = mgos_rand_range(0.0, 999.0);
+  sprintf(uuid, "%08lx-%04lx-1%03lx-a%03lx-%s", (unsigned long) time(NULL), (unsigned long) mgos_uptime() & 0xFFFFUL, (unsigned long) mgos_uptime() & 0xFFFUL, (unsigned long) random, mgos_sys_ro_vars_get_mac_address());
+}
 
 static void shelly_get_info_handler(struct mg_rpc_request_info *ri,
                                     void *cb_arg, struct mg_rpc_frame_info *fi,
@@ -112,6 +122,19 @@ static void shelly_get_conso_handler(struct mg_rpc_request_info *ri,
   (void)args;
 }
 
+static void shelly_get_uid_handler(struct mg_rpc_request_info *ri,
+                                     void *cb_arg, struct mg_rpc_frame_info *fi,
+                                     struct mg_str args)
+{
+  generate_uuid(default_uuid);
+  mg_rpc_send_responsef(
+      ri,
+      "{uid: %Q}", default_uuid);
+  (void)cb_arg;
+  (void)fi;
+  (void)args;
+}
+
 static void send_ocpp_response(struct mg_connection *nc, const char *id, struct mg_str data)
 {
   char buf[1024];
@@ -154,16 +177,37 @@ static void send_ocpp_status_notification(const char *status)
 
   char date_buffer[30];
   get_current_date(date_buffer);
+  generate_uuid(default_uuid);
 
   length = sprintf(buf, "{\"connectorId\": 1,\"errorCode\": \"NoError\",\"status\": \"%s\",\"timestamp\": \"%s\"}", status, date_buffer);
   struct mg_str content = mg_mk_str_n(buf, length);
   LOG(LL_INFO, ("Sending status notification %.*s", length, buf));
-  send_ocpp_request(ws_connection, OCPP_REQUEST_STATUS_NOTIFICATION, "12121212", content);
+  send_ocpp_request(ws_connection, OCPP_REQUEST_STATUS_NOTIFICATION, default_uuid, content);
 }
 
-static mg_str stopTransaction(const char *payload) {
-  if (json_scanf(payload, strlen(payload), "{ transactionId:%d }", &transaction_id) > 0) {
+static void send_ocpp_meter_values()
+{
+  char buf[200];
+  int length;
+
+  char date_buffer[30];
+  get_current_date(date_buffer);
+  generate_uuid(default_uuid);
+  int energy = mgos_hlw8012_readEnergy(hlw8012) / 3600;
+
+  length = sprintf(buf, "{\"connectorId\":1,\"transactionId\":%d,\"meterValue\":[{\"sampledValue\":[{\"unit\":\"Wh\",\"context\":\"Sample.Periodic\",\"value\":\"%d\"}],\"timestamp\":\"%s\"}]}", transaction_id, energy, date_buffer);
+  struct mg_str content = mg_mk_str_n(buf, length);
+  LOG(LL_INFO, ("Sending meter values %.*s", length, buf));
+  send_ocpp_request(ws_connection, OCPP_REQUEST_METER_VALUES, default_uuid, content);
+}
+
+static mg_str stopTransaction(const char *payload)
+{
+  if (json_scanf(payload, strlen(payload), "{ transactionId:%d }", &transaction_id) > 0)
+  {
     LOG(LL_INFO, ("Stop transaction %d for tag with id %s", transaction_id, tag_id));
+
+    send_ocpp_status_notification(OCPP_STATUS_FINISHING);
     mgos_gpio_write(mgos_sys_config_get_sw1_out_gpio(), 0);
 
     char buf[200];
@@ -171,44 +215,78 @@ static mg_str stopTransaction(const char *payload) {
 
     char date_buffer[30];
     get_current_date(date_buffer);
+    generate_uuid(stop_transaction_uuid);
 
-    length = sprintf(buf, "{\"meterStop\": 10000,\"transactionId\": \"%d\",\"idTag\": \"%s\",\"timestamp\": \"%s\"}", transaction_id, tag_id, date_buffer);
+    int energy = mgos_hlw8012_readEnergy(hlw8012) / 3600;
+
+    length = sprintf(buf, "{\"meterStop\": %d,\"transactionId\": \"%d\",\"idTag\": \"%s\",\"timestamp\": \"%s\"}", energy, transaction_id, tag_id, date_buffer);
     struct mg_str content = mg_mk_str_n(buf, length);
-    LOG(LL_INFO, ("Sending start transaction %.*s", length, buf));
-    send_ocpp_request(ws_connection, OCPP_REQUEST_STOP_TRANSACTION, "12121212", content);
-
-    send_ocpp_status_notification(OCPP_STATUS_AVAILABLE);
+    LOG(LL_INFO, ("Sending stop transaction %.*s", length, buf));
+    send_ocpp_request(ws_connection, OCPP_REQUEST_STOP_TRANSACTION, stop_transaction_uuid, content);
     ws_charging = false;
     return mg_mk_str(OCPP_RESPONSE_ACCEPTED);
-  } else {
+  }
+  else
+  {
     LOG(LL_INFO, ("Unable to find transaction id in payload %s", payload));
     return mg_mk_str(OCPP_RESPONSE_REJECTED);
   }
 }
 
-static mg_str startTransaction(const char *payload) {
-  if (json_scanf(payload, strlen(payload), "{ idTag:%Q }", &tag_id) > 0) {
+static mg_str startTransaction(const char *payload)
+{
+  if (json_scanf(payload, strlen(payload), "{ idTag:%Q }", &tag_id) > 0)
+  {
     LOG(LL_INFO, ("Starting transaction for tag with id %s", tag_id));
-    mgos_gpio_write(mgos_sys_config_get_sw1_out_gpio(), 1);
 
     char buf[200];
     int length;
 
     char date_buffer[30];
     get_current_date(date_buffer);
+    generate_uuid(start_transaction_uuid);
+
+    send_ocpp_status_notification(OCPP_STATUS_PREPARING);
 
     length = sprintf(buf, "{\"connectorId\": 1, \"meterStart\": 0, \"idTag\": \"%s\",\"timestamp\": \"%s\"}", tag_id, date_buffer);
     struct mg_str content = mg_mk_str_n(buf, length);
     LOG(LL_INFO, ("Sending start transaction %.*s", length, buf));
-    send_ocpp_request(ws_connection, OCPP_REQUEST_START_TRANSACTION, "12121212", content);
-
-    send_ocpp_status_notification(OCPP_STATUS_CHARGING);
-    ws_charging = true;
+    send_ocpp_request(ws_connection, OCPP_REQUEST_START_TRANSACTION, start_transaction_uuid, content);
     return mg_mk_str(OCPP_RESPONSE_ACCEPTED);
-  } else {
+  }
+  else
+  {
     LOG(LL_INFO, ("Unable to find tag id in payload %s", payload));
     return mg_mk_str(OCPP_RESPONSE_REJECTED);
   }
+}
+
+static void handle_ocpp_response(struct mg_connection *nc, const char *id, const char *payload)
+{
+  LOG(LL_INFO, ("Handle ocpp response with id %s", id));
+  if (strcmp(id, start_transaction_uuid) == 0)
+  {
+    if (json_scanf(payload, strlen(payload), "{ transactionId:%d }", &transaction_id) > 0) {
+      send_ocpp_status_notification(OCPP_STATUS_CHARGING);
+      ws_charging = true;
+      mgos_hlw8012_resetEnergy(hlw8012);
+      mgos_gpio_write(mgos_sys_config_get_sw1_out_gpio(), 1);
+      LOG(LL_INFO, ("Transaction started %d", transaction_id));
+    } else {
+      send_ocpp_status_notification(OCPP_STATUS_AVAILABLE);
+      ws_charging = false;
+      transaction_id = -1;
+      LOG(LL_INFO, ("Failed to start transaction"));
+    }
+  } else if (strcmp(id, stop_transaction_uuid) == 0)
+  {
+    send_ocpp_status_notification(OCPP_STATUS_AVAILABLE);
+    ws_charging = false;
+    transaction_id = -1;
+    mgos_hlw8012_resetEnergy(hlw8012);
+  }
+  
+  (void)nc;
 }
 
 static void handle_ocpp_cmd(struct mg_connection *nc, const char *cmd, const char *id, const char *payload)
@@ -218,11 +296,17 @@ static void handle_ocpp_cmd(struct mg_connection *nc, const char *cmd, const cha
   if (strcmp(cmd, OCPP_REQUEST_GET_CONFIGURATION) == 0)
   {
     data = mg_mk_str("{}");
-  } else if (strcmp(cmd, OCPP_REQUEST_REMOTE_START_TRANSACTION) == 0) {
+  }
+  else if (strcmp(cmd, OCPP_REQUEST_REMOTE_START_TRANSACTION) == 0)
+  {
     data = startTransaction(payload);
-  } else if (strcmp(cmd, OCPP_REQUEST_REMOTE_STOP_TRANSACTION) == 0) {
+  }
+  else if (strcmp(cmd, OCPP_REQUEST_REMOTE_STOP_TRANSACTION) == 0)
+  {
     data = stopTransaction(payload);
-  } else {
+  }
+  else
+  {
     data = mg_mk_str("{}");
   }
   send_ocpp_response(nc, id, data);
@@ -248,7 +332,8 @@ static void ev_handler(struct mg_connection *nc, int ev, void *ev_data, void *us
   case MG_EV_WEBSOCKET_HANDSHAKE_DONE:
   {
     struct http_message *hm = (struct http_message *)ev_data;
-    if (ws_connected == true) {
+    if (ws_connected == true)
+    {
       LOG(LL_INFO, ("-- Already Connected"));
       break;
     }
@@ -258,7 +343,6 @@ static void ev_handler(struct mg_connection *nc, int ev, void *ev_data, void *us
       ws_connected = true;
       struct mg_str content = mg_mk_str("{\"chargeBoxSerialNumber\": \"EV.534150204C616273204672616E6365\",\"chargePointModel\": \"SHELLY\",\"chargePointSerialNumber\": \"3N4453686F70204361656E\",\"chargePointVendor\": \"SAP Labs DShop Caen\",\"firmwareVersion\": \"0.0.1\"}");
       send_ocpp_request(nc, OCPP_REQUEST_BOOT_NOTIFICATION, "1212121", content);
-      send_ocpp_status_notification(OCPP_STATUS_AVAILABLE);
     }
     else
     {
@@ -271,7 +355,10 @@ static void ev_handler(struct mg_connection *nc, int ev, void *ev_data, void *us
   {
     struct websocket_message *wm = (struct websocket_message *)ev_data;
     LOG(LL_INFO, ("-- Frame %.*s", (int)wm->size, wm->data));
-    if (wm->size > 2 && wm->data[1] == '2')
+    if (wm->size < 2) {
+      break;
+    }
+    else if (wm->data[1] == '2')
     {
       const char *msg = reinterpret_cast<const char *>(wm->data);
       char cmd[50];
@@ -303,7 +390,31 @@ static void ev_handler(struct mg_connection *nc, int ev, void *ev_data, void *us
       {
         break;
       }
+    } else if  (wm->data[1] == '3')
+    {
+      const char *msg = reinterpret_cast<const char *>(wm->data);
+      char uuid[50];
+      char payload[500];
+      struct json_token token;
+      if (json_scanf_array_elem(msg, (int)wm->size, "", 1, &token) > 0)
+      {
+        sprintf(uuid, "%.*s", token.len, token.ptr);
+      }
+      else
+      {
+        break;
+      }
+      if (json_scanf_array_elem(msg, (int)wm->size, "", 2, &token) > 0)
+      {
+        sprintf(payload, "%.*s", token.len, token.ptr);
+        handle_ocpp_response(nc, uuid, payload);
+      }
+      else
+      {
+        break;
+      }
     }
+    
     break;
   }
   case MG_EV_CLOSE:
@@ -313,7 +424,6 @@ static void ev_handler(struct mg_connection *nc, int ev, void *ev_data, void *us
     break;
   }
   }
-  (void)nc;
   (void)user_data;
 }
 
@@ -329,6 +439,14 @@ static void timer_cb(void *arg)
   if (ws_connected == true)
   {
     send_ocpp_heartbeat();
+    int energy = mgos_hlw8012_readEnergy(hlw8012);
+    LOG(LL_INFO, ("Energy Ws  %d", energy));
+    LOG(LL_INFO, ("Energy Wh %d", energy / 3600));
+    LOG(LL_INFO, ("ActivePower %d", mgos_hlw8012_readActivePower(hlw8012)));
+
+    if (ws_charging == true && transaction_id > 0) {
+      send_ocpp_meter_values();
+    }
   }
   else
   {
@@ -338,14 +456,26 @@ static void timer_cb(void *arg)
   (void)arg;
 }
 
-static void button_handler(int pin, void *arg) {
+static void button_handler(int pin, void *arg)
+{
   LOG(LL_INFO, ("Click from %d !", pin));
   bool currentValue = mgos_gpio_read(mgos_sys_config_get_sw1_out_gpio());
   LOG(LL_INFO, ("Previous Value %d !", currentValue));
   mgos_gpio_write(mgos_sys_config_get_sw1_out_gpio(), !currentValue);
   bool newValue = mgos_gpio_read(mgos_sys_config_get_sw1_out_gpio());
   LOG(LL_INFO, ("New Value %d !", newValue));
-  (void) arg;
+  (void)arg;
+}
+
+static void handleInterrupt(int pin, void *arg)
+{
+  if (pin == mgos_sys_config_get_cf_pin()) {
+    hlw8012->cf_interrupt();
+  }
+  if (pin == mgos_sys_config_get_cf1_pin()) {
+    hlw8012->cf1_interrupt();
+  }
+  (void)arg;
 }
 
 enum mgos_app_init_result mgos_app_init(void)
@@ -371,10 +501,17 @@ enum mgos_app_init_result mgos_app_init(void)
 
   LOG(LL_INFO, ("Starting Shelly Wallbox"));
 
-  mgos_hlw8012_begin(hlw8012, mgos_sys_config_get_cf_pin(), mgos_sys_config_get_cf1_pin(), mgos_sys_config_get_sel_pin(), LOW, false, 1000000);
+  mgos_hlw8012_begin(hlw8012, mgos_sys_config_get_cf_pin(), mgos_sys_config_get_cf1_pin(), mgos_sys_config_get_sel_pin(), LOW, true, 2000000);
   mgos_hlw8012_setCurrentMultiplier(hlw8012, 25740.0);
   mgos_hlw8012_setVoltageMultiplier(hlw8012, 313400.0);
   mgos_hlw8012_setPowerMultiplier(hlw8012, 3414290.0);
+
+  mgos_gpio_set_mode(mgos_sys_config_get_cf_pin(), MGOS_GPIO_MODE_INPUT);
+  mgos_gpio_set_mode(mgos_sys_config_get_cf1_pin(), MGOS_GPIO_MODE_INPUT);
+  mgos_gpio_set_int_handler(mgos_sys_config_get_cf_pin(), MGOS_GPIO_INT_EDGE_NEG, handleInterrupt, NULL);
+  mgos_gpio_set_int_handler(mgos_sys_config_get_cf1_pin(), MGOS_GPIO_INT_EDGE_NEG, handleInterrupt, NULL);
+  mgos_gpio_enable_int(mgos_sys_config_get_cf_pin());
+  mgos_gpio_enable_int(mgos_sys_config_get_cf1_pin());
 
   mgos_set_timer(60000 /* ms */, MGOS_TIMER_REPEAT, timer_cb, NULL);
 
@@ -388,6 +525,7 @@ enum mgos_app_init_result mgos_app_init(void)
   mg_rpc_add_handler(mgos_rpc_get_global(), "Shelly.GetInfo", "", shelly_get_info_handler, NULL);
   mg_rpc_add_handler(mgos_rpc_get_global(), "Shelly.GetConso", "", shelly_get_conso_handler, NULL);
   mg_rpc_add_handler(mgos_rpc_get_global(), "Shelly.SetSwitch", "", shelly_set_switch_handler, NULL);
+  mg_rpc_add_handler(mgos_rpc_get_global(), "Shelly.GetUid", "", shelly_get_uid_handler, NULL);
 
   connect_ocpp_backend();
   return MGOS_APP_INIT_SUCCESS;
