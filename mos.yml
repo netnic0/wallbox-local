@@ -2,7 +2,7 @@ author: 'Sébastien Savalle'
 description: A Mongoose OS app skeleton
 version: 1.0
 platform: esp8266
-name: switch1pm
+name: shellyWallbox
 
 libs_version: ${mos.version}
 modules_version: ${mos.version}

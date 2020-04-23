@@ -40,7 +40,15 @@
   <body onLoad="onLoad()">
 
     <div class="container">
-      <h1 class="" id="device_id">Shelly Wallbox</h1>
+      <h1 class="">Shelly Wallbox</h1>
+      <div class="form-control">
+        <label>Status:</label>
+        <span id="state"></span>
+      </div>
+      <div class="form-control">
+        <label>Energy (Wh):</label>
+        <span id="energy"></span>
+      </div>
       <button class="btn" id="refresh_btn">
         <span id="spinner"></span>
         Refresh
@@ -51,14 +59,6 @@
       <h1 class="">Firmware</h1>
       <div class="form">
         <div class="">
-          <div class="form-control">
-            <label>Status:</label>
-            <span id="state"></span>
-          </div>
-          <div class="form-control">
-            <label>Energy (Wh):</label>
-            <span id="energy"></span>
-          </div>
           <div class="form-control">
             <label>App:</label>
             <span id="app_name"></span>
@@ -157,12 +157,11 @@ function getInfo() {
   spinner.className = "spin";
   axios.get(host + "/rpc/Shelly.GetInfo").then(function(res) {
     wifiSSID.value = res.data.wifi_ssid;
-    document.getElementById("device_id").innerText = res.data.id;
     document.getElementById("app_name").innerText = res.data.app;
     document.getElementById("app_version").innerText = res.data.version;
     document.getElementById("app_build").innerText = res.data.fw_build;
-    document.getElementById("state").innerText = res.data.state === 1 ? "Charging" : "Available";
-    document.getElementById("energy").innerText = res.data.energy ? res.data.energy / 3600 : 0;
+    document.getElementById("state").innerText = res.data.state ? "Charging" : "Available";
+    document.getElementById("energy").innerText = (res.data.energy ? res.data.energy / 3600 : 0).toFixed(2);
   }).catch(function(err) {
     alert(err);
   }).then(function() {
