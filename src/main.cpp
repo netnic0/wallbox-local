@@ -75,15 +75,8 @@ static void shelly_get_info_handler(struct mg_rpc_request_info *ri,
 {
   mg_rpc_send_responsef(
       ri,
-      "{id: %Q, app: %Q, version: %Q, fw_build: %Q, current: %d, voltage: %d, energy: %d, "
-      "sw1: {id: %d, name: %Q, in_mode: %d, persist: %B, state: %B}"
-      "} ",
-      mgos_sys_config_get_device_id(), MGOS_APP,
-      mgos_sys_ro_vars_get_fw_version(), mgos_sys_ro_vars_get_fw_id(),
-      mgos_hlw8012_readCurrent(hlw8012), mgos_hlw8012_readVoltage(hlw8012), mgos_hlw8012_readEnergy(hlw8012),
-      mgos_sys_config_get_sw1_id(), mgos_sys_config_get_sw1_name(),
-      mgos_sys_config_get_sw1_in_mode(),
-      mgos_sys_config_get_sw1_persist_state(), mgos_gpio_read(mgos_sys_config_get_sw1_in_gpio()));
+      "{id: %Q, app: %Q, version: %Q, fw_build: %Q, wifi_ssid: %s, energy: %d, state: %B}",
+      mgos_sys_config_get_device_id(), MGOS_APP, mgos_sys_ro_vars_get_fw_version(), mgos_sys_ro_vars_get_fw_id(), mgos_sys_config_get_wifi_sta_ssid(), mgos_hlw8012_readEnergy(hlw8012), mgos_gpio_read(mgos_sys_config_get_sw1_out_gpio()));
   (void)cb_arg;
   (void)fi;
   (void)args;

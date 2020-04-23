@@ -40,57 +40,49 @@
   <body onLoad="onLoad()">
 
     <div class="container">
-      <h1 class="" id="device_id" style="visibility: hidden">shellyswitch25-XXXXXX</h1>
+      <h1 class="" id="device_id">Shelly Wallbox</h1>
       <button class="btn" id="refresh_btn">
         <span id="spinner"></span>
         Refresh
       </button>
     </div>
 
-    <div class="container" id="sw1_container" style="display: none">
-      <h1 class="" id="sw1_name">SW1 Name</h1>
+    <div class="container" id="fw_container">
+      <h1 class="">Firmware</h1>
       <div class="form">
         <div class="">
           <div class="form-control">
-            <label>State:</label>
-            <span id="sw1_state">off</span>
+            <label>Status:</label>
+            <span id="state"></span>
           </div>
           <div class="form-control">
-            <label></label>
-            <button class="btn" id="sw1_set_btn">
-              <span id="sw1_set_spinner"></span>
-              <label id="sw1_btn_label">Turn On</label>
-            </button>
-          </div>
-        </div>
-      </div>
-      <div class="form">
-        <div class="">
-          <div class="form-control">
-            <label>Mode:</label>
-            <select id="sw1_in_mode">
-              <option id="sw1_in_mode_0" value="0">Momentary</option>
-              <option id="sw1_in_mode_1" value="1">Toggle</option>
-              <option id="sw1_in_mode_2" value="2">Edge</option>
-              <option id="sw1_in_mode_3" value="3">Detached</option>
-            </select>
+            <label>Energy (Wh):</label>
+            <span id="energy"></span>
           </div>
           <div class="form-control">
-            <label>Persist state:</label>
-            <input type="checkbox" id="sw1_persist">
+            <label>App:</label>
+            <span id="app_name"></span>
           </div>
           <div class="form-control">
-            <label></label>
-            <button class="btn" id="sw1_save_btn">
-              <span id="sw1_save_spinner"></span>
-              <label>Save</label>
-            </button>
+            <label>Version:</label>
+            <span id="app_version"></span>
+          </div>
+          <div class="form-control">
+            <label>Build ID:</label>
+            <span id="app_build"></span>
+          </div>
+          <div class="form-control">
+            <label>Update (<a href="https://github.com/mongoose-os-apps/shelly-homekit">GitHub</a>):</label>
+            <form id="fw_upload_form" method="POST" action="/update" enctype="multipart/form-data">
+              <input type="file" id="fw_select_file" name="file" accept=".zip" />
+              <button class="btn" id="fw_upload_btn"><span id="fw_spinner"></span> Upload</button>
+            </form>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="container" id="wifi_container" style="visibility: hidden">
+    <div class="container" id="wifi_container">
       <h1 class="">WiFi setup</h1>
       <div class="form">
         <div class="">
@@ -116,46 +108,6 @@
         </div>
       </div>
     </div>
-
-    <div class="container" id="fw_container" style="visibility: hidden">
-      <h1 class="">Firmware</h1>
-      <div class="form">
-        <div class="">
-          <div class="form-control">
-            <label>App:</label>
-            <span id="app_name"></span>
-          </div>
-          <div class="form-control">
-            <label>Version:</label>
-            <span id="app_version"></span>
-          </div>
-          <div class="form-control">
-            <label>Build ID:</label>
-            <span id="app_build"></span>
-          </div>
-          <div class="form-control">
-            <label>Current:</label>
-            <span id="current"></span>
-          </div>
-          <div class="form-control">
-            <label>Voltage:</label>
-            <span id="voltage"></span>
-          </div>
-          <div class="form-control">
-            <label>Energy:</label>
-            <span id="energy"></span>
-          </div>
-          <div class="form-control">
-            <label>Update (<a href="https://github.com/mongoose-os-apps/shelly-homekit">GitHub</a>):</label>
-            <form id="fw_upload_form" method="POST" action="/update" enctype="multipart/form-data">
-              <input type="file" id="fw_select_file" name="file" accept=".zip" />
-              <button class="btn" id="fw_upload_btn"><span id="fw_spinner"></span> Upload</button>
-            </form>
-          </div>
-        </div>
-      </div>
-    </div>
-
 <script>
 
 var host = "";
@@ -201,86 +153,16 @@ document.getElementById("wifi_save_btn").onclick = function() {
   });
 };
 
-function sw_set_common(id, state, spinner) {
-  spinner.className = "spin";
-  axios.post(host + "/rpc/Shelly.SetSwitch", {id: id, state: state}).then(function(res) {
-  }).catch(function(err) {
-    if (err.response) {
-      err = err.response.data.message;
-    }
-    alert(err);
-  }).then(function() {
-    spinner.className = "";
-    getInfo();
-  });
-}
-
-document.getElementById("sw1_set_btn").onclick = function() {
-  sw_set_common(
-      document.getElementById("sw1_container").sw_id,
-      !document.getElementById("sw1_container").sw_state,
-      document.getElementById("sw1_set_spinner"),
-  );
-}
-
-function sw_save_common(cfg_key, in_mode, persist, spinner) {
-  spinner.className = "spin";
-  var data = {
-    config: {},
-    save: true,
-    reboot: false,
-  };
-  data.config[cfg_key] = {
-    in_mode: parseInt(in_mode),
-    persist_state: persist,
-  };
-  axios.post(host + "/rpc/Config.Set", data).then(function(res) {
-  }).catch(function(err) {
-    if (err.response) {
-      err = err.response.data.message;
-    }
-    alert(err);
-  }).then(function() {
-    spinner.className = "";
-    getInfo();
-  });
-}
-
-document.getElementById("sw1_save_btn").onclick = function() {
-  sw_save_common(
-      "sw1",
-      document.getElementById("sw1_in_mode").value,
-      document.getElementById("sw1_persist").checked,
-      document.getElementById("sw1_save_spinner"),
-  );
-}
-
 function getInfo() {
   spinner.className = "spin";
   axios.get(host + "/rpc/Shelly.GetInfo").then(function(res) {
-    wifiEn.checked = res.data.wifi_en;
     wifiSSID.value = res.data.wifi_ssid;
-    wifiPass.value = res.data.wifi_pass;
     document.getElementById("device_id").innerText = res.data.id;
     document.getElementById("app_name").innerText = res.data.app;
     document.getElementById("app_version").innerText = res.data.version;
     document.getElementById("app_build").innerText = res.data.fw_build;
-    document.getElementById("current").innerText = res.data.current;
-    document.getElementById("voltage").innerText = res.data.voltage;
-    document.getElementById("energy").innerText = res.data.energy;
-    if (res.data.sw1) {
-      document.getElementById("sw1_name").innerText = res.data.sw1.name;
-      document.getElementById("sw1_state").innerText = (res.data.sw1.state ? "on" : "off");
-      document.getElementById("sw1_btn_label").innerText = "Turn " + (res.data.sw1.state ? "Off" : "On");
-//      document.getElementById("sw1_in_mode_" + res.data.sw1.in_mode).selected = true;
-      document.getElementById("sw1_persist").checked = res.data.sw1.persist;
-      document.getElementById("sw1_container").sw_id = res.data.sw1.id;
-      document.getElementById("sw1_container").sw_state = res.data.sw1.state;
-      document.getElementById("sw1_container").style.display = "block";
-    }
-    document.getElementById("wifi_container").style.visibility = "visible";
-    document.getElementById("fw_container").style.visibility = "visible";
-    document.getElementById("device_id").style.visibility = "visible";
+    document.getElementById("state").innerText = res.data.state === 1 ? "Charging" : "Available";
+    document.getElementById("energy").innerText = res.data.energy ? res.data.energy / 3600 : 0;
   }).catch(function(err) {
     alert(err);
   }).then(function() {
