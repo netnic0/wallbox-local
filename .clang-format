@@ -1,0 +1,6 @@
+AllowShortFunctionsOnASingleLine: false
+BasedOnStyle: Google
+DerivePointerBinding: false
+IncludeBlocks: Preserve
+PointerBindsToType: false
+SpaceAfterCStyleCast: true
