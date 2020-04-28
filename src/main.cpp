@@ -408,30 +408,9 @@ static void connect_ocpp_backend() {
     LOG(LL_INFO, ("Connecting to OCPP Backend %.*s", length, buf));
 
     ws_connection = mg_connect_ws(mgos_get_mgr(), ev_handler, NULL, buf, "ocpp1.6", NULL);
-
-    ws_connection = mg_connect_ws(mgos_get_mgr(), ev_handler, NULL, buf, "ocpp1.6", NULL);
   } else {
     LOG(LL_WARN, ("OCPP Config is not defined !"));
   }
-  /** if (urlLength > 1 && nameLength > 1) {
-    char buf[urlLength + nameLength + 2];
-    int length = sprintf(buf, "%.*s/%.*s", urlLength, mgos_sys_config_get_ocpp_url(), nameLength,
-  mgos_sys_config_get_ocpp_name());
-
-    LOG(LL_INFO, ("Connecting to OCPP Backend %.*s", length, buf));
-
-    ws_connection = mg_connect_ws(mgos_get_mgr(), ev_handler, NULL, buf, "ocpp1.6", NULL);
-  } else {
-    LOG(LL_WARN, ("OCPP Config is not defined %d , %d", urlLength, nameLength));
-  }
-    LOG(LL_WARN, ("OCPP Config is not defined"));
-    ws_connection = mg_connect_ws(
-      mgos_get_mgr(),
-      ev_handler,
-      NULL,
-      "wss://sap-ev-chargebox-json-server-qa.cfapps.eu10.hana.ondemand.com/OCPP16/5c1d018887ea6e000856511a/5d5a8df36b8d26000682edb0/Shelly",
-      "ocpp1.6",
-      NULL);*/
 }
 
 static void timer_cb(void *arg) {
@@ -463,16 +442,6 @@ static void button_handler(int pin, void *arg) {
   (void) arg;
 }
 
-static void handleInterrupt(int pin, void *arg) {
-  if (pin == mgos_sys_config_get_cf_pin()) {
-    hlw8012->cf_interrupt();
-  }
-  if (pin == mgos_sys_config_get_cf1_pin()) {
-    hlw8012->cf1_interrupt();
-  }
-  (void) arg;
-}
-
 enum mgos_app_init_result mgos_app_init(void) {
 #ifdef MGOS_HAVE_OTA_COMMON
   if (mgos_ota_is_first_boot()) {
@@ -501,16 +470,10 @@ enum mgos_app_init_result mgos_app_init(void) {
       LOW,
       true,
       2000000);
+  mgos_hlw8012_setResistors(hlw8012, 0.001, 5 * 470000, 1000);
   mgos_hlw8012_setCurrentMultiplier(hlw8012, 25740.0);
   mgos_hlw8012_setVoltageMultiplier(hlw8012, 313400.0);
   mgos_hlw8012_setPowerMultiplier(hlw8012, 3414290.0);
-
-  mgos_gpio_set_mode(mgos_sys_config_get_cf_pin(), MGOS_GPIO_MODE_INPUT);
-  mgos_gpio_set_mode(mgos_sys_config_get_cf1_pin(), MGOS_GPIO_MODE_INPUT);
-  mgos_gpio_set_int_handler(mgos_sys_config_get_cf_pin(), MGOS_GPIO_INT_EDGE_NEG, handleInterrupt, NULL);
-  mgos_gpio_set_int_handler(mgos_sys_config_get_cf1_pin(), MGOS_GPIO_INT_EDGE_NEG, handleInterrupt, NULL);
-  mgos_gpio_enable_int(mgos_sys_config_get_cf_pin());
-  mgos_gpio_enable_int(mgos_sys_config_get_cf1_pin());
 
   mgos_set_timer(60000 /* ms */, MGOS_TIMER_REPEAT, timer_cb, NULL);
 
