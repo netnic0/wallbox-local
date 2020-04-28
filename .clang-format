@@ -1,5 +1,5 @@
 BasedOnStyle: Google
-AlignAfterOpenBracket: AlwaysBreak
+AlignAfterOpenBracket: Align
 AllowAllParametersOfDeclarationOnNextLine: false
 AllowShortFunctionsOnASingleLine: false
 BinPackArguments: false
