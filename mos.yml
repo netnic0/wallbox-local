@@ -44,6 +44,9 @@ config_schema:
   - ["cf1_pin", "i", 13, {"CF1 pin"}]
   - ["sel_pin", "i", 12, {"SEL pin"}]
   - ["debug.level", 3]
+  - ["ocpp", "o", {"OCPP settings"}]
+  - ["ocpp.url", "s", "", {"Url of the OCPP Backend"}]
+  - ["ocpp.name", "s", "", {"Name of the wallbox in OCPP Backend"}]
 
 # These settings get compiled into the C structure, and can be accessed
 # from the C code this way:
