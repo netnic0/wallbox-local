@@ -31,6 +31,10 @@
 #define OCPP_RESET_TYPE_HARD "Hard"
 #define OCPP_RESET_TYPE_SOFT "Soft"
 
+#define OCPP_STOP_TRANSACTION_REASON_REMOTE "Remote"
+#define OCPP_STOP_TRANSACTION_REASON_SOFTRESET "SoftReset"
+#define OCPP_STOP_TRANSACTION_REASON_HARDRESET "HardReset"
+
 #define OCPP_RESPONSE_ACCEPTED "{\"status\": \"Accepted\"}"
 #define OCPP_RESPONSE_REJECTED "{\"status\": \"Rejected\"}"
 
@@ -213,33 +217,39 @@ static void send_ocpp_meter_values() {
   send_ocpp_request(ws_connection, OCPP_REQUEST_METER_VALUES, default_uuid, content);
 }
 
-static mg_str stopTransaction(const char *payload) {
+static mg_str stopTransaction(const char *reason) {
+  LOG(LL_INFO, ("Stop transaction %d for tag %s, reason %s", transaction_id, tag_id, reason));
+
+  send_ocpp_status_notification(OCPP_STATUS_FINISHING);
+  mgos_gpio_write(mgos_sys_config_get_sw1_out_gpio(), 0);
+
+  char buf[200];
+  int length;
+
+  char date_buffer[30];
+  get_current_date(date_buffer);
+  generate_uuid(stop_transaction_uuid);
+
+  int energy = mgos_hlw8012_readEnergy(hlw8012) / 3600;
+
+  length = sprintf(
+      buf,
+      "{\"meterStop\": %d,\"transactionId\": \"%d\",\"idTag\": \"%s\",\"timestamp\": \"%s\",\"reason\": \"%s\"}",
+      energy,
+      transaction_id,
+      tag_id,
+      date_buffer,
+      reason);
+  struct mg_str content = mg_mk_str_n(buf, length);
+  LOG(LL_INFO, ("Sending stop transaction %.*s", length, buf));
+  send_ocpp_request(ws_connection, OCPP_REQUEST_STOP_TRANSACTION, stop_transaction_uuid, content);
+  ws_charging = false;
+  return mg_mk_str(OCPP_RESPONSE_ACCEPTED);
+}
+
+static mg_str stopTransaction(const char *payload, const char *reason) {
   if (json_scanf(payload, strlen(payload), "{ transactionId:%d }", &transaction_id) > 0) {
-    LOG(LL_INFO, ("Stop transaction %d for tag with id %s", transaction_id, tag_id));
-
-    send_ocpp_status_notification(OCPP_STATUS_FINISHING);
-    mgos_gpio_write(mgos_sys_config_get_sw1_out_gpio(), 0);
-
-    char buf[200];
-    int length;
-
-    char date_buffer[30];
-    get_current_date(date_buffer);
-    generate_uuid(stop_transaction_uuid);
-
-    int energy = mgos_hlw8012_readEnergy(hlw8012) / 3600;
-
-    length = sprintf(buf,
-                     "{\"meterStop\": %d,\"transactionId\": \"%d\",\"idTag\": \"%s\",\"timestamp\": \"%s\"}",
-                     energy,
-                     transaction_id,
-                     tag_id,
-                     date_buffer);
-    struct mg_str content = mg_mk_str_n(buf, length);
-    LOG(LL_INFO, ("Sending stop transaction %.*s", length, buf));
-    send_ocpp_request(ws_connection, OCPP_REQUEST_STOP_TRANSACTION, stop_transaction_uuid, content);
-    ws_charging = false;
-    return mg_mk_str(OCPP_RESPONSE_ACCEPTED);
+    return stopTransaction(reason);
   } else {
     LOG(LL_INFO, ("Unable to find transaction id in payload %s", payload));
     return mg_mk_str(OCPP_RESPONSE_REJECTED);
@@ -271,6 +281,42 @@ static mg_str startTransaction(const char *payload) {
   }
 }
 
+/*
+ * Soft: Return to initial status, gracefully terminating any transactions in progress.
+ * At receipt of a soft reset, the Charge Point SHALL return to a state that behaves as just having been booted.
+ * If any transaction is in progress it SHALL be terminated normally, before the reset, as in Stop Transaction.
+ * Send StatusNotification/ResetFailure if not able to reset.
+ */
+static mg_str reset_soft() {
+  LOG(LL_INFO, ("Performing soft reset"));
+
+  if (ws_charging) {
+    stopTransaction(OCPP_STOP_TRANSACTION_REASON_SOFTRESET);
+  }
+
+  mgos_app_init();
+
+  return mg_mk_str(OCPP_RESPONSE_ACCEPTED);
+}
+
+/*
+ * Hard: Full reboot of Charge Point software.
+ * At receipt of a hard reset the Charge Point SHALL attempt to terminate any transaction in progress normally as
+ * in StopTransaction and then perform a reboot.
+ * Send StatusNotification/ResetFailure if not able to reset.
+ */
+static mg_str reset_hard() {
+  LOG(LL_INFO, ("Performing hard reset"));
+
+  if (ws_charging) {
+    stopTransaction(OCPP_STOP_TRANSACTION_REASON_HARDRESET);
+  }
+
+  mgos_system_restart_after(5000);
+
+  return mg_mk_str(OCPP_RESPONSE_ACCEPTED);
+}
+
 static mg_str reset(const char *payload) {
   char *reset_type = NULL;
 
@@ -285,36 +331,10 @@ static mg_str reset(const char *payload) {
       LOG(LL_WARN, ("Reset type %s not supported", reset_type));
       return mg_mk_str(OCPP_RESPONSE_REJECTED);
     }
-  } else {
-    LOG(LL_INFO, ("Unable to find reset type in payload %s", payload));
-    return mg_mk_str(OCPP_RESPONSE_REJECTED);
   }
-}
 
-static mg_str reset_soft() {
-  // Soft: Return to initial status, gracefully terminating any transactions in progress.
-  // At receipt of a soft reset, the Charge Point SHALL return to a state that behaves as just having been booted.
-  // If any transaction is in progress it SHALL be terminated normally, before the reset, as in Stop Transaction.
-  LOG(LL_INFO, ("Performing soft reset"));
-
-  // Reason for stopping a transaction in StopTransaction.req: SoftReset
-
-  // Send StatusNotification/ResetFailure is not able to reset
-
-  return mg_mk_str(OCPP_RESPONSE_ACCEPTED);
-}
-
-static mg_str reset_hard() {
-  // Hard: Full reboot of Charge Point software.
-  // At receipt of a hard reset the Charge Point SHALL attempt to terminate any transaction in progress normally as
-  // in StopTransaction and then perform a reboot.
-  LOG(LL_INFO, ("Performing hard reset"));
-
-  // Reason for stopping a transaction in StopTransaction.req: HardReset
-
-  // Send StatusNotification/ResetFailure is not able to reset
-
-  return mg_mk_str(OCPP_RESPONSE_ACCEPTED);
+  LOG(LL_INFO, ("Unable to find reset type in payload %s", payload));
+  return mg_mk_str(OCPP_RESPONSE_REJECTED);
 }
 
 static void handle_ocpp_response(struct mg_connection *nc, const char *id, const char *payload) {
@@ -350,7 +370,7 @@ static void handle_ocpp_cmd(struct mg_connection *nc, const char *cmd, const cha
   } else if (strcmp(cmd, OCPP_REQUEST_REMOTE_START_TRANSACTION) == 0) {
     data = startTransaction(payload);
   } else if (strcmp(cmd, OCPP_REQUEST_REMOTE_STOP_TRANSACTION) == 0) {
-    data = stopTransaction(payload);
+    data = stopTransaction(payload, OCPP_STOP_TRANSACTION_REASON_REMOTE);
   } else if (strcmp(cmd, OCPP_REQUEST_RESET) == 0) {
     data = reset(payload);
   } else {
@@ -496,7 +516,7 @@ enum mgos_app_init_result mgos_app_init(void) {
 #ifdef MGOS_HAVE_OTA_COMMON
   if (mgos_ota_is_first_boot()) {
     LOG(LL_INFO, ("Performing cleanup"));
-    // In case we're uograding from stock fw, remove its files
+    // In case we're upgrading from stock fw, remove its files
     // with the exception of hwinfo_struct.json.
     remove("cert.pem");
     remove("passwd");
