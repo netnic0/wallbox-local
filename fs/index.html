@@ -49,6 +49,10 @@
         <label>Energy (Wh):</label>
         <span id="energy"></span>
       </div>
+      <div class="form-control">
+        <label>Power (Wh):</label>
+        <span id="power"></span>
+      </div>
       <button class="btn" id="refresh_btn">
         <span id="spinner"></span>
         Refresh
@@ -82,14 +86,33 @@
       </div>
     </div>
 
+    <div class="container" id="setup_container">
+      <h1 class="">Setup</h1>
+      <div class="form">
+        <div class="">
+          <div class="form-control">
+            <label>OCPP Backend Url</label>
+            <input type="text" id="ocpp_url">
+          </div>
+          <div class="form-control">
+            <label>OCPP Wallbox Name</label>
+            <input type="text" id="ocpp_name">
+          </div>
+          <div class="form-control">
+            <label></label>
+            <button class="btn" id="ocpp_save_btn">
+              <span id="ocpp_spinner"></span>
+              Save
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="container" id="wifi_container">
       <h1 class="">WiFi setup</h1>
       <div class="form">
         <div class="">
-          <div class="form-control">
-            <label>Enable:</label>
-            <input type="checkbox" id="wifi_en">
-          </div>
           <div class="form-control">
             <label>WiFi network:</label>
             <input type="text" id="wifi_ssid">
@@ -117,11 +140,40 @@ var spinner = document.getElementById("spinner");
 var wifiEn = document.getElementById("wifi_en");
 var wifiSSID = document.getElementById("wifi_ssid");
 var wifiPass = document.getElementById("wifi_pass");
+var ocppUrl = document.getElementById("ocpp_url");
+var ocppName = document.getElementById("ocpp_name");
 var wifiSpinner = document.getElementById("wifi_spinner");
+var ocppSpinner = document.getElementById("ocpp_spinner");
 
 document.getElementById("fw_upload_form").onsubmit = function() {
   document.getElementById("fw_spinner").className = "spin";
   return true;
+};
+
+document.getElementById("ocpp_save_btn").onclick = function() {
+  ocppSpinner.className = "spin";
+  var data = {
+    config: {
+      ocpp: {
+        url: ocpp_url.value,
+        name: ocpp_name.value,
+      },
+    },
+    save: true,
+    reboot: true,
+  };
+  axios.post(host + "/rpc/Config.Set", data).then(function(res) {
+    document.body.innerHTML =
+      "<div class='container'><h1>Rebooting...</h1>" +
+      "<p>Device is rebooting and connecting to OCPP Backend";
+  }).catch(function(err) {
+    if (err.response) {
+      err = err.response.data.message;
+    }
+    alert(err);
+  }).then(function() {
+    ocppSpinner.className = "";
+  });
 };
 
 document.getElementById("wifi_save_btn").onclick = function() {
@@ -129,8 +181,8 @@ document.getElementById("wifi_save_btn").onclick = function() {
   var data = {
     config: {
       wifi: {
-        sta: { enable: wifiEn.checked, ssid: wifiSSID.value, pass: wifiPass.value},
-        ap: { enable: !wifiEn.checked },
+        sta: { enable: true, ssid: wifiSSID.value, pass: wifiPass.value},
+        ap: { enable: false },
       },
     },
     save: true,
@@ -157,11 +209,14 @@ function getInfo() {
   spinner.className = "spin";
   axios.get(host + "/rpc/Shelly.GetInfo").then(function(res) {
     wifiSSID.value = res.data.wifi_ssid;
+    ocppUrl.value = res.data.ocpp_url;
+    ocppName.value = res.data.ocpp_name;
     document.getElementById("app_name").innerText = res.data.app;
     document.getElementById("app_version").innerText = res.data.version;
     document.getElementById("app_build").innerText = res.data.fw_build;
     document.getElementById("state").innerText = res.data.state ? "Charging" : "Available";
     document.getElementById("energy").innerText = (res.data.energy ? res.data.energy / 3600 : 0).toFixed(2);
+    document.getElementById("power").innerText = (res.data.power ? res.data.power.toFixed(2) : "-");
   }).catch(function(err) {
     alert(err);
   }).then(function() {
