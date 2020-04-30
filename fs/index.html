@@ -1,44 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-  <script src="axios.min.js.gz"></script>
-  <style>
-    html, body { height: 100vh; padding: 0; margin: 0;}
-    * { outline: none !important; }
-    body { color: #454955; font: 15px/1.5 Verdana, Helvetica, Arial, sans-serif; }
-    h1, h2, h3, h4, h5, h6, b, th, strong, .nav-link { color: #777; }
-    input, button, div, pre, p { font: inherit; }
-    button {
-      color: white; padding: 0.4em 1em; border-radius: 0.3em;
-      border: none; cursor: pointer;
-    }
-    input[type=text] input[type=password] {
-      padding: 0.2em 0.7em; position: relative;
-      border: 1px solid #cdcdcd; border-color: rgba(0, 0, 0, .15);
-      background-color: white; font-size: 16px;
-    }
-    h1 { margin: 0; padding-top: 0.5em; text-align: center; }
-    .container { padding: 0 1em; margin: 1em auto; max-width: 640px; background: #fafafa; }
-    .form-control { margin: 0.5em 0; }
-    .form-control input, .form-control button { min-width: 15em; }
-    .form label { min-width: 10em; display: inline-block; }
-    .form { padding: 1em 0; }
-    .btn { background: #2079b0; }
-    .admin-btn { background: #ff3333; }
-    .spin {
-      display: inline-block; width: 0.9em; height: 0.9em;
-      margin-bottom: -0.2em;
-      border: 0.15em solid rgba(255,255,255,.5);
-      border-radius: 50%;
-      border-top-color: #fff;
-      animation: spin 1s linear infinite;
-      -webkit-animation: spin 1s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    @-webkit-keyframes spin { to { -webkit-transform: rotate(360deg); } }
-  </style>
+    <title>Wallbox</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="description" content="Wallbox configuration">
+    <link rel="stylesheet" href="./main.css" type="text/css" />
+    <link rel="shortcut icon" href="./favicon.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="./favicon.png">
   </head>
-  <body onLoad="onLoad()">
+  <body>
 
     <div class="container" id="main_container">
       <h1 class="">Wallbox</h1>
@@ -59,7 +30,7 @@
           <div class="form-control">
             <label></label>
             <button class="btn" id="refresh_btn">
-              <span id="spinner"></span>
+              <span id="refresh_spinner"></span>
               Refresh
             </button>
           </div>
@@ -71,21 +42,23 @@
       <h1 class="">WiFi Setup</h1>
       <div class="form">
         <div class="">
-          <div class="form-control">
-            <label>Network SSID:</label>
-            <input type="text" id="wifi_ssid">
-          </div>
-          <div class="form-control">
-            <label>Password:</label>
-            <input type="password" id="wifi_pass">
-          </div>
-          <div class="form-control">
-            <label></label>
-            <button class="btn" id="wifi_save_btn">
-              <span id="wifi_spinner"></span>
-              Save
-            </button>
-          </div>
+          <form id="wifi_form">
+            <div class="form-control">
+              <label>Network SSID:</label>
+              <input type="text" id="wifi_ssid" autocomplete="wifi ssid">
+            </div>
+            <div class="form-control">
+              <label>Password:</label>
+              <input type="password" id="wifi_pass" autocomplete="wifi current-password">
+            </div>
+            <div class="form-control">
+              <label></label>
+              <button class="btn" id="wifi_save_btn">
+                <span id="wifi_spinner"></span>
+                Save
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </div>
@@ -96,11 +69,11 @@
         <div class="">
           <div class="form-control">
             <label>Wallbox name:</label>
-            <input type="text" id="ocpp_name">
+            <input type="text" id="ocpp_name" autocomplete="ocpp wallbox-name">
           </div>
           <div class="form-control">
             <label>Backend URL:</label>
-            <input type="text" id="ocpp_url">
+            <input type="text" id="ocpp_url" autocomplete="ocpp backend-url">
           </div>
           <div class="form-control">
             <label></label>
@@ -168,143 +141,8 @@
         </div>
       </div>
     </div>
-<script>
 
-var host = "";
-
-var spinner = document.getElementById("spinner");
-
-var wifiEn = document.getElementById("wifi_en");
-var wifiSSID = document.getElementById("wifi_ssid");
-var wifiPass = document.getElementById("wifi_pass");
-var ocppUrl = document.getElementById("ocpp_url");
-var ocppName = document.getElementById("ocpp_name");
-var wifiSpinner = document.getElementById("wifi_spinner");
-var ocppSpinner = document.getElementById("ocpp_spinner");
-var rebootSpinner = document.getElementById("reboot_spinner");
-var resetSpinner = document.getElementById("reset_spinner");
-
-document.getElementById("fw_upload_form").onsubmit = function() {
-  document.getElementById("fw_spinner").className = "spin";
-  return true;
-};
-
-document.getElementById("ocpp_save_btn").onclick = function() {
-  ocppSpinner.className = "spin";
-  var data = {
-    config: {
-      ocpp: {
-        url: ocpp_url.value,
-        name: ocpp_name.value,
-      },
-    },
-    save: true,
-    reboot: true,
-  };
-  axios.post(host + "/rpc/Config.Set", data).then(function(res) {
-    document.body.innerHTML =
-      "<div class='container'><h1>Rebooting...</h1>" +
-      "<p>Device is rebooting and connecting to OCPP Backend";
-  }).catch(function(err) {
-    if (err.response) {
-      err = err.response.data.message;
-    }
-    alert(err);
-  }).then(function() {
-    ocppSpinner.className = "";
-  });
-};
-
-document.getElementById("wifi_save_btn").onclick = function() {
-  wifiSpinner.className = "spin";
-  var data = {
-    config: {
-      wifi: {
-        sta: { enable: true, ssid: wifiSSID.value, pass: wifiPass.value},
-        ap: { enable: false },
-      },
-    },
-    save: true,
-    reboot: true,
-  };
-  axios.post(host + "/rpc/Config.Set", data).then(function(res) {
-    document.body.innerHTML =
-      "<div class='container'><h1>Rebooting...</h1>" +
-      "<p>Device is rebooting and connecting to " + wifiSSID.value + "." +
-      "<p>Connect to the same network and visit " +
-      "<a href='http://" + document.getElementById("device_id").innerText + ".local/'>" +
-      document.getElementById("device_id").innerText + ".local.</a></div>.";
-  }).catch(function(err) {
-    if (err.response) {
-      err = err.response.data.message;
-    }
-    alert(err);
-  }).then(function() {
-    wifiSpinner.className = "";
-  });
-};
-
-document.getElementById("reset_btn").onclick = function() {
-  resetSpinner.className = "spin";
-  var data = {};
-  axios.post(host + "/rpc/Shelly.Reset", data).then(function(res) {
-    document.body.innerHTML =
-      "<div class='container'><h1>Resetting...</h1>" +
-      "<p>Device configuration is reset. Device is rebooting";
-  }).catch(function(err) {
-    if (err.response) {
-      err = err.response.data.message;
-    }
-    alert(err);
-  }).then(function() {
-    resetSpinner.className = "";
-  });
-};
-
-document.getElementById("reboot_btn").onclick = function() {
-  rebootSpinner.className = "spin";
-  var data = {};
-  axios.post(host + "/rpc/Shelly.Reboot", data).then(function(res) {
-    document.body.innerHTML =
-      "<div class='container'><h1>Rebooting...</h1>" +
-      "<p>Device is rebooting";
-  }).catch(function(err) {
-    if (err.response) {
-      err = err.response.data.message;
-    }
-    alert(err);
-  }).then(function() {
-    rebootSpinner.className = "";
-  });
-};
-
-function getInfo() {
-  spinner.className = "spin";
-  axios.get(host + "/rpc/Shelly.GetInfo").then(function(res) {
-    wifiSSID.value = res.data.wifi_ssid;
-    ocppUrl.value = res.data.ocpp_url;
-    ocppName.value = res.data.ocpp_name;
-    document.getElementById("device_id").innerText = res.data.id;
-    document.getElementById("app_name").innerText = res.data.app;
-    document.getElementById("app_version").innerText = res.data.version;
-    document.getElementById("app_build").innerText = res.data.fw_build;
-    document.getElementById("state").innerText = res.data.state ? "Charging" : "Available";
-    document.getElementById("energy").innerText = (res.data.energy ? res.data.energy / 3600 : 0).toFixed(2);
-    document.getElementById("power").innerText = (res.data.power ? res.data.power.toFixed(2) : "-");
-  }).catch(function(err) {
-    alert(err);
-  }).then(function() {
-    spinner.className = "";
-  });
-}
-
-document.getElementById("refresh_btn").onclick = getInfo;
-
-function onLoad() {
-  getInfo();
-}
-
-</script>
-
+    <script src="./axios.min.js.gz"></script>
+    <script type="text/javascript" src="./app.js"></script>
   </body>
 </html>
