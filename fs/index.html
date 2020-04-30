@@ -24,9 +24,10 @@
     .form label { min-width: 10em; display: inline-block; }
     .form { padding: 1em 0; }
     .btn { background: #2079b0; }
+    .admin-btn { background: #ff3333; }
     .spin {
       display: inline-block; width: 0.9em; height: 0.9em;
-      margin-bottom: -0.2em; 
+      margin-bottom: -0.2em;
       border: 0.15em solid rgba(255,255,255,.5);
       border-radius: 50%;
       border-top-color: #fff;
@@ -131,6 +132,28 @@
         </div>
       </div>
     </div>
+
+    <div class="container" id="admin_container">
+      <h1 class="">Administration</h1>
+      <div class="form">
+        <div class="">
+          <div class="form-control">
+            <label>Reboot:</label>
+            <button class="admin-btn" id="reboot_btn">
+              <span id="reboot_spinner"></span>
+              Reboot
+            </button>
+          </div>
+          <div class="form-control">
+            <label>Factory reset:</label>
+            <button class="admin-btn" id="reset_btn">
+              <span id="reset_spinner"></span>
+              Reset
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
 <script>
 
 var host = "";
@@ -144,6 +167,8 @@ var ocppUrl = document.getElementById("ocpp_url");
 var ocppName = document.getElementById("ocpp_name");
 var wifiSpinner = document.getElementById("wifi_spinner");
 var ocppSpinner = document.getElementById("ocpp_spinner");
+var rebootSpinner = document.getElementById("reboot_spinner");
+var resetSpinner = document.getElementById("reset_spinner");
 
 document.getElementById("fw_upload_form").onsubmit = function() {
   document.getElementById("fw_spinner").className = "spin";
@@ -202,6 +227,40 @@ document.getElementById("wifi_save_btn").onclick = function() {
     alert(err);
   }).then(function() {
     wifiSpinner.className = "";
+  });
+};
+
+document.getElementById("reset_btn").onclick = function() {
+  resetSpinner.className = "spin";
+  var data = {};
+  axios.post(host + "/rpc/Shelly.Reset", data).then(function(res) {
+    document.body.innerHTML =
+      "<div class='container'><h1>Resetting...</h1>" +
+      "<p>Device configuration is reset. Device is rebooting";
+  }).catch(function(err) {
+    if (err.response) {
+      err = err.response.data.message;
+    }
+    alert(err);
+  }).then(function() {
+    resetSpinner.className = "";
+  });
+};
+
+document.getElementById("reboot_btn").onclick = function() {
+  rebootSpinner.className = "spin";
+  var data = {};
+  axios.post(host + "/rpc/Shelly.Reboot", data).then(function(res) {
+    document.body.innerHTML =
+      "<div class='container'><h1>Rebooting...</h1>" +
+      "<p>Device is rebooting";
+  }).catch(function(err) {
+    if (err.response) {
+      err = err.response.data.message;
+    }
+    alert(err);
+  }).then(function() {
+    rebootSpinner.className = "";
   });
 };
 
