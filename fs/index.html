@@ -20,7 +20,7 @@
     h1 { margin: 0; padding-top: 0.5em; text-align: center; }
     .container { padding: 0 1em; margin: 1em auto; max-width: 640px; background: #fafafa; }
     .form-control { margin: 0.5em 0; }
-    .form-control input, .form-control button { Xmin-width: 15em; }
+    .form-control input, .form-control button { min-width: 15em; }
     .form label { min-width: 10em; display: inline-block; }
     .form { padding: 1em 0; }
     .btn { background: #2079b0; }
@@ -40,64 +40,67 @@
   </head>
   <body onLoad="onLoad()">
 
-    <div class="container">
-      <h1 class="">Shelly Wallbox</h1>
-      <div class="form-control">
-        <label>Status:</label>
-        <span id="state"></span>
-      </div>
-      <div class="form-control">
-        <label>Energy (Wh):</label>
-        <span id="energy"></span>
-      </div>
-      <div class="form-control">
-        <label>Power (Wh):</label>
-        <span id="power"></span>
-      </div>
-      <button class="btn" id="refresh_btn">
-        <span id="spinner"></span>
-        Refresh
-      </button>
-    </div>
-
-    <div class="container" id="fw_container">
-      <h1 class="">Firmware</h1>
+    <div class="container" id="main_container">
+      <h1 class="">Wallbox</h1>
       <div class="form">
         <div class="">
           <div class="form-control">
-            <label>App:</label>
-            <span id="app_name"></span>
+            <label>Status:</label>
+            <span id="state"></span>
           </div>
           <div class="form-control">
-            <label>Version:</label>
-            <span id="app_version"></span>
+            <label>Energy (Wh):</label>
+            <span id="energy"></span>
           </div>
           <div class="form-control">
-            <label>Build ID:</label>
-            <span id="app_build"></span>
+            <label>Power (Wh):</label>
+            <span id="power"></span>
           </div>
           <div class="form-control">
-            <label>Update (<a href="https://github.com/mongoose-os-apps/shelly-homekit">GitHub</a>):</label>
-            <form id="fw_upload_form" method="POST" action="/update" enctype="multipart/form-data">
-              <input type="file" id="fw_select_file" name="file" accept=".zip" />
-              <button class="btn" id="fw_upload_btn"><span id="fw_spinner"></span> Upload</button>
-            </form>
+            <label></label>
+            <button class="btn" id="refresh_btn">
+              <span id="spinner"></span>
+              Refresh
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container" id="wifi_container">
+      <h1 class="">WiFi Setup</h1>
+      <div class="form">
+        <div class="">
+          <div class="form-control">
+            <label>Network SSID:</label>
+            <input type="text" id="wifi_ssid">
+          </div>
+          <div class="form-control">
+            <label>Password:</label>
+            <input type="password" id="wifi_pass">
+          </div>
+          <div class="form-control">
+            <label></label>
+            <button class="btn" id="wifi_save_btn">
+              <span id="wifi_spinner"></span>
+              Save
+            </button>
           </div>
         </div>
       </div>
     </div>
 
     <div class="container" id="setup_container">
-      <h1 class="">Setup</h1>
+      <h1 class="">e-Mobility Setup</h1>
       <div class="form">
         <div class="">
           <div class="form-control">
-            <label>OCPP Backend Url</label>
-            <input type="text" id="ocpp_url">
+            <label>Wallbox name:</label>
+            <input type="text" id="ocpp_name">
           </div>
           <div class="form-control">
-            <label>OCPP Wallbox Name</label>
-            <input type="text" id="ocpp_name">
+            <label>Backend URL:</label>
+            <input type="text" id="ocpp_url">
           </div>
           <div class="form-control">
             <label></label>
@@ -110,25 +113,36 @@
       </div>
     </div>
 
-    <div class="container" id="wifi_container">
-      <h1 class="">WiFi setup</h1>
+    <div class="container" id="fw_container">
+      <h1 class="">Firmware</h1>
       <div class="form">
         <div class="">
           <div class="form-control">
-            <label>WiFi network:</label>
-            <input type="text" id="wifi_ssid">
+            <label>Device:</label>
+            <span id="device_id"></span>
           </div>
           <div class="form-control">
-            <label>WiFi password:</label>
-            <input type="password" id="wifi_pass">
+            <label>App:</label>
+            <span id="app_name"></span>
           </div>
           <div class="form-control">
-            <label></label>
-            <button class="btn" id="wifi_save_btn">
-              <span id="wifi_spinner"></span>
-              Save
-            </button>
+            <label>Version:</label>
+            <span id="app_version"></span>
           </div>
+          <div class="form-control">
+            <label>Build number:</label>
+            <span id="app_build"></span>
+          </div>
+          <form id="fw_upload_form" method="POST" action="/update" enctype="multipart/form-data">
+            <div class="form-control">
+              <label>Update:</label>
+              <input type="file" id="fw_select_file" name="file" accept=".zip" />
+            </div>
+            <div class="form-control">
+              <label></label>
+              <button class="btn" id="fw_upload_btn"><span id="fw_spinner"></span> Upload</button>
+            </div>
+          </form>
         </div>
       </div>
     </div>
@@ -270,6 +284,7 @@ function getInfo() {
     wifiSSID.value = res.data.wifi_ssid;
     ocppUrl.value = res.data.ocpp_url;
     ocppName.value = res.data.ocpp_name;
+    document.getElementById("device_id").innerText = res.data.id;
     document.getElementById("app_name").innerText = res.data.app;
     document.getElementById("app_version").innerText = res.data.version;
     document.getElementById("app_build").innerText = res.data.fw_build;
