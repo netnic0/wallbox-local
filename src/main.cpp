@@ -27,8 +27,17 @@
 #define OCPP_STATUS_CHARGING "Charging"
 #define OCPP_STATUS_FINISHING "Finishing"
 #define OCPP_STATUS_PREPARING "Preparing"
+
+#define OCPP_RESET_TYPE_HARD "Hard"
+#define OCPP_RESET_TYPE_SOFT "Soft"
+
+#define OCPP_STOP_TRANSACTION_REASON_REMOTE "Remote"
+#define OCPP_STOP_TRANSACTION_REASON_SOFTRESET "SoftReset"
+#define OCPP_STOP_TRANSACTION_REASON_HARDRESET "HardReset"
+
 #define OCPP_RESPONSE_ACCEPTED "{\"status\": \"Accepted\"}"
 #define OCPP_RESPONSE_REJECTED "{\"status\": \"Rejected\"}"
+
 #define OCPP_REQUEST_BOOT_NOTIFICATION "BootNotification"
 #define OCPP_REQUEST_GET_CONFIGURATION "GetConfiguration"
 #define OCPP_REQUEST_METER_VALUES "MeterValues"
@@ -38,6 +47,7 @@
 #define OCPP_REQUEST_STOP_TRANSACTION "StopTransaction"
 #define OCPP_REQUEST_HEARTBEAT "Heartbeat"
 #define OCPP_REQUEST_STATUS_NOTIFICATION "StatusNotification"
+#define OCPP_REQUEST_RESET "Reset"
 
 #ifndef MGOS_HAVE_WIFI
 const char *mgos_sys_config_get_wifi_sta_ssid(void) {
@@ -63,21 +73,19 @@ static struct mg_connection *ws_connection;
 
 static void generate_uuid(char *uuid) {
   int random = mgos_rand_range(0.0, 999.0);
-  sprintf(
-      uuid,
-      "%08lx-%04lx-1%03lx-a%03lx-%s",
-      (unsigned long) time(NULL),
-      (unsigned long) mgos_uptime() & 0xFFFFUL,
-      (unsigned long) mgos_uptime() & 0xFFFUL,
-      (unsigned long) random,
-      mgos_sys_ro_vars_get_mac_address());
+  sprintf(uuid,
+          "%08lx-%04lx-1%03lx-a%03lx-%s",
+          (unsigned long) time(NULL),
+          (unsigned long) mgos_uptime() & 0xFFFFUL,
+          (unsigned long) mgos_uptime() & 0xFFFUL,
+          (unsigned long) random,
+          mgos_sys_ro_vars_get_mac_address());
 }
 
-static void shelly_get_info_handler(
-    struct mg_rpc_request_info *ri,
-    void *cb_arg,
-    struct mg_rpc_frame_info *fi,
-    struct mg_str args) {
+static void shelly_get_info_handler(struct mg_rpc_request_info *ri,
+                                    void *cb_arg,
+                                    struct mg_rpc_frame_info *fi,
+                                    struct mg_str args) {
   mg_rpc_send_responsef(
       ri,
       "{id: %Q, app: %Q, version: %Q, fw_build: %Q, wifi_ssid: %Q, energy: %d, power: %d, state: %B, ocpp_url: %Q, ocpp_name: %Q}",
@@ -96,11 +104,10 @@ static void shelly_get_info_handler(
   (void) args;
 }
 
-static void shelly_set_switch_handler(
-    struct mg_rpc_request_info *ri,
-    void *cb_arg,
-    struct mg_rpc_frame_info *fi,
-    struct mg_str args) {
+static void shelly_set_switch_handler(struct mg_rpc_request_info *ri,
+                                      void *cb_arg,
+                                      struct mg_rpc_frame_info *fi,
+                                      struct mg_str args) {
   bool currentValue = mgos_gpio_read(mgos_sys_config_get_sw1_out_gpio());
   mgos_gpio_toggle(mgos_sys_config_get_sw1_out_gpio());
   mg_rpc_send_responsef(ri, "{currentValue: %B, newValue: %B}", currentValue, !currentValue);
@@ -110,11 +117,10 @@ static void shelly_set_switch_handler(
   (void) args;
 }
 
-static void shelly_get_conso_handler(
-    struct mg_rpc_request_info *ri,
-    void *cb_arg,
-    struct mg_rpc_frame_info *fi,
-    struct mg_str args) {
+static void shelly_get_conso_handler(struct mg_rpc_request_info *ri,
+                                     void *cb_arg,
+                                     struct mg_rpc_frame_info *fi,
+                                     struct mg_str args) {
   mg_rpc_send_responsef(
       ri,
       "{status: %Q,Current: %d, Voltage: %d, Energy: %d, ActivePower: %d, ApparentPower: %d, PowerFactor: %d, ReactivePower: %d}",
@@ -131,8 +137,10 @@ static void shelly_get_conso_handler(
   (void) args;
 }
 
-static void
-shelly_get_uid_handler(struct mg_rpc_request_info *ri, void *cb_arg, struct mg_rpc_frame_info *fi, struct mg_str args) {
+static void shelly_get_uid_handler(struct mg_rpc_request_info *ri,
+                                   void *cb_arg,
+                                   struct mg_rpc_frame_info *fi,
+                                   struct mg_str args) {
   generate_uuid(default_uuid);
   mg_rpc_send_responsef(ri, "{uid: %Q}", default_uuid);
   (void) cb_arg;
@@ -180,11 +188,10 @@ static void send_ocpp_status_notification(const char *status) {
   get_current_date(date_buffer);
   generate_uuid(default_uuid);
 
-  length = sprintf(
-      buf,
-      "{\"connectorId\": 1,\"errorCode\": \"NoError\",\"status\": \"%s\",\"timestamp\": \"%s\"}",
-      status,
-      date_buffer);
+  length = sprintf(buf,
+                   "{\"connectorId\": 1,\"errorCode\": \"NoError\",\"status\": \"%s\",\"timestamp\": \"%s\"}",
+                   status,
+                   date_buffer);
   struct mg_str content = mg_mk_str_n(buf, length);
   LOG(LL_INFO, ("Sending status notification %.*s", length, buf));
   send_ocpp_request(ws_connection, OCPP_REQUEST_STATUS_NOTIFICATION, default_uuid, content);
@@ -210,34 +217,39 @@ static void send_ocpp_meter_values() {
   send_ocpp_request(ws_connection, OCPP_REQUEST_METER_VALUES, default_uuid, content);
 }
 
-static mg_str stopTransaction(const char *payload) {
+static mg_str stopTransaction(const char *reason) {
+  LOG(LL_INFO, ("Stop transaction %d for tag %s, reason %s", transaction_id, tag_id, reason));
+
+  send_ocpp_status_notification(OCPP_STATUS_FINISHING);
+  mgos_gpio_write(mgos_sys_config_get_sw1_out_gpio(), 0);
+
+  char buf[200];
+  int length;
+
+  char date_buffer[30];
+  get_current_date(date_buffer);
+  generate_uuid(stop_transaction_uuid);
+
+  int energy = mgos_hlw8012_readEnergy(hlw8012) / 3600;
+
+  length = sprintf(
+      buf,
+      "{\"meterStop\": %d,\"transactionId\": \"%d\",\"idTag\": \"%s\",\"timestamp\": \"%s\",\"reason\": \"%s\"}",
+      energy,
+      transaction_id,
+      tag_id,
+      date_buffer,
+      reason);
+  struct mg_str content = mg_mk_str_n(buf, length);
+  LOG(LL_INFO, ("Sending stop transaction %.*s", length, buf));
+  send_ocpp_request(ws_connection, OCPP_REQUEST_STOP_TRANSACTION, stop_transaction_uuid, content);
+  ws_charging = false;
+  return mg_mk_str(OCPP_RESPONSE_ACCEPTED);
+}
+
+static mg_str stopTransaction(const char *payload, const char *reason) {
   if (json_scanf(payload, strlen(payload), "{ transactionId:%d }", &transaction_id) > 0) {
-    LOG(LL_INFO, ("Stop transaction %d for tag with id %s", transaction_id, tag_id));
-
-    send_ocpp_status_notification(OCPP_STATUS_FINISHING);
-    mgos_gpio_write(mgos_sys_config_get_sw1_out_gpio(), 0);
-
-    char buf[200];
-    int length;
-
-    char date_buffer[30];
-    get_current_date(date_buffer);
-    generate_uuid(stop_transaction_uuid);
-
-    int energy = mgos_hlw8012_readEnergy(hlw8012) / 3600;
-
-    length = sprintf(
-        buf,
-        "{\"meterStop\": %d,\"transactionId\": \"%d\",\"idTag\": \"%s\",\"timestamp\": \"%s\"}",
-        energy,
-        transaction_id,
-        tag_id,
-        date_buffer);
-    struct mg_str content = mg_mk_str_n(buf, length);
-    LOG(LL_INFO, ("Sending stop transaction %.*s", length, buf));
-    send_ocpp_request(ws_connection, OCPP_REQUEST_STOP_TRANSACTION, stop_transaction_uuid, content);
-    ws_charging = false;
-    return mg_mk_str(OCPP_RESPONSE_ACCEPTED);
+    return stopTransaction(reason);
   } else {
     LOG(LL_INFO, ("Unable to find transaction id in payload %s", payload));
     return mg_mk_str(OCPP_RESPONSE_REJECTED);
@@ -267,6 +279,60 @@ static mg_str startTransaction(const char *payload) {
     LOG(LL_INFO, ("Unable to find tag id in payload %s", payload));
     return mg_mk_str(OCPP_RESPONSE_REJECTED);
   }
+}
+
+/*
+ * Soft: Return to initial status, gracefully terminating any transactions in progress.
+ * At receipt of a soft reset, the Charge Point SHALL return to a state that behaves as just having been booted.
+ * If any transaction is in progress it SHALL be terminated normally, before the reset, as in Stop Transaction.
+ * Send StatusNotification/ResetFailure if not able to reset.
+ */
+static mg_str reset_soft() {
+  LOG(LL_INFO, ("Performing soft reset"));
+
+  if (ws_charging) {
+    stopTransaction(OCPP_STOP_TRANSACTION_REASON_SOFTRESET);
+  }
+
+  return mg_mk_str(OCPP_RESPONSE_ACCEPTED);
+}
+
+/*
+ * Hard: Full reboot of Charge Point software.
+ * At receipt of a hard reset the Charge Point SHALL attempt to terminate any transaction in progress normally as
+ * in StopTransaction and then perform a reboot.
+ * Send StatusNotification/ResetFailure if not able to reset.
+ */
+static mg_str reset_hard() {
+  LOG(LL_INFO, ("Performing hard reset"));
+
+  if (ws_charging) {
+    stopTransaction(OCPP_STOP_TRANSACTION_REASON_HARDRESET);
+  }
+
+  mgos_system_restart_after(5000);
+
+  return mg_mk_str(OCPP_RESPONSE_ACCEPTED);
+}
+
+static mg_str reset(const char *payload) {
+  char *reset_type = NULL;
+
+  if (json_scanf(payload, strlen(payload), "{ type:%Q }", &reset_type) > 0) {
+    LOG(LL_DEBUG, ("Resetting in mode %s", reset_type));
+
+    if (strcmp(OCPP_RESET_TYPE_SOFT, reset_type) == 0) {
+      return reset_soft();
+    } else if (strcmp(OCPP_RESET_TYPE_HARD, reset_type) == 0) {
+      return reset_hard();
+    } else {
+      LOG(LL_WARN, ("Reset type %s not supported", reset_type));
+      return mg_mk_str(OCPP_RESPONSE_REJECTED);
+    }
+  }
+
+  LOG(LL_INFO, ("Unable to find reset type in payload %s", payload));
+  return mg_mk_str(OCPP_RESPONSE_REJECTED);
 }
 
 static void handle_ocpp_response(struct mg_connection *nc, const char *id, const char *payload) {
@@ -302,7 +368,9 @@ static void handle_ocpp_cmd(struct mg_connection *nc, const char *cmd, const cha
   } else if (strcmp(cmd, OCPP_REQUEST_REMOTE_START_TRANSACTION) == 0) {
     data = startTransaction(payload);
   } else if (strcmp(cmd, OCPP_REQUEST_REMOTE_STOP_TRANSACTION) == 0) {
-    data = stopTransaction(payload);
+    data = stopTransaction(payload, OCPP_STOP_TRANSACTION_REASON_REMOTE);
+  } else if (strcmp(cmd, OCPP_REQUEST_RESET) == 0) {
+    data = reset(payload);
   } else {
     data = mg_mk_str("{}");
   }
@@ -446,7 +514,7 @@ enum mgos_app_init_result mgos_app_init(void) {
 #ifdef MGOS_HAVE_OTA_COMMON
   if (mgos_ota_is_first_boot()) {
     LOG(LL_INFO, ("Performing cleanup"));
-    // In case we're uograding from stock fw, remove its files
+    // In case we're upgrading from stock fw, remove its files
     // with the exception of hwinfo_struct.json.
     remove("cert.pem");
     remove("passwd");
@@ -462,14 +530,13 @@ enum mgos_app_init_result mgos_app_init(void) {
 
   LOG(LL_INFO, ("Starting Shelly Wallbox"));
 
-  mgos_hlw8012_begin(
-      hlw8012,
-      mgos_sys_config_get_cf_pin(),
-      mgos_sys_config_get_cf1_pin(),
-      mgos_sys_config_get_sel_pin(),
-      LOW,
-      true,
-      2000000);
+  mgos_hlw8012_begin(hlw8012,
+                     mgos_sys_config_get_cf_pin(),
+                     mgos_sys_config_get_cf1_pin(),
+                     mgos_sys_config_get_sel_pin(),
+                     LOW,
+                     true,
+                     2000000);
   mgos_hlw8012_setResistors(hlw8012, 0.001, 5 * 470000, 1000);
   mgos_hlw8012_setCurrentMultiplier(hlw8012, 25740.0);
   mgos_hlw8012_setVoltageMultiplier(hlw8012, 313400.0);

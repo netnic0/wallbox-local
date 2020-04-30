@@ -1,6 +1,7 @@
 # VS Code
 .vscode/c_cpp_properties.json
 .vscode/settings.json
+.vscode/tasks.json
 
 # Mongoose OS
 build/
