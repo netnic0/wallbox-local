@@ -294,8 +294,6 @@ static mg_str reset_soft() {
     stopTransaction(OCPP_STOP_TRANSACTION_REASON_SOFTRESET);
   }
 
-  mgos_app_init();
-
   return mg_mk_str(OCPP_RESPONSE_ACCEPTED);
 }
 
