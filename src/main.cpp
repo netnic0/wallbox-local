@@ -481,6 +481,37 @@ static void connect_ocpp_backend() {
   }
 }
 
+static void shelly_reboot_handler(struct mg_rpc_request_info *ri,
+                                  void *cb_arg,
+                                  struct mg_rpc_frame_info *fi,
+                                  struct mg_str args) {
+  LOG(LL_INFO, ("Rebooting device "));
+
+  // OCPP reset and reboot
+  reset_hard();
+
+  mg_rpc_send_responsef(ri, NULL);
+  (void) cb_arg;
+  (void) fi;
+  (void) args;
+}
+
+static void shelly_reset_handler(struct mg_rpc_request_info *ri,
+                                 void *cb_arg,
+                                 struct mg_rpc_frame_info *fi,
+                                 struct mg_str args) {
+  // OCPP reset and reboot
+  reset_hard();
+
+  // Reset config
+  mgos_config_reset(MGOS_CONFIG_LEVEL_USER);
+
+  mg_rpc_send_responsef(ri, NULL);
+  (void) cb_arg;
+  (void) fi;
+  (void) args;
+}
+
 static void timer_cb(void *arg) {
   LOG(LL_INFO, ("Timer callback connected ? %d", ws_connected));
   if (ws_connected == true) {
@@ -556,6 +587,8 @@ enum mgos_app_init_result mgos_app_init(void) {
   mg_rpc_add_handler(mgos_rpc_get_global(), "Shelly.GetConso", "", shelly_get_conso_handler, NULL);
   mg_rpc_add_handler(mgos_rpc_get_global(), "Shelly.SetSwitch", "", shelly_set_switch_handler, NULL);
   mg_rpc_add_handler(mgos_rpc_get_global(), "Shelly.GetUid", "", shelly_get_uid_handler, NULL);
+  mg_rpc_add_handler(mgos_rpc_get_global(), "Shelly.Reboot", "", shelly_reboot_handler, NULL);
+  mg_rpc_add_handler(mgos_rpc_get_global(), "Shelly.Reset", "", shelly_reset_handler, NULL);
 
   connect_ocpp_backend();
   return MGOS_APP_INIT_SUCCESS;
