@@ -485,7 +485,7 @@ static void shelly_reboot_handler(struct mg_rpc_request_info *ri,
                                   void *cb_arg,
                                   struct mg_rpc_frame_info *fi,
                                   struct mg_str args) {
-  LOG(LL_INFO, ("Rebooting device "));
+  LOG(LL_INFO, ("RPC request to reboot"));
 
   // OCPP reset and reboot
   reset_hard();
@@ -500,6 +500,8 @@ static void shelly_reset_handler(struct mg_rpc_request_info *ri,
                                  void *cb_arg,
                                  struct mg_rpc_frame_info *fi,
                                  struct mg_str args) {
+  LOG(LL_INFO, ("RPC request to reset to factory settings"));
+
   // OCPP reset and reboot
   reset_hard();
 
