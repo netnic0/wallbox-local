@@ -1,4 +1,5 @@
 var host = "";
+var refreshTimer;
 
 var wifiEn = document.getElementById("wifi_en");
 var wifiSSID = document.getElementById("wifi_ssid");
@@ -105,11 +106,13 @@ document.getElementById("reboot_btn").onclick = function() {
     var data = {};
     axios.post(host + "/rpc/Shelly.Reboot", data).then(function(res) {
         document.body.innerHTML =
-        "<div class='container'><h1>Rebooting...</h1>" +
-        "<p>Device is rebooting";
+            "<div class='container'><h1>Rebooting...</h1>" +
+            "<div class='centered'><span id='spinner' class='spin reboot'></span> Device is rebooting";
+        clearInterval(refreshTimer);
+        setTimeout(function(){document.location.reload()}, 6000);
     }).catch(function(err) {
         if (err.response) {
-        err = err.response.data.message;
+            err = err.response.data.message;
         }
         alert(err);
     }).then(function() {
@@ -146,4 +149,5 @@ document.getElementById("refresh_btn").onclick = getInfo;
 
 (function(){
     getInfo();
+    refreshTimer = setInterval(getInfo, 10000);
 })();
