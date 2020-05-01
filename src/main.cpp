@@ -18,8 +18,8 @@
 #include "mgos.h"
 #include "mgos_app.h"
 #include "mgos_hlw8012.h"
-#include "mgos_rpc.h"
 #include "mgos_ota_http_client.h"
+#include "mgos_rpc.h"
 #ifdef MGOS_HAVE_OTA_COMMON
 #include "mgos_ota.h"
 #endif
@@ -381,6 +381,7 @@ static void handle_ocpp_cmd(struct mg_connection *nc, const char *cmd, const cha
   struct mg_str data;
   if (strcmp(cmd, OCPP_REQUEST_GET_CONFIGURATION) == 0) {
     data = mg_mk_str("{}");
+    send_ocpp_status_notification(OCPP_STATUS_AVAILABLE);
   } else if (strcmp(cmd, OCPP_REQUEST_REMOTE_START_TRANSACTION) == 0) {
     data = startTransaction(payload);
   } else if (strcmp(cmd, OCPP_REQUEST_REMOTE_STOP_TRANSACTION) == 0) {
