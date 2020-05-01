@@ -5,6 +5,8 @@ var wifiSSID = document.getElementById("wifi_ssid");
 var wifiPass = document.getElementById("wifi_pass");
 var ocppUrl = document.getElementById("ocpp_url");
 var ocppName = document.getElementById("ocpp_name");
+var deviceState = document.getElementById("state");
+var ocppState = document.getElementById("ocpp_state");
 
 var refreshSpinner = document.getElementById("refresh_spinner");
 var wifiSpinner = document.getElementById("wifi_spinner");
@@ -125,9 +127,14 @@ function getInfo() {
         document.getElementById("app_name").innerText = res.data.app;
         document.getElementById("app_version").innerText = res.data.version;
         document.getElementById("app_build").innerText = res.data.fw_build;
-        document.getElementById("state").innerText = res.data.state ? "Charging" : "Available";
         document.getElementById("energy").innerText = (res.data.energy ? res.data.energy / 3600 : 0).toFixed(2);
         document.getElementById("power").innerText = (res.data.power ? res.data.power.toFixed(2) : "-");
+        var state = res.data.state;
+        deviceState.innerText = state ? "Charging" : "Available";
+        deviceState.className = state ? "connected" : "";
+        state = res.data.ocpp_state;
+        ocppState.innerText = state ? "Connected" : "Disconnected";
+        ocppState.className = state ? "connected" : "disconnected";
     }).catch(function(err) {
         alert(err);
     }).then(function() {

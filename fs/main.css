@@ -72,8 +72,24 @@ h1 {
   background: #2079b0;
 }
 
+.btn:hover {
+  background: #399ad6;
+}
+
 .admin-btn {
   background: #ff3333;
+}
+
+.admin-btn:hover {
+  background: #ff6464;
+}
+
+.form span.connected {
+  color: #339933;
+}
+
+.form span.disconnected {
+  color: #cc3333;
 }
 
 .spin {
