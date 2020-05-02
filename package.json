@@ -8,7 +8,7 @@
   "scripts": {
     "mos-build": "mos build --local --platform esp8266",
     "lint": "./node_modules/.bin/eslint .",
-    "gulp": "./node_modules/.bin/gulp deploy",
+    "gulp": "./node_modules/.bin/gulp gzip",
     "build": "npm run lint && npm run gulp && npm run mos-build",
     "console": "mos --port udp://:1993/ console"
   },

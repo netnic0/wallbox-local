@@ -1,7 +1,9 @@
+/*eslint no-alert: "off"*/
+var axios;
+
 var host = "";
 var refreshTimer;
 
-var wifiEn = document.getElementById("wifi_en");
 var wifiSSID = document.getElementById("wifi_ssid");
 var wifiPass = document.getElementById("wifi_pass");
 var ocppUrl = document.getElementById("ocpp_url");
@@ -25,22 +27,23 @@ document.getElementById("ocpp_save_btn").onclick = function() {
     var data = {
         config: {
         ocpp: {
-            url: ocpp_url.value,
-            name: ocpp_name.value,
+            url: ocppUrl.value,
+            name: ocppName.value,
         },
         },
         save: true,
         reboot: true,
     };
-    axios.post(host + "/rpc/Config.Set", data).then(function(res) {
+    axios.post(host + "/rpc/Config.Set", data).then(function() {
         document.body.innerHTML =
         "<div class='container'><h1>Rebooting...</h1>" +
         "<p>Device is rebooting and connecting to OCPP Backend";
     }).catch(function(err) {
+        var msg = err;
         if (err.response) {
-        err = err.response.data.message;
+            msg = err.response.data.message;
         }
-        alert(err);
+        alert(msg);
     }).then(function() {
         ocppSpinner.className = "";
     });
@@ -58,7 +61,7 @@ document.getElementById("wifi_save_btn").onclick = function() {
         save: true,
         reboot: true,
     };
-    axios.post(host + "/rpc/Config.Set", data).then(function(res) {
+    axios.post(host + "/rpc/Config.Set", data).then(function() {
         document.body.innerHTML =
         "<div class='container'><h1>Rebooting...</h1>" +
         "<p>Device is rebooting and connecting to " + wifiSSID.value + "." +
@@ -66,10 +69,11 @@ document.getElementById("wifi_save_btn").onclick = function() {
         "<a href='http://" + document.getElementById("device_id").innerText + ".local/'>" +
         document.getElementById("device_id").innerText + ".local.</a></div>.";
     }).catch(function(err) {
+        var msg = err;
         if (err.response) {
-        err = err.response.data.message;
+            msg = err.response.data.message;
         }
-        alert(err);
+        alert(msg);
     }).then(function() {
         wifiSpinner.className = "";
     });
@@ -83,15 +87,16 @@ document.getElementById("reset_btn").onclick = function() {
     }
     resetSpinner.className = "spin";
     var data = {};
-    axios.post(host + "/rpc/Shelly.Reset", data).then(function(res) {
+    axios.post(host + "/rpc/Shelly.Reset", data).then(function() {
         document.body.innerHTML =
         "<div class='container'><h1>Resetting...</h1>" +
         "<p>Device configuration is reset. Device is rebooting";
     }).catch(function(err) {
+        var msg = err;
         if (err.response) {
-        err = err.response.data.message;
+            msg = err.response.data.message;
         }
-        alert(err);
+        alert(msg);
     }).then(function() {
         resetSpinner.className = "";
     });
@@ -104,17 +109,18 @@ document.getElementById("reboot_btn").onclick = function() {
     }
     rebootSpinner.className = "spin";
     var data = {};
-    axios.post(host + "/rpc/Shelly.Reboot", data).then(function(res) {
+    axios.post(host + "/rpc/Shelly.Reboot", data).then(function() {
         document.body.innerHTML =
             "<div class='container'><h1>Rebooting...</h1>" +
             "<div class='centered'><span id='spinner' class='spin reboot'></span> Device is rebooting";
         clearInterval(refreshTimer);
-        setTimeout(function(){document.location.reload()}, 6000);
+        setTimeout(function(){ document.location.reload() }, 6000);
     }).catch(function(err) {
+        var msg = err;
         if (err.response) {
-            err = err.response.data.message;
+            msg = err.response.data.message;
         }
-        alert(err);
+        alert(msg);
     }).then(function() {
         rebootSpinner.className = "";
     });
@@ -150,4 +156,4 @@ document.getElementById("refresh_btn").onclick = getInfo;
 (function(){
     getInfo();
     refreshTimer = setInterval(getInfo, 10000);
-})();
+}());
