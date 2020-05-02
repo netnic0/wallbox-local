@@ -88,7 +88,7 @@ static void shelly_get_info_handler(struct mg_rpc_request_info *ri,
                                     struct mg_str args) {
   mg_rpc_send_responsef(
       ri,
-      "{id: %Q, app: %Q, version: %Q, fw_build: %Q, wifi_ssid: %Q, energy: %d, power: %d, state: %B, ocpp_url: %Q, ocpp_name: %Q}",
+      "{id: %Q, app: %Q, version: %Q, fw_build: %Q, wifi_ssid: %Q, energy: %d, power: %d, state: %B, ocpp_url: %Q, ocpp_name: %Q, ocpp_state: %B}",
       mgos_sys_config_get_device_id(),
       MGOS_APP,
       mgos_sys_ro_vars_get_fw_version(),
@@ -98,7 +98,8 @@ static void shelly_get_info_handler(struct mg_rpc_request_info *ri,
       mgos_hlw8012_readActivePower(hlw8012),
       mgos_gpio_read(mgos_sys_config_get_sw1_out_gpio()),
       mgos_sys_config_get_ocpp_url(),
-      mgos_sys_config_get_ocpp_name());
+      mgos_sys_config_get_ocpp_name(),
+      ws_connected);
   (void) cb_arg;
   (void) fi;
   (void) args;
@@ -365,6 +366,7 @@ static void handle_ocpp_cmd(struct mg_connection *nc, const char *cmd, const cha
   struct mg_str data;
   if (strcmp(cmd, OCPP_REQUEST_GET_CONFIGURATION) == 0) {
     data = mg_mk_str("{}");
+    send_ocpp_status_notification(OCPP_STATUS_AVAILABLE);
   } else if (strcmp(cmd, OCPP_REQUEST_REMOTE_START_TRANSACTION) == 0) {
     data = startTransaction(payload);
   } else if (strcmp(cmd, OCPP_REQUEST_REMOTE_STOP_TRANSACTION) == 0) {

@@ -8,6 +8,10 @@ tmp/
 .vscode/settings.json
 .vscode/tasks.json
 
+# Node.js
+node_modules/
+
 # Mongoose OS
 build/
 deps/
+dest/
