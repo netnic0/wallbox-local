@@ -149,5 +149,5 @@ document.getElementById("refresh_btn").onclick = getInfo;
 
 (function(){
     getInfo();
-    refreshTimer = setInterval(getInfo, 10000);
+    refreshTimer = setInterval(getInfo, 30000);
 })();
