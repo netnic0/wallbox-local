@@ -1,4 +1,5 @@
 /*eslint no-alert: "off"*/
+/*eslint no-console: "off"*/
 var axios;
 
 var host = "";
@@ -35,10 +36,14 @@ document.getElementById("ocpp_save_btn").onclick = function() {
         reboot: true,
     };
     axios.post(host + "/rpc/Config.Set", data).then(function() {
+        clearInterval(refreshTimer);
+        setTimeout(function(){ document.location.reload() }, 6000);
         document.body.innerHTML =
-        "<div class='container'><h1>Rebooting...</h1>" +
-        "<p>Device is rebooting and connecting to OCPP Backend";
+            "<div class='container'><h1>Rebooting...</h1>" +
+            "<div class='centered'><span id='spinner' class='spin reboot'></span> " +
+            "Device is rebooting and connecting to OCPP backend";
     }).catch(function(err) {
+        console.error(err);
         var msg = err;
         if (err.response) {
             msg = err.response.data.message;
@@ -62,13 +67,15 @@ document.getElementById("wifi_save_btn").onclick = function() {
         reboot: true,
     };
     axios.post(host + "/rpc/Config.Set", data).then(function() {
+        clearInterval(refreshTimer);
         document.body.innerHTML =
-        "<div class='container'><h1>Rebooting...</h1>" +
-        "<p>Device is rebooting and connecting to " + wifiSSID.value + "." +
-        "<p>Connect to the same network and visit " +
-        "<a href='http://" + document.getElementById("device_id").innerText + ".local/'>" +
+            "<div class='container'><h1>Rebooting...</h1>" +
+            "<p>Device is rebooting and connecting to " + wifiSSID.value + "." +
+            "<p>Connect to the same network and visit " +
+            "<a href='http://" + document.getElementById("device_id").innerText + ".local/'>" +
         document.getElementById("device_id").innerText + ".local.</a></div>.";
     }).catch(function(err) {
+        console.error(err);
         var msg = err;
         if (err.response) {
             msg = err.response.data.message;
@@ -88,10 +95,12 @@ document.getElementById("reset_btn").onclick = function() {
     resetSpinner.className = "spin";
     var data = {};
     axios.post(host + "/rpc/Shelly.Reset", data).then(function() {
+        clearInterval(refreshTimer);
         document.body.innerHTML =
-        "<div class='container'><h1>Resetting...</h1>" +
-        "<p>Device configuration is reset. Device is rebooting";
+            "<div class='container'><h1>Resetting...</h1>" +
+            "<p>Device configuration is reset. Device is rebooting";
     }).catch(function(err) {
+        console.error(err);
         var msg = err;
         if (err.response) {
             msg = err.response.data.message;
@@ -110,12 +119,13 @@ document.getElementById("reboot_btn").onclick = function() {
     rebootSpinner.className = "spin";
     var data = {};
     axios.post(host + "/rpc/Shelly.Reboot", data).then(function() {
+        clearInterval(refreshTimer);
+        setTimeout(function(){ document.location.reload() }, 6000);
         document.body.innerHTML =
             "<div class='container'><h1>Rebooting...</h1>" +
             "<div class='centered'><span id='spinner' class='spin reboot'></span> Device is rebooting";
-        clearInterval(refreshTimer);
-        setTimeout(function(){ document.location.reload() }, 6000);
     }).catch(function(err) {
+        console.error(err);
         var msg = err;
         if (err.response) {
             msg = err.response.data.message;
@@ -145,6 +155,26 @@ function getInfo() {
         ocppState.innerText = state ? "Connected" : "Disconnected";
         ocppState.className = state ? "connected" : "disconnected";
     }).catch(function(err) {
+        console.error(err);
+        alert(err);
+    }).then(function() {
+        refreshSpinner.className = "";
+    });
+}
+
+function refreshInfo() {
+    refreshSpinner.className = "spin";
+    axios.get(host + "/rpc/Shelly.GetInfo").then(function(res) {
+        document.getElementById("energy").innerText = (res.data.energy ? res.data.energy / 3600 : 0).toFixed(2);
+        document.getElementById("power").innerText = (res.data.power ? res.data.power.toFixed(2) : "-");
+        var state = res.data.state;
+        deviceState.innerText = state ? "Charging" : "Available";
+        deviceState.className = state ? "connected" : "";
+        state = res.data.ocpp_state;
+        ocppState.innerText = state ? "Connected" : "Disconnected";
+        ocppState.className = state ? "connected" : "disconnected";
+    }).catch(function(err) {
+        console.error(err);
         alert(err);
     }).then(function() {
         refreshSpinner.className = "";
@@ -155,5 +185,5 @@ document.getElementById("refresh_btn").onclick = getInfo;
 
 (function(){
     getInfo();
-    refreshTimer = setInterval(getInfo, 10000);
+    refreshTimer = setInterval(refreshInfo, 10000);
 }());

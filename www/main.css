@@ -122,6 +122,8 @@ h1 {
 }
 
 .spin.reboot {
+  width: 1.1em;
+  height: 1.1em;
   border: 0.15em solid #45495577;
   border-top-color: #454955;
 }
