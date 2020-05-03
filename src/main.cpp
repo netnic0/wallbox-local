@@ -18,6 +18,7 @@
 #include "mgos.h"
 #include "mgos_app.h"
 #include "mgos_hlw8012.h"
+#include "mgos_ota_http_client.h"
 #include "mgos_rpc.h"
 #ifdef MGOS_HAVE_OTA_COMMON
 #include "mgos_ota.h"
@@ -48,6 +49,7 @@
 #define OCPP_REQUEST_HEARTBEAT "Heartbeat"
 #define OCPP_REQUEST_STATUS_NOTIFICATION "StatusNotification"
 #define OCPP_REQUEST_RESET "Reset"
+#define OCPP_REQUEST_UPDATE_FIRMWARE "UpdateFirmware"
 
 #ifndef MGOS_HAVE_WIFI
 const char *mgos_sys_config_get_wifi_sta_ssid(void) {
@@ -336,6 +338,20 @@ static mg_str reset(const char *payload) {
   return mg_mk_str(OCPP_RESPONSE_REJECTED);
 }
 
+static mg_str updateFirmware(const char *payload) {
+  char *location = NULL;
+
+  if (json_scanf(payload, strlen(payload), "{ location:%Q }", &location) > 0) {
+    LOG(LL_DEBUG, ("Updating firmware from %s", location));
+
+    mgos_ota_http_start(location, NULL);
+    return mg_mk_str(OCPP_RESPONSE_ACCEPTED);
+  }
+
+  LOG(LL_INFO, ("Unable to find location in payload %s", payload));
+  return mg_mk_str(OCPP_RESPONSE_REJECTED);
+}
+
 static void handle_ocpp_response(struct mg_connection *nc, const char *id, const char *payload) {
   LOG(LL_INFO, ("Handle ocpp response with id %s", id));
   if (strcmp(id, start_transaction_uuid) == 0) {
@@ -373,6 +389,8 @@ static void handle_ocpp_cmd(struct mg_connection *nc, const char *cmd, const cha
     data = stopTransaction(payload, OCPP_STOP_TRANSACTION_REASON_REMOTE);
   } else if (strcmp(cmd, OCPP_REQUEST_RESET) == 0) {
     data = reset(payload);
+  } else if (strcmp(cmd, OCPP_REQUEST_UPDATE_FIRMWARE) == 0) {
+    data = updateFirmware(payload);
   } else {
     data = mg_mk_str("{}");
   }
