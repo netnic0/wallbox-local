@@ -1,8 +1,8 @@
 author: 'Sébastien Savalle'
-description: A Mongoose OS app skeleton
+description: Wallbox firmware for Shelly 1PM relay
 version: 1.0
 platform: esp8266
-name: shellyWallbox
+name: Wallbox
 
 libs_version: ${mos.version}
 modules_version: ${mos.version}
@@ -15,14 +15,13 @@ sources:
 # List of dirs. Files from these dirs will be copied to the device filesystem
 filesystem:
   - fs
+  - dest/gzip
 
 # Custom configuration entries, settable via "device configuration"
-# Below is a custom firmware configuration example.
-# Uncomment and modify according to your needs:
-
 config_schema:
-  - ["device.id", "shelly1pm-??????"]
-  - ["wifi.ap.ssid", "shelly1pm-??????"]
+  - ["device.id", "wallbox-??????"]
+  - ["wifi.ap.ssid", "Wallbox-Hotspot"]
+  - ["wifi.ap.pass", "Wallbox1"]
   - ["device.sn", "000000"]
   - ["http.index_files", "index.html,index.html.gz"]
   - ["sw", "o", {"Switch settings"}]
@@ -47,23 +46,6 @@ config_schema:
   - ["ocpp", "o", {"OCPP settings"}]
   - ["ocpp.url", "s", "", {"Url of the OCPP Backend"}]
   - ["ocpp.name", "s", "", {"Name of the wallbox in OCPP Backend"}]
-
-# These settings get compiled into the C structure, and can be accessed
-# from the C code this way:
-#
-# printf("Hello from %s!\n", mgos_sys_config_get_device_id());
-#
-# Settings are cool: can be modified remotely without full firmware upgrade!
-#
-# To see all available compiled settings, buid the firmware and open
-# build/gen/mgos_config.h file.
-#
-# Also, in this config_schema section, you can override existing
-# settings that has been created by other libraries. For example, debug log
-# level is 2 by default. For this firmware we can override it to 3:
-#
-# config_schema:
-#  - ["debug.level", 3]
 
 libs:
   - origin: https://github.com/mongoose-os-libs/mbedtls

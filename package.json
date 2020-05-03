@@ -1,0 +1,38 @@
+{
+  "name": "shelly-wallbox",
+  "version": "0.1.0",
+  "description": "Wallbox firmware for Shelly 1PM relay",
+  "author": "Sébastien Savalle",
+  "homepage": "https://github.com/ellavas/mongoose-app-shelly#readme",
+  "license": "SEE LICENSE IN LICENSE.txt",
+  "scripts": {
+    "mos-build": "mos build --local --platform esp8266",
+    "lint": "./node_modules/.bin/eslint .",
+    "gulp": "./node_modules/.bin/gulp gzip",
+    "build": "npm run lint && npm run gulp && npm run mos-build",
+    "console": "mos --port udp://:1993/ console"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ellavas/mongoose-app-shelly.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ellavas/mongoose-app-shelly/issues"
+  },
+  "keywords": [
+    "wallbox",
+    "shelly",
+    "firmware",
+    "charging",
+    "emobility"
+  ],
+  "devDependencies": {
+    "eslint": "^6.8.0",
+    "gulp": "^4.0.2",
+    "gulp-gzip": "^1.4.2",
+    "gulp-htmlmin": "^5.0.1",
+    "gulp-minify-css": "^1.2.4",
+    "gulp-uglify": "^3.0.2",
+    "pump": "^3.0.0"
+  }
+}
