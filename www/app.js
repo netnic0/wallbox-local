@@ -45,8 +45,8 @@ function showInfoPopup(reboot, title, message) {
     adminContainer.className = clazzes;
 
     infoContainer.className = "container popup";
-    infoTitle.innerText = title;
-    infoMessage.innerText = message;
+    infoTitle.innerHTML = title;
+    infoMessage.innerHTML = message;
 }
 
 document.getElementById("fw_upload_form").onsubmit = function() {
@@ -67,7 +67,7 @@ document.getElementById("ocpp_save_btn").onclick = function() {
         reboot: true,
     };
     axios.post(host + "/rpc/Config.Set", data).then(function() {
-        showInfoPopup(true, "Rebooting...", "Device is rebooting and connecting to OCPP backend.");
+        showInfoPopup(true, "Configuration", "Device is rebooting and connecting to OCPP backend.");
     }).catch(function(err) {
         console.error(err);
         var msg = err;
@@ -94,8 +94,8 @@ document.getElementById("wifi_save_btn").onclick = function() {
     };
     axios.post(host + "/rpc/Config.Set", data).then(function() {
         var deviceIdStr = document.getElementById("device_id").innerText;
-        showInfoPopup(false, "Rebooting...",
-            "Device is rebooting and connecting to " + wifiSSID.value + ".<br>" +
+        showInfoPopup(false, "Configuration",
+            "Device is rebooting and connecting to " + wifiSSID.value + ".<br/>" +
             "Connect to the same network and visit <a href='http://" + deviceIdStr + ".local/'>" +
             deviceIdStr + ".local.</a>.");
     }).catch(function(err) {

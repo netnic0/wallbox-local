@@ -38,7 +38,7 @@ gulp.task('minify-js', function (cb) {
             gulp.src(jsSrc),
             uglify({
                 compress: {
-                    'drop_console': false
+                    'drop_console': true
                 }
             }),
             gulp.dest(minDest)
