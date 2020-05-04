@@ -50,6 +50,7 @@
 #define OCPP_REQUEST_STATUS_NOTIFICATION "StatusNotification"
 #define OCPP_REQUEST_RESET "Reset"
 #define OCPP_REQUEST_UPDATE_FIRMWARE "UpdateFirmware"
+#define OCPP_REQUEST_CLEAR_CACHE "ClearCache"
 
 #ifndef MGOS_HAVE_WIFI
 const char *mgos_sys_config_get_wifi_sta_ssid(void) {
@@ -338,6 +339,16 @@ static mg_str reset(const char *payload) {
   return mg_mk_str(OCPP_RESPONSE_REJECTED);
 }
 
+static mg_str getConfiguration(const char *payload) {
+  LOG(LL_DEBUG, ("OCPP GetConfiguration request: %s", payload));
+  return mg_mk_str("{}");
+}
+
+static mg_str clearCache(const char *payload) {
+  return mg_mk_str(OCPP_RESPONSE_REJECTED);
+  (void) payload;
+}
+
 static mg_str updateFirmware(const char *payload) {
   char *location = NULL;
 
@@ -381,7 +392,7 @@ static void handle_ocpp_cmd(struct mg_connection *nc, const char *cmd, const cha
   LOG(LL_INFO, ("Handle ocpp cmd %s with id %s", cmd, id));
   struct mg_str data;
   if (strcmp(cmd, OCPP_REQUEST_GET_CONFIGURATION) == 0) {
-    data = mg_mk_str("{}");
+    data = getConfiguration(payload);
     send_ocpp_status_notification(OCPP_STATUS_AVAILABLE);
   } else if (strcmp(cmd, OCPP_REQUEST_REMOTE_START_TRANSACTION) == 0) {
     data = startTransaction(payload);
@@ -391,6 +402,8 @@ static void handle_ocpp_cmd(struct mg_connection *nc, const char *cmd, const cha
     data = reset(payload);
   } else if (strcmp(cmd, OCPP_REQUEST_UPDATE_FIRMWARE) == 0) {
     data = updateFirmware(payload);
+  } else if (strcmp(cmd, OCPP_REQUEST_CLEAR_CACHE) == 0) {
+    data = clearCache(payload);
   } else {
     data = mg_mk_str("{}");
   }
