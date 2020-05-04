@@ -2,7 +2,7 @@ const gulp = require('gulp');
 const pump = require('pump');
 const uglify = require('gulp-uglify');
 const htmlmin = require('gulp-htmlmin');
-const mincss = require("gulp-minify-css");
+const cleancss = require('gulp-clean-css');
 const gzip = require('gulp-gzip');
 
 const htmlSrc = "www/*.html";
@@ -11,7 +11,7 @@ const cssSrc = "www/*.css";
 const minDest = "dest/min";
 const gzipDest = "dest/gzip";
 
-gulp.task('minhtml', function (cb) {
+gulp.task('minify-html', function (cb) {
     pump([
             gulp.src(htmlSrc),
             htmlmin({
@@ -23,22 +23,22 @@ gulp.task('minhtml', function (cb) {
     );
 });
 
-gulp.task('mincss', function (cb) {
+gulp.task('minify-css', function (cb) {
     pump([
             gulp.src(cssSrc),
-            mincss(),
+            cleancss(),
             gulp.dest(minDest)
         ],
         cb
     );
 });
 
-gulp.task('minjs', function (cb) {
+gulp.task('minify-js', function (cb) {
     pump([
             gulp.src(jsSrc),
             uglify({
                 compress: {
-                    'drop_console': true
+                    'drop_console': false
                 }
             }),
             gulp.dest(minDest)
@@ -47,7 +47,7 @@ gulp.task('minjs', function (cb) {
     );
 });
 
-gulp.task('gzipall', function (cb) {
+gulp.task('gzip-all', function (cb) {
     pump([
             gulp.src(minDest + "/*"),
             gzip({
@@ -59,6 +59,6 @@ gulp.task('gzipall', function (cb) {
     );
 });
 
-gulp.task('min', gulp.series('minjs', 'mincss', 'minhtml'));
-gulp.task('gzip', gulp.series('minjs', 'mincss', 'minhtml', 'gzipall'));
+gulp.task('minify', gulp.series('minify-html', 'minify-css', 'minify-js'));
+gulp.task('gzip', gulp.series('minify', 'gzip-all'));
 gulp.task('default', gulp.series('gzip'));
