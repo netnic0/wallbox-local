@@ -12,11 +12,42 @@ var ocppName = document.getElementById("ocpp_name");
 var deviceState = document.getElementById("state");
 var ocppState = document.getElementById("ocpp_state");
 
+var infoContainer = document.getElementById("info_container");
+var mainContainer = document.getElementById("main_container");
+var wifiContainer = document.getElementById("wifi_container");
+var ocppContainer = document.getElementById("ocpp_container");
+var fwContainer = document.getElementById("fw_container");
+var adminContainer = document.getElementById("admin_container");
+
+var infoSpinner = document.getElementById("info_spinner");
 var refreshSpinner = document.getElementById("refresh_spinner");
 var wifiSpinner = document.getElementById("wifi_spinner");
 var ocppSpinner = document.getElementById("ocpp_spinner");
 var rebootSpinner = document.getElementById("reboot_spinner");
 var resetSpinner = document.getElementById("reset_spinner");
+
+var infoTitle = document.getElementById("info_title");
+var infoMessage = document.getElementById("info_message");
+
+function showInfoPopup(reboot, title, message) {
+    clearInterval(refreshTimer);
+    if (reboot) {
+        setTimeout(function(){ document.location.reload() }, 6000);
+    }
+
+    infoSpinner.className = reboot ? "spin reboot" : "hidden";
+
+    var clazzes = "container hidden";
+    mainContainer.className = clazzes;
+    wifiContainer.className = clazzes;
+    ocppContainer.className = clazzes;
+    fwContainer.className = clazzes;
+    adminContainer.className = clazzes;
+
+    infoContainer.className = "container popup";
+    infoTitle.innerText = title;
+    infoMessage.innerText = message;
+}
 
 document.getElementById("fw_upload_form").onsubmit = function() {
     document.getElementById("fw_spinner").className = "spin";
@@ -27,21 +58,16 @@ document.getElementById("ocpp_save_btn").onclick = function() {
     ocppSpinner.className = "spin";
     var data = {
         config: {
-        ocpp: {
-            url: ocppUrl.value,
-            name: ocppName.value,
-        },
+            ocpp: {
+                url: ocppUrl.value,
+                name: ocppName.value,
+            },
         },
         save: true,
         reboot: true,
     };
     axios.post(host + "/rpc/Config.Set", data).then(function() {
-        clearInterval(refreshTimer);
-        setTimeout(function(){ document.location.reload() }, 6000);
-        document.body.innerHTML =
-            "<div class='container'><h1>Rebooting...</h1>" +
-            "<div class='centered'><span id='spinner' class='spin reboot'></span> " +
-            "Device is rebooting and connecting to OCPP backend";
+        showInfoPopup(true, "Rebooting...", "Device is rebooting and connecting to OCPP backend.");
     }).catch(function(err) {
         console.error(err);
         var msg = err;
@@ -58,22 +84,20 @@ document.getElementById("wifi_save_btn").onclick = function() {
     wifiSpinner.className = "spin";
     var data = {
         config: {
-        wifi: {
-            sta: { enable: true, ssid: wifiSSID.value, pass: wifiPass.value},
-            ap: { enable: false },
-        },
+            wifi: {
+                sta: { enable: true, ssid: wifiSSID.value, pass: wifiPass.value},
+                ap: { enable: false },
+            },
         },
         save: true,
         reboot: true,
     };
     axios.post(host + "/rpc/Config.Set", data).then(function() {
-        clearInterval(refreshTimer);
-        document.body.innerHTML =
-            "<div class='container'><h1>Rebooting...</h1>" +
-            "<p>Device is rebooting and connecting to " + wifiSSID.value + "." +
-            "<p>Connect to the same network and visit " +
-            "<a href='http://" + document.getElementById("device_id").innerText + ".local/'>" +
-        document.getElementById("device_id").innerText + ".local.</a></div>.";
+        var deviceIdStr = document.getElementById("device_id").innerText;
+        showInfoPopup(false, "Rebooting...",
+            "Device is rebooting and connecting to " + wifiSSID.value + ".<br>" +
+            "Connect to the same network and visit <a href='http://" + deviceIdStr + ".local/'>" +
+            deviceIdStr + ".local.</a>.");
     }).catch(function(err) {
         console.error(err);
         var msg = err;
@@ -95,10 +119,9 @@ document.getElementById("reset_btn").onclick = function() {
     resetSpinner.className = "spin";
     var data = {};
     axios.post(host + "/rpc/Shelly.Reset", data).then(function() {
-        clearInterval(refreshTimer);
-        document.body.innerHTML =
-            "<div class='container'><h1>Resetting...</h1>" +
-            "<p>Device configuration is reset. Device is rebooting";
+        showInfoPopup(false, "Reset",
+            "Device configuration is reset.<br>" +
+            "Reconnect to Wallbox Hotspot to configure the WiFi.");
     }).catch(function(err) {
         console.error(err);
         var msg = err;
@@ -119,11 +142,7 @@ document.getElementById("reboot_btn").onclick = function() {
     rebootSpinner.className = "spin";
     var data = {};
     axios.post(host + "/rpc/Shelly.Reboot", data).then(function() {
-        clearInterval(refreshTimer);
-        setTimeout(function(){ document.location.reload() }, 6000);
-        document.body.innerHTML =
-            "<div class='container'><h1>Rebooting...</h1>" +
-            "<div class='centered'><span id='spinner' class='spin reboot'></span> Device is rebooting";
+        showInfoPopup(true, "Reboot", "Device is rebooting. Please wait...");
     }).catch(function(err) {
         console.error(err);
         var msg = err;

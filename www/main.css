@@ -9,6 +9,7 @@ html, body {
 }
 
 body {
+  background: #fafafa;
   color: #454955;
   font: 15px/1.5 Verdana, Helvetica, Arial, sans-serif;
 }
@@ -42,18 +43,28 @@ h1 {
   margin: 0;
   padding-top: 0.5em;
   text-align: center;
-  font-size: 1.5em;
+  font-size: 1.4em;
 }
 
 .centered {
   text-align: center;
 }
 
+.hidden {
+  display: none;
+}
+
 .container {
   padding: 0 1em;
   margin: 1em auto;
   max-width: 640px;
-  background: #fafafa;
+  background: #ffffff;
+  border: solid 1px #dddddd;
+}
+
+.popup {
+  background: #ffee0044;
+  padding: 1em 1em;
 }
 
 .form-control {
