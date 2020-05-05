@@ -28,6 +28,9 @@ jobs:
         sudo apt-get update
         sudo apt-get install mos
         
+    - name: Build UI
+      run: npm install && npm run lint && npm run gulp  
+        
     - name: Build Project
       run: mos build
       
