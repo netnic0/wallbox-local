@@ -343,7 +343,21 @@ static mg_str getConfiguration(const char *payload) {
   LOG(LL_DEBUG, ("OCPP GetConfiguration request: %s", payload));
   return mg_mk_str(
       "{\"configurationKey\":["
-      "{\"key\":\"SupportedFeatureProfiles\",\"readonly\":\"true\",\"value\":\"Core\"}"
+      "{\"key\":\"AuthorizeRemoteTxRequests\",\"readonly\":true,\"value\":false},"
+      "{\"key\":\"ClockAlignedDataInterval\",\"readonly\":true,\"value\":0},"
+      "{\"key\":\"ConnectionTimeOut\",\"readonly\":true,\"value\":30},"
+      "{\"key\":\"GetConfigurationMaxKeys\",\"readonly\":true,\"value\":32},"
+      "{\"key\":\"HeartbeatInterval\",\"readonly\":false,\"value\":180},"
+      "{\"key\":\"LocalAuthorizeOffline\",\"readonly\":true,\"value\":false},"
+      "{\"key\":\"LocalPreAuthorize\",\"readonly\":true,\"value\":false},"
+      "{\"key\":\"MeterValuesAlignedData\",\"readonly\":true,\"value\":\"Energy.Active.Import.Register\"},"
+      "{\"key\":\"MeterValuesSampledData\",\"readonly\":true,\"value\":\"Energy.Active.Import.Register\"},"
+      "{\"key\":\"MeterValueSampleInterval\",\"readonly\":true,\"value\":60},"
+      "{\"key\":\"NumberOfConnectors\",\"readonly\":true,\"value\":1},"
+      "{\"key\":\"ResetRetries\",\"readonly\":true,\"value\":0},"
+      "{\"key\":\"ConnectorPhaseRotation\",\"readonly\":true,\"value\":\"0.NotApplicable\"},"
+      "{\"key\":\"ConnectorPhaseRotationMaxLength\",\"readonly\":true,\"value\":1},"
+      "{\"key\":\"SupportedFeatureProfiles\",\"readonly\":true,\"value\":\"Core\"}"
       "]}");
 }
 
