@@ -23,7 +23,7 @@ config_schema:
   - ["wifi.ap.ssid", "Wallbox-Hotspot"]
   - ["wifi.ap.pass", "Wallbox1"]
   - ["device.sn", "000000"]
-  - ["http.index_files", "index.html,index.html.gz"]
+  - ["http.index_files", "index.html.gz,index.html"]
   - ["sw", "o", {"Switch settings"}]
   - ["sw.id", "i", 0, {"ID of the switch"}]
   - ["sw.name", "s", "", {"Name of the switch"}]
