@@ -99,7 +99,7 @@ static void shelly_get_info_handler(struct mg_rpc_request_info *ri,
       mgos_sys_config_get_wifi_sta_ssid(),
       mgos_hlw8012_readEnergy(hlw8012),
       mgos_hlw8012_readActivePower(hlw8012),
-      mgos_gpio_read(mgos_sys_config_get_sw1_out_gpio()),
+      mgos_gpio_read(mgos_sys_config_get_gpio_relay()),
       mgos_sys_config_get_ocpp_url(),
       mgos_sys_config_get_ocpp_name(),
       ws_connected);
@@ -112,8 +112,8 @@ static void shelly_set_switch_handler(struct mg_rpc_request_info *ri,
                                       void *cb_arg,
                                       struct mg_rpc_frame_info *fi,
                                       struct mg_str args) {
-  bool currentValue = mgos_gpio_read(mgos_sys_config_get_sw1_out_gpio());
-  mgos_gpio_toggle(mgos_sys_config_get_sw1_out_gpio());
+  bool currentValue = mgos_gpio_read(mgos_sys_config_get_gpio_relay());
+  mgos_gpio_toggle(mgos_sys_config_get_gpio_relay());
   mg_rpc_send_responsef(ri, "{currentValue: %B, newValue: %B}", currentValue, !currentValue);
 
   (void) cb_arg;
@@ -225,7 +225,7 @@ static mg_str stopTransaction(const char *reason) {
   LOG(LL_INFO, ("Stop transaction %d for tag %s, reason %s", transaction_id, tag_id, reason));
 
   send_ocpp_status_notification(OCPP_STATUS_FINISHING);
-  mgos_gpio_write(mgos_sys_config_get_sw1_out_gpio(), 0);
+  mgos_gpio_write(mgos_sys_config_get_gpio_relay(), 0);
 
   char buf[200];
   int length;
@@ -396,7 +396,7 @@ static void handle_ocpp_response(struct mg_connection *nc, const char *id, const
       send_ocpp_status_notification(OCPP_STATUS_CHARGING);
       ws_charging = true;
       mgos_hlw8012_resetEnergy(hlw8012);
-      mgos_gpio_write(mgos_sys_config_get_sw1_out_gpio(), 1);
+      mgos_gpio_write(mgos_sys_config_get_gpio_relay(), 1);
       LOG(LL_INFO, ("Transaction started %d", transaction_id));
     } else {
       send_ocpp_status_notification(OCPP_STATUS_AVAILABLE);
@@ -592,16 +592,6 @@ static void timer_cb(void *arg) {
   (void) arg;
 }
 
-static void button_handler(int pin, void *arg) {
-  LOG(LL_INFO, ("Click from %d !", pin));
-  bool currentValue = mgos_gpio_read(mgos_sys_config_get_sw1_out_gpio());
-  LOG(LL_INFO, ("Previous Value %d !", currentValue));
-  mgos_gpio_write(mgos_sys_config_get_sw1_out_gpio(), !currentValue);
-  bool newValue = mgos_gpio_read(mgos_sys_config_get_sw1_out_gpio());
-  LOG(LL_INFO, ("New Value %d !", newValue));
-  (void) arg;
-}
-
 enum mgos_app_init_result mgos_app_init(void) {
 #ifdef MGOS_HAVE_OTA_COMMON
   if (mgos_ota_is_first_boot()) {
@@ -623,9 +613,9 @@ enum mgos_app_init_result mgos_app_init(void) {
   LOG(LL_INFO, ("Starting Shelly Wallbox"));
 
   mgos_hlw8012_begin(hlw8012,
-                     mgos_sys_config_get_cf_pin(),
-                     mgos_sys_config_get_cf1_pin(),
-                     mgos_sys_config_get_sel_pin(),
+                     mgos_sys_config_get_gpio_cf(),
+                     mgos_sys_config_get_gpio_cf1(),
+                     mgos_sys_config_get_gpio_sel(),
                      LOW,
                      true,
                      2000000);
@@ -636,13 +626,8 @@ enum mgos_app_init_result mgos_app_init(void) {
 
   mgos_set_timer(60000 /* ms */, MGOS_TIMER_REPEAT, timer_cb, NULL);
 
-  mgos_gpio_set_mode(mgos_sys_config_get_sw1_out_gpio(), MGOS_GPIO_MODE_OUTPUT);
-  mgos_gpio_write(mgos_sys_config_get_sw1_out_gpio(), 0);
-
-  mgos_gpio_set_mode(mgos_sys_config_get_sw1_in_gpio(), MGOS_GPIO_MODE_OUTPUT);
-  mgos_gpio_set_pull(mgos_sys_config_get_sw1_in_gpio(), MGOS_GPIO_PULL_NONE);
-  mgos_gpio_set_button_handler(
-      mgos_sys_config_get_sw1_in_gpio(), MGOS_GPIO_PULL_NONE, MGOS_GPIO_INT_EDGE_POS, 100, button_handler, NULL);
+  mgos_gpio_set_mode(mgos_sys_config_get_gpio_relay(), MGOS_GPIO_MODE_OUTPUT);
+  mgos_gpio_write(mgos_sys_config_get_gpio_relay(), 0);
 
   mg_rpc_add_handler(mgos_rpc_get_global(), "Shelly.GetInfo", "", shelly_get_info_handler, NULL);
   mg_rpc_add_handler(mgos_rpc_get_global(), "Shelly.GetConso", "", shelly_get_conso_handler, NULL);
