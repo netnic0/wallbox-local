@@ -2,6 +2,10 @@
 
 Wallbox firmware for Shelly 1PM relay.
 
+## Usage
+
+See [Quick Start Guide](./doc/quick-start.md) to understand how to set up and use the Wallbox.
+
 ## Development
 
 ### Requirements
