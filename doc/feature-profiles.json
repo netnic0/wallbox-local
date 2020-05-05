@@ -1,0 +1,400 @@
+{
+    "Name": "OCPP Feature Profiles",
+    "Source": {
+        "Name": "Open Charge Point Protocol",
+        "Version": "1.6 FINAL 2015-10-08",
+        "File": "OCPP-1.6.pdf"
+    },
+    "FeatureProfiles": [
+        {
+            "id": "Core",
+            "Name": "Core Profile",
+            "Description": "Basic Charge Point functionality comparable with OCPP 1.5 [OCPP1.5] without support for firmware updates, local authorization list management and reservations.",
+            "ConfigurationKeys": [
+                {
+                    "id": "9.1.1.",
+                    "Key": "AllowOfflineTxForUnknownId",
+                    "Required": "optional",
+                    "Accessibility": "RW",
+                    "Type": "boolean",
+                    "Description": "If this key exists, the Charge Point supports Unknown Offline Authorization. If this key reports a value of true, Unknown Offline Authorization is enabled."
+                },
+                {
+                    "id": "9.1.2.",
+                    "Key": "AuthorizationCacheEnabled",
+                    "Required": "optional",
+                    "Accessibility": "RW",
+                    "Type": "boolean",
+                    "Description": "If this key exists, the Charge Point supports an Authorization Cache. If this key reports a value of true, the Authorization Cache is enabled."
+                },
+                {
+                    "id": "9.1.3.",
+                    "Key": "AuthorizeRemoteTxRequests",
+                    "Required": "required",
+                    "Accessibility": "R or RW. Choice is up to Charge Point implementation.",
+                    "Type": "boolean",
+                    "Description": "Whether a remote request to start a transaction in the form of a RemoteStartTransaction.req message should be authorized beforehand like a local action to start a transaction."
+                },
+                {
+                    "id": "9.1.4.",
+                    "Key": "BlinkRepeat",
+                    "Required": "optional",
+                    "Accessibility": "RW",
+                    "Type": "int",
+                    "Unit": "times",
+                    "Description": "Number of times to blink Charge Point lighting when signalling"
+                },
+                {
+                    "id": "9.1.5.",
+                    "Key": "ClockAlignedDataInterval",
+                    "Required": "required",
+                    "Accessibility": "RW",
+                    "Type": "int",
+                    "Unit": "seconds",
+                    "Description": "Size (in seconds) of the clock-aligned data interval. This is the size (in seconds) of the set of evenly spaced aggregation intervals per day, starting at 00: 00: 00 (midnight). For example, a value of 900 (15 minutes) indicates that every day should be broken into 96 15-minute intervals. When clock aligned data is being transmitted, the interval in question is identified by the start time and (optional) duration interval value, represented according to the ISO8601 standard. All \"per-period\" data (e.g. energy readings) should be accumulated (for \"flow\" type measurands such as energy), or averaged (for other values) across the entire interval (or partial interval, at the beginning or end of a charging session), and transmitted (if so enabled) at the end of each interval, bearing the interval start time timestamp. A value of \"0\" (numeric zero), by convention, is to be interpreted to mean that no clock-aligned data should be transmitted."
+                },
+                {
+                    "id": "9.1.6.",
+                    "Key": "ConnectionTimeOut",
+                    "Required": "required",
+                    "Accessibility": "RW",
+                    "Type": "int",
+                    "Unit": "seconds",
+                    "Description": "Interval (from successful authorization) until incipient charging session is automatically canceled due to failure of EV user to (correctly) insert the charging cable connector(s) into the appropriate connector(s)."
+                },
+                {
+                    "id": "9.1.7.",
+                    "Key": "GetConfigurationMaxKeys",
+                    "Required": "required",
+                    "Accessibility": "R",
+                    "Type": "int",
+                    "Description": "Maximum number of requested configuration keys in a GetConfiguration.req PDU."
+                },
+                {
+                    "id": "9.1.8.",
+                    "Key": "HeartbeatInterval",
+                    "Required": "required",
+                    "Accessibility": "RW",
+                    "Type": "int",
+                    "Unit": "seconds",
+                    "Description": "Interval of inactivity (no OCPP exchanges) with central system after which the Charge Point should send a Heartbeat.req PDU"
+                },
+                {
+                    "id": "9.1.9.",
+                    "Key": "LightIntensity",
+                    "Required": "optional",
+                    "Accessibility": "RW",
+                    "Type": "int",
+                    "Unit": "%",
+                    "Description": "Percentage of maximum intensity at which to illuminate Charge Point lighting"
+                },
+                {
+                    "id": "9.1.10.",
+                    "Key": "LocalAuthorizeOffline",
+                    "Required": "required",
+                    "Accessibility": "RW",
+                    "Type": "boolean",
+                    "Description": "whether the Charge Point, when offline, will start a transaction for locallyauthorized identifiers."
+                },
+                {
+                    "id": "9.1.11.",
+                    "Key": "LocalPreAuthorize",
+                    "Required": "required",
+                    "Accessibility": "RW",
+                    "Type": "boolean",
+                    "Description": "whether the Charge Point, when online, will start a transaction for locallyauthorized identifiers without waiting for or requesting an Authorize.conf from the Central System"
+                },
+                {
+                    "id": "9.1.12.",
+                    "Key": "MaxEnergyOnInvalidId",
+                    "Required": "optional",
+                    "Accessibility": "RW",
+                    "Type": "integer",
+                    "Unit": "Wh",
+                    "Description": "Maximum energy in Wh delivered when an identifier is invalidated by the Central System after start of a transaction."
+                },
+                {
+                    "id": "9.1.13.",
+                    "Key": "MeterValuesAlignedData",
+                    "Required": "required",
+                    "Accessibility": "RW",
+                    "Type": "CSL",
+                    "Description": "Clock-aligned measurand(s) to be included in a MeterValues.req PDU, every ClockAlignedDataInterval seconds"
+                },
+                {
+                    "id": "9.1.14.",
+                    "Key": "MeterValuesAlignedDataMaxLength",
+                    "Required": "optional",
+                    "Accessibility": "R",
+                    "Description": "Maximum number of items in a MeterValuesAlignedData Configuration Key."
+                },
+                {
+                    "id": "9.1.15.",
+                    "Key": "MeterValuesSampledData",
+                    "Required": "required",
+                    "Accessibility": "RW",
+                    "Type": "CSL",
+                    "Description": "Sampled measurands to be included in a MeterValues.req PDU, every MeterValueSampleInterval seconds. Where applicable, the Measurand is combined with the optional phase; for instance: Voltage.L1 Default: \"Energy.Active.Import.Register\""
+                },
+                {
+                    "id": "9.1.16.",
+                    "Key": "MeterValuesSampledDataMaxLength",
+                    "Required": "optional",
+                    "Accessibility": "R",
+                    "Description": "Maximum number of items in a MeterValuesSampledData Configuration Key."
+                },
+                {
+                    "id": "9.1.17.",
+                    "Key": "MeterValueSampleInterval",
+                    "Required": "required",
+                    "Accessibility": "RW",
+                    "Type": "int",
+                    "Unit": "seconds",
+                    "Description": "Interval between sampling of metering (or other) data, intended to be transmitted by \"MeterValues\" PDUs. For charging session data (ConnectorId>0), samples are acquired and transmitted periodically at this interval from the start of the charging transaction. A value of \"0\" (numeric zero), by convention, is to be interpreted to mean that no sampled data should be transmitted."
+                },
+                {
+                    "id": "9.1.18.",
+                    "Key": "MinimumStatusDuration",
+                    "Required": "optional",
+                    "Accessibility": "RW",
+                    "Type": "int",
+                    "Unit": "seconds",
+                    "Description": "The minimum duration that a Charge Point or Connector status is stable before a StatusNotification.req PDU is sent to the Central System."
+                },
+                {
+                    "id": "9.1.19.",
+                    "Key": "NumberOfConnectors",
+                    "Required": "required",
+                    "Accessibility": "R",
+                    "Type": "int",
+                    "Description": "The number of physical charging connectors of this Charge Point."
+                },
+                {
+                    "id": "9.1.20.",
+                    "Key": "ResetRetries",
+                    "Required": "required",
+                    "Accessibility": "RW",
+                    "Type": "int",
+                    "Unit": "times",
+                    "Description": "Number of times to retry an unsuccessful reset of the Charge Point."
+                },
+                {
+                    "id": "9.1.21.",
+                    "Key": "ConnectorPhaseRotation",
+                    "Required": "required",
+                    "Accessibility": "RW",
+                    "Type": "CSL",
+                    "Description": "The phase rotation per connector in respect to the connector’s energy meter (or if absent, the grid connection). Possible values per connector are: NotApplicable (for Single phase or DC Charge Points) Unknown (not (yet) known) RST (Standard Reference Phasing) RTS (Reversed Reference Phasing) SRT (Reversed 240 degree rotation) STR (Standard 120 degree rotation) TRS (Standard 240 degree rotation) TSR (Reversed 120 degree rotation) R can be identified as phase 1 (L1), S as phase 2 (L2), T as phase 3 (L3). If known, the Charge Point MAY also report the phase rotation between the grid connection and the main energymeter by using index number Zero (0). Values are reported in CSL, formatted: 0.RST, 1.RST, 2.RTS"
+                },
+                {
+                    "id": "9.1.22.",
+                    "Key": "ConnectorPhaseRotationMaxLength",
+                    "Required": "optional",
+                    "Accessibility": "R",
+                    "Description": "Maximum number of items in a ConnectorPhaseRotation Configuration Key."
+                },
+                {
+                    "id": "9.1.23.",
+                    "Key": "StopTransactionOnEVSideDisconnect",
+                    "Required": "required",
+                    "Accessibility": "RW",
+                    "Type": "boolean",
+                    "Description": "When set to true, the Charge Point SHALL administratively stop the transaction when the cable is unplugged from the EV."
+                },
+                {
+                    "id": "9.1.24.",
+                    "Key": "StopTransactionOnInvalidId",
+                    "Required": "required",
+                    "Accessibility": "RW",
+                    "Type": "boolean",
+                    "Description": "whether the Charge Point will stop an ongoing transaction when it receives a non- Accepted authorization status in a StartTransaction.conf for this transaction"
+                },
+                {
+                    "id": "9.1.25.",
+                    "Key": "StopTxnAlignedData",
+                    "Required": "required",
+                    "Accessibility": "RW",
+                    "Type": "CSL",
+                    "Description": "Clock-aligned periodic measurand(s) to be included in the TransactionData element of StopTransaction.req MeterValues.req PDU for every ClockAlignedDataInterval of the charging session"
+                },
+                {
+                    "id": "9.1.26.",
+                    "Key": "StopTxnAlignedDataMaxLength",
+                    "Required": "optional",
+                    "Accessibility": "R",
+                    "Description": "Maximum number of items in a StopTxnAlignedData Configuration Key."
+                },
+                {
+                    "id": "9.1.27.",
+                    "Key": "StopTxnSampledData",
+                    "Required": "required",
+                    "Accessibility": "RW",
+                    "Type": "CSL",
+                    "Description": "Sampled measurands to be included in the TransactionData element of StopTransaction.req PDU, every MeterValueSampleInterval seconds from the start of the charging session"
+                },
+                {
+                    "id": "9.1.28.",
+                    "Key": "StopTxnSampledDataMaxLength",
+                    "Required": "optional",
+                    "Accessibility": "R",
+                    "Description": "Maximum number of items in a StopTxnSampledData Configuration Key."
+                },
+                {
+                    "id": "9.1.29.",
+                    "Key": "SupportedFeatureProfiles",
+                    "Required": "required",
+                    "Accessibility": "R",
+                    "Type": "CSL",
+                    "Description": "A list of supported Feature Profiles. Possible profile identifiers: Core, FirmwareManagement, LocalAuthListManagement, Reservation, SmartCharging and RemoteTrigger."
+                },
+                {
+                    "id": "9.1.30.",
+                    "Key": "SupportedFeatureProfilesMaxLength",
+                    "Required": "optional",
+                    "Accessibility": "R",
+                    "Description": "Maximum number of items in a SupportedFeatureProfiles Configuration Key."
+                },
+                {
+                    "id": "9.1.31.",
+                    "Key": "TransactionMessageAttempts",
+                    "Required": "required",
+                    "Accessibility": "RW",
+                    "Type": "int",
+                    "Unit": "times",
+                    "Description": "How often the Charge Point should try to submit a transaction-related message when the Central System fails to process it."
+                },
+                {
+                    "id": "9.1.32.",
+                    "Key": "TransactionMessageRetryInterval",
+                    "Required": "required",
+                    "Accessibility": "RW",
+                    "Type": "int",
+                    "Unit": "seconds",
+                    "Description": "How long the Charge Point should wait before resubmitting a transactionrelated message that the Central System failed to process."
+                },
+                {
+                    "id": "9.1.33.",
+                    "Key": "UnlockConnectorOnEVSideDisconnect",
+                    "Required": "required",
+                    "Accessibility": "RW",
+                    "Type": "boolean",
+                    "Description": "When set to true, the Charge Point SHALL unlock the cable on Charge Point side when the cable is unplugged at the EV."
+                },
+                {
+                    "id": "9.1.34.",
+                    "Key": "WebSocketPingInterval",
+                    "Required": "optional",
+                    "Accessibility": "RW",
+                    "Type": "int",
+                    "Unit": "seconds",
+                    "Description": "Only relevant for websocket implementations. 0 disables client side websocket Ping/Pong. In this case there is either no ping/pong or the server initiates the ping and client responds with Pong. Positive values are interpreted as number of seconds between pings. Negative values are not allowed. ChangeConfiguration is expected to return a REJECTED result."
+                }
+            ]
+        },
+        {
+            "id": "FirmwareManagement",
+            "Name": "Firmware Management Profile",
+            "Description": "Support for firmware update management and diagnostic log file download.",
+            "ConfigurationKeys": []
+        },
+        {
+            "id": "LocalAuthListManagement",
+            "Name": "Local Auth List Management Profile",
+            "Description": "Features to manage the local authorization list in Charge Points.",
+            "ConfigurationKeys": [
+                {
+                    "id": "9.2.1.",
+                    "Key": "LocalAuthListEnabled",
+                    "Required": "required",
+                    "Accessibility": "RW",
+                    "Type": "boolean",
+                    "Description": "whether the Local Authorization List is enabled"
+                },
+                {
+                    "id": "9.2.2.",
+                    "Key": "LocalAuthListMaxLength",
+                    "Required": "required",
+                    "Accessibility": "R",
+                    "Type": "int",
+                    "Description": "Maximum number of identifications that can be stored in the Local Authorization List"
+                },
+                {
+                    "id": "9.2.3.",
+                    "Key": "SendLocalListMaxLength",
+                    "Required": "required",
+                    "Accessibility": "R",
+                    "Type": "int",
+                    "Description": "Maximum number of identifications that can be send in a single SendLocalList.req"
+                }
+            ]
+        },
+        {
+            "id": "Reservation",
+            "Name": "Reservation Profile",
+            "Description": "Support for reservation of a Charge Point.",
+            "ConfigurationKeys": [
+                {
+                    "id": "9.3.1.",
+                    "Key": "ReserveConnectorZeroSupported",
+                    "Required": "optional",
+                    "Accessibility": "R",
+                    "Type": "boolean",
+                    "Description": "If this configuration key is present and set to true: Charge Point support reservations on connector 0."
+                }
+            ]
+        },
+        {
+            "id": "SmartCharging",
+            "Name": "Smart Charging Profile",
+            "Description": "Support for basic Smart Charging, for instance using control pilot.",
+            "ConfigurationKeys": [
+                {
+                    "id": "9.4.1.",
+                    "Key": "ChargeProfileMaxStackLevel",
+                    "Required": "required",
+                    "Accessibility": "R",
+                    "Type": "int",
+                    "Description": "Max StackLevel of a ChargingProfile. The number defined also indicates the max allowed number of installed charging schedules per Charging Profile Purposes."
+                },
+                {
+                    "id": "9.4.2.",
+                    "Key": "ChargingScheduleAllowedChargingRateUnit",
+                    "Required": "required",
+                    "Accessibility": "R",
+                    "Type": "CSL",
+                    "Description": "A list of supported quantities for use in a ChargingSchedule. Allowed values: 'Current' and 'Power'"
+                },
+                {
+                    "id": "9.4.3.",
+                    "Key": "ChargingScheduleMaxPeriods",
+                    "Required": "required",
+                    "Accessibility": "R",
+                    "Type": "int",
+                    "Description": "Maximum number of periods that may be defined per ChargingSchedule."
+                },
+                {
+                    "id": "9.4.4.",
+                    "Key": "ConnectorSwitch3to1PhaseSupported",
+                    "Required": "optional",
+                    "Accessibility": "R",
+                    "Type": "bool",
+                    "Description": "If defined and true, this Charge Point support switching from 3 to 1 phase during a charging session."
+                },
+                {
+                    "id": "9.4.5.",
+                    "Key": "MaxChargingProfilesInstalled",
+                    "Required": "required",
+                    "Accessibility": "R",
+                    "Type": "int",
+                    "Description": "Maximum number of Charging profiles installed at a time"
+                }
+            ]
+        },
+        {
+            "id": "RemoteTrigger",
+            "Name": "Remote Trigger Profile",
+            "Description": "Support for remote triggering of Charge Point initiated messages",
+            "ConfigurationKeys": []
+        }
+    ]
+}

@@ -1,0 +1,626 @@
+{
+    "configurationKey": [
+        {
+            "key": "operatingmode",
+            "readonly": false,
+            "value": "2"
+        },
+        {
+            "key": "clustermanagement",
+            "readonly": true,
+            "value": "0"
+        },
+        {
+            "key": "simplifiedmode3",
+            "readonly": false,
+            "value": "true"
+        },
+        {
+            "key": "ventilation",
+            "readonly": false,
+            "value": "true"
+        },
+        {
+            "key": "localisation",
+            "readonly": false,
+            "value": "true"
+        },
+        {
+            "key": "cpwratestep",
+            "readonly": true,
+            "value": "0"
+        },
+        {
+            "key": "isolatedinput1",
+            "readonly": false,
+            "value": "0"
+        },
+        {
+            "key": "isolatedinput2",
+            "readonly": false,
+            "value": "0"
+        },
+        {
+            "key": "sm3currentlowthreshold",
+            "readonly": true,
+            "value": "1"
+        },
+        {
+            "key": "sm3stopdelay",
+            "readonly": true,
+            "value": "3600"
+        },
+        {
+            "key": "postponecharge",
+            "readonly": false,
+            "value": "false"
+        },
+        {
+            "key": "allowpluggedcable",
+            "readonly": true,
+            "value": "true"
+        },
+        {
+            "key": "enableevdetection",
+            "readonly": false,
+            "value": "true"
+        },
+        {
+            "key": "schukowithnodetectionendofcharge",
+            "readonly": true,
+            "value": "60"
+        },
+        {
+            "key": "updatesetpointperiodinsec",
+            "readonly": true,
+            "value": "15"
+        },
+        {
+            "key": "remotesetpointperiodinsec",
+            "readonly": true,
+            "value": "5"
+        },
+        {
+            "key": "stationnetworktype",
+            "readonly": false,
+            "value": "3"
+        },
+        {
+            "key": "dhcp",
+            "readonly": false,
+            "value": "0"
+        },
+        {
+            "key": "strictdhcpmode",
+            "readonly": false,
+            "value": "0"
+        },
+        {
+            "key": "slavehaspublicip",
+            "readonly": false,
+            "value": "1"
+        },
+        {
+            "key": "stationname",
+            "readonly": false,
+            "value": "1A 01234 01 234 567"
+        },
+        {
+            "key": "dhcpmode",
+            "readonly": true,
+            "value": "1"
+        },
+        {
+            "key": "loadsheddingsetpoint",
+            "readonly": false,
+            "value": "0"
+        },
+        {
+            "key": "voltagererefence",
+            "readonly": false,
+            "value": "400"
+        },
+        {
+            "key": "currentpb1",
+            "readonly": true,
+            "value": "32"
+        },
+        {
+            "key": "nbphase",
+            "readonly": true,
+            "value": "3"
+        },
+        {
+            "key": "maxintensitysocket",
+            "readonly": false,
+            "value": "32"
+        },
+        {
+            "key": "maxintensitystation",
+            "readonly": false,
+            "value": "64"
+        },
+        {
+            "key": "maxtevalue",
+            "readonly": false,
+            "value": "14"
+        },
+        {
+            "key": "headmetertype",
+            "readonly": false,
+            "value": "5"
+        },
+        {
+            "key": "headmeterprotocol",
+            "readonly": false,
+            "value": "1"
+        },
+        {
+            "key": "headmeterrtuaddress",
+            "readonly": false,
+            "value": "1"
+        },
+        {
+            "key": "headmetergatewayaddress",
+            "readonly": false,
+            "value": "130"
+        },
+        {
+            "key": "headmeterphase",
+            "readonly": false,
+            "value": "1"
+        },
+        {
+            "key": "stationmetertype",
+            "readonly": false,
+            "value": "5"
+        },
+        {
+            "key": "stationmeterprotocol",
+            "readonly": false,
+            "value": "1"
+        },
+        {
+            "key": "stationmeterrtuaddress",
+            "readonly": false,
+            "value": "2"
+        },
+        {
+            "key": "stationmetergatewayaddress",
+            "readonly": false,
+            "value": "130"
+        },
+        {
+            "key": "stationmeterphase",
+            "readonly": false,
+            "value": "3"
+        },
+        {
+            "key": "alternativemetertype",
+            "readonly": false,
+            "value": "5"
+        },
+        {
+            "key": "alternativemeterprotocol",
+            "readonly": false,
+            "value": "1"
+        },
+        {
+            "key": "alternativemeterrtuaddress",
+            "readonly": false,
+            "value": "3"
+        },
+        {
+            "key": "alternativemetergatewayaddress",
+            "readonly": false,
+            "value": "130"
+        },
+        {
+            "key": "alternativemeterphase",
+            "readonly": false,
+            "value": "3"
+        },
+        {
+            "key": "meteringpollingperiod",
+            "readonly": false,
+            "value": "1000"
+        },
+        {
+            "key": "powermeterphasesconnection",
+            "readonly": true,
+            "value": "1"
+        },
+        {
+            "key": "terminalphasesconnection",
+            "readonly": false,
+            "value": "1"
+        },
+        {
+            "key": "currentchargelogperiod",
+            "readonly": false,
+            "value": "60"
+        },
+        {
+            "key": "enablesuspendchargebybutton",
+            "readonly": false,
+            "value": "false"
+        },
+        {
+            "key": "useautotimemanagment",
+            "readonly": false,
+            "value": "true"
+        },
+        {
+            "key": "timeservername",
+            "readonly": false,
+            "value": "pool.ntp.org"
+        },
+        {
+            "key": "timezone",
+            "readonly": false,
+            "value": "UTC"
+        },
+        {
+            "key": "pulsetoenergyfactor",
+            "readonly": false,
+            "value": "1"
+        },
+        {
+            "key": "degradedmodesetpointmono",
+            "readonly": false,
+            "value": "8"
+        },
+        {
+            "key": "degradedmodesetpointtri",
+            "readonly": false,
+            "value": "14"
+        },
+        {
+            "key": "monophasedloadsheddingfloorvalue",
+            "readonly": false,
+            "value": "8"
+        },
+        {
+            "key": "triphasedloadsheddingfloorvalue",
+            "readonly": false,
+            "value": "14"
+        },
+        {
+            "key": "emsetting",
+            "readonly": false,
+            "value": "3"
+        },
+        {
+            "key": "upstreamprothightrshld",
+            "readonly": true,
+            "value": "100"
+        },
+        {
+            "key": "homeupstreamprotection",
+            "readonly": true,
+            "value": "32"
+        },
+        {
+            "key": "staticmaxintensitycluster",
+            "readonly": false,
+            "value": "64"
+        },
+        {
+            "key": "loadsheddingpriority",
+            "readonly": false,
+            "value": "0"
+        },
+        {
+            "key": "loadsheddingperiod",
+            "readonly": false,
+            "value": "900"
+        },
+        {
+            "key": "phaserotation",
+            "readonly": false,
+            "value": "false"
+        },
+        {
+            "key": "imaxstation",
+            "readonly": true,
+            "value": "64"
+        },
+        {
+            "key": "overloaddelay",
+            "readonly": true,
+            "value": "90"
+        },
+        {
+            "key": "overloadtolerance",
+            "readonly": true,
+            "value": "18"
+        },
+        {
+            "key": "AllowOfflineTxForUnknownId",
+            "readonly": false,
+            "value": "true"
+        },
+        {
+            "key": "authenticationmanager",
+            "readonly": false,
+            "value": "2"
+        },
+        {
+            "key": "rfidstatustimeout",
+            "readonly": false,
+            "value": "10"
+        },
+        {
+            "key": "masterkeyavailability",
+            "readonly": false,
+            "value": "false"
+        },
+        {
+            "key": "authenticationmode",
+            "readonly": false,
+            "value": "1"
+        },
+        {
+            "key": "supervisionsystem",
+            "readonly": false,
+            "value": "2"
+        },
+        {
+            "key": "controlchargebyremotecommand",
+            "readonly": false,
+            "value": "true"
+        },
+        {
+            "key": "ocppversion",
+            "readonly": false,
+            "value": "1.6"
+        },
+        {
+            "key": "ocppcentraladdress",
+            "readonly": false,
+            "value": "wss://chargebox.server.example.com/OCPP16/dfa7453686e48956e49f8a96"
+        },
+        {
+            "key": "ocppboxlocalport",
+            "readonly": false,
+            "value": "8080"
+        },
+        {
+            "key": "ocppboxpublicip",
+            "readonly": false,
+            "value": "192.168.1.123"
+        },
+        {
+            "key": "ocppboxpublicport",
+            "readonly": false,
+            "value": "8080"
+        },
+        {
+            "key": "ocppboxlocalssl",
+            "readonly": true,
+            "value": "0"
+        },
+        {
+            "key": "ocppboxaddressreplyto",
+            "readonly": false,
+            "value": "http://www.w3.org/2005/08/addressing/anonymous"
+        },
+        {
+            "key": "ocppmodemipaddress",
+            "readonly": true,
+            "value": "192.168.1.254"
+        },
+        {
+            "key": "ocppmodempresence",
+            "readonly": true,
+            "value": "0"
+        },
+        {
+            "key": "modemtype",
+            "readonly": true
+        },
+        {
+            "key": "confmodemretryinterval",
+            "readonly": false,
+            "value": "0"
+        },
+        {
+            "key": "boxidentity",
+            "readonly": false,
+            "value": "Charger-01"
+        },
+        {
+            "key": "defaultidtag",
+            "readonly": false,
+            "value": "UNDEFINED"
+        },
+        {
+            "key": "metervaluesaligneddata",
+            "readonly": false,
+            "value": "Energy.Active.Import.Register"
+        },
+        {
+            "key": "metervaluessampleddata",
+            "readonly": false,
+            "value": "Energy.Active.Import.Register"
+        },
+        {
+            "key": "metervaluesampleinterval",
+            "readonly": false,
+            "value": "60"
+        },
+        {
+            "key": "clockaligneddatainterval",
+            "readonly": false,
+            "value": "0"
+        },
+        {
+            "key": "ocppconnecttimeout",
+            "readonly": false,
+            "value": "60"
+        },
+        {
+            "key": "websocketpinginterval",
+            "readonly": false,
+            "value": "120"
+        },
+        {
+            "key": "minimumstatusduration",
+            "readonly": false,
+            "value": "0"
+        },
+        {
+            "key": "transactionmessageretryinterval",
+            "readonly": false,
+            "value": "60"
+        },
+        {
+            "key": "transactionmessageattempts",
+            "readonly": false,
+            "value": "500"
+        },
+        {
+            "key": "truncatebootnotificationsserialnumbers",
+            "readonly": false,
+            "value": "false"
+        },
+        {
+            "key": "clienthttpsoptions",
+            "readonly": true,
+            "value": "DEFAULT"
+        },
+        {
+            "key": "AuthorizationCacheEnabled",
+            "readonly": false,
+            "value": "false"
+        },
+        {
+            "key": "enableplugnumbering",
+            "readonly": false,
+            "value": "false"
+        },
+        {
+            "key": "compressdiagnostic",
+            "readonly": false,
+            "value": "1"
+        },
+        {
+            "key": "ocppemdegradedmodeenabled",
+            "readonly": false,
+            "value": "0"
+        },
+        {
+            "key": "HeartBeatInterval",
+            "readonly": false,
+            "value": "180"
+        },
+        {
+            "key": "AuthorizeRemoteTxRequests",
+            "readonly": true,
+            "value": "false"
+        },
+        {
+            "key": "ChargeProfileMaxStackLevel",
+            "readonly": true,
+            "value": "999"
+        },
+        {
+            "key": "ChargingScheduleAllowedChargingRateUnit",
+            "readonly": true,
+            "value": "Current"
+        },
+        {
+            "key": "ChargingScheduleMaxPeriods",
+            "readonly": true,
+            "value": "50"
+        },
+        {
+            "key": "ConnectionTimeOut",
+            "readonly": true,
+            "value": "30"
+        },
+        {
+            "key": "ConnectorPhaseRotation",
+            "readonly": true,
+            "value": "1.Unknown, 2.Unknown"
+        },
+        {
+            "key": "ConnectorPhaseRotationMaxLength",
+            "readonly": true,
+            "value": "2"
+        },
+        {
+            "key": "ConnectorSwitch3to1PhaseSupported",
+            "readonly": true,
+            "value": "false"
+        },
+        {
+            "key": "GetConfigurationMaxKeys",
+            "readonly": true,
+            "value": "200"
+        },
+        {
+            "key": "MaxChargingProfilesInstalled",
+            "readonly": true,
+            "value": "99"
+        },
+        {
+            "key": "NumberOfConnectors",
+            "readonly": true,
+            "value": "2"
+        },
+        {
+            "key": "ReserveConnectorZeroSupported",
+            "readonly": true,
+            "value": "false"
+        },
+        {
+            "key": "ResetRetries",
+            "readonly": true,
+            "value": "0"
+        },
+        {
+            "key": "StopTransactionOnEVSideDisconnect",
+            "readonly": true,
+            "value": "true"
+        },
+        {
+            "key": "StopTransactionOnInvalidId",
+            "readonly": true,
+            "value": "true"
+        },
+        {
+            "key": "StopTxnAlignedData",
+            "readonly": true
+        },
+        {
+            "key": "StopTxnAlignedDataMaxLength",
+            "readonly": true,
+            "value": "0"
+        },
+        {
+            "key": "StopTxnSampledData",
+            "readonly": true
+        },
+        {
+            "key": "StopTxnSampledDataMaxLength",
+            "readonly": true,
+            "value": "0"
+        },
+        {
+            "key": "SupportedFeatureProfiles",
+            "readonly": true,
+            "value": "Core,FirmwareManagement,Reservation,SmartCharging"
+        },
+        {
+            "key": "SupportedFeatureProfilesMaxLength",
+            "readonly": true,
+            "value": "4"
+        },
+        {
+            "key": "UnlockConnectorOnEVSideDisconnect",
+            "readonly": true,
+            "value": "true"
+        }
+    ]
+}
