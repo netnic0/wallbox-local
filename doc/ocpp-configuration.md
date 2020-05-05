@@ -4,27 +4,27 @@
 
 ### Core Profile
 
-- AuthorizeRemoteTxRequests (type: boolean) (units: -)
-- ClockAlignedDataInterval (type: int) (units: seconds)
-- ConnectionTimeOut (type: int) (units: seconds)
-- GetConfigurationMaxKeys (type: int) (units: -)
-- HeartbeatInterval (type: int) (units: seconds)
-- LocalAuthorizeOffline (type: boolean) (units: -)
-- LocalPreAuthorize (type: boolean) (units: -)
-- MeterValuesAlignedData (type: CSL) (units: -)
-- MeterValuesSampledData (type: CSL) (units: -)
-- MeterValueSampleInterval (type: int) (units: seconds)
-- NumberOfConnectors (type: int) (units: -)
-- ResetRetries (type: int) (units: times)
-- ConnectorPhaseRotation (type: CSL) (units: -)
-- StopTransactionOnEVSideDisconnect (type: boolean) (units: -)
-- StopTransactionOnInvalidId (type: boolean) (units: -)
-- StopTxnAlignedData (type: CSL) (units: -)
-- StopTxnSampledData (type: CSL) (units: -)
-- SupportedFeatureProfiles (type: CSL) (units: -)
-- TransactionMessageAttempts (type: int) (units: times)
-- TransactionMessageRetryInterval (type: int) (units: seconds)
-- UnlockConnectorOnEVSideDisconnect (type: boolean) (units: -)
+- :heavy_check_mark: AuthorizeRemoteTxRequests (type: boolean) (units: -)
+- :heavy_check_mark: ClockAlignedDataInterval (type: int) (units: seconds)
+- :heavy_check_mark: ConnectionTimeOut (type: int) (units: seconds)
+- :heavy_check_mark: GetConfigurationMaxKeys (type: int) (units: -)
+- :heavy_check_mark: HeartbeatInterval (type: int) (units: seconds)
+- :heavy_check_mark: LocalAuthorizeOffline (type: boolean) (units: -)
+- :heavy_check_mark: LocalPreAuthorize (type: boolean) (units: -)
+- :heavy_check_mark: MeterValuesAlignedData (type: CSL) (units: -)
+- :heavy_check_mark: MeterValuesSampledData (type: CSL) (units: -)
+- :heavy_check_mark: MeterValueSampleInterval (type: int) (units: seconds)
+- :heavy_check_mark: NumberOfConnectors (type: int) (units: -)
+- :heavy_check_mark: ResetRetries (type: int) (units: times)
+- :heavy_check_mark: ConnectorPhaseRotation (type: CSL) (units: -)
+- :interrobang: StopTransactionOnEVSideDisconnect (type: boolean) (units: -)
+- :interrobang: StopTransactionOnInvalidId (type: boolean) (units: -)
+- :heavy_check_mark: StopTxnAlignedData (type: CSL) (units: -)
+- :heavy_check_mark: StopTxnSampledData (type: CSL) (units: -)
+- :heavy_check_mark: SupportedFeatureProfiles (type: CSL) (units: -)
+- :interrobang: TransactionMessageAttempts (type: int) (units: times)
+- :interrobang: TransactionMessageRetryInterval (type: int) (units: seconds)
+- :heavy_check_mark: UnlockConnectorOnEVSideDisconnect (type: boolean) (units: -)
 
 ### Firmware Management Profile
 
@@ -32,9 +32,9 @@
 
 ### Local Auth List Management Profile
 
-- LocalAuthListEnabled (type: boolean) (units: -)
-- LocalAuthListMaxLength (type: int) (units: -)
-- SendLocalListMaxLength (type: int) (units: -)
+- :x: LocalAuthListEnabled (type: boolean) (units: -)
+- :x: LocalAuthListMaxLength (type: int) (units: -)
+- :x: SendLocalListMaxLength (type: int) (units: -)
 
 ### Reservation Profile
 
@@ -42,10 +42,10 @@
 
 ### Smart Charging Profile
 
-- ChargeProfileMaxStackLevel (type: int) (units: -)
-- ChargingScheduleAllowedChargingRateUnit (type: CSL) (units: -)
-- ChargingScheduleMaxPeriods (type: int) (units: -)
-- MaxChargingProfilesInstalled (type: int) (units: -)
+- :x: ChargeProfileMaxStackLevel (type: int) (units: -)
+- :x: ChargingScheduleAllowedChargingRateUnit (type: CSL) (units: -)
+- :x: ChargingScheduleMaxPeriods (type: int) (units: -)
+- :x: MaxChargingProfilesInstalled (type: int) (units: -)
 
 ### Remote Trigger Profile
 

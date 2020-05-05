@@ -357,7 +357,16 @@ static mg_str getConfiguration(const char *payload) {
       "{\"key\":\"ResetRetries\",\"readonly\":true,\"value\":0},"
       "{\"key\":\"ConnectorPhaseRotation\",\"readonly\":true,\"value\":\"0.NotApplicable\"},"
       "{\"key\":\"ConnectorPhaseRotationMaxLength\",\"readonly\":true,\"value\":1},"
-      "{\"key\":\"SupportedFeatureProfiles\",\"readonly\":true,\"value\":\"Core\"}"
+      "{\"key\":\"StopTransactionOnEVSideDisconnect\",\"readonly\":true,\"value\":true},"
+      "{\"key\":\"StopTransactionOnInvalidId\",\"readonly\":true,\"value\":true},"
+      "{\"key\":\"StopTxnAlignedData\",\"readonly\":true,\"value\":\"\"},"
+      "{\"key\":\"StopTxnAlignedDataMaxLength\",\"readonly\":true,\"value\":0},"
+      "{\"key\":\"StopTxnSampledData\",\"readonly\":true,\"value\":\"\"},"
+      "{\"key\":\"StopTxnSampledDataMaxLength\",\"readonly\":true,\"value\":0},"
+      "{\"key\":\"SupportedFeatureProfiles\",\"readonly\":true,\"value\":\"Core\"},"
+      "{\"key\":\"TransactionMessageAttempts\",\"readonly\":false,\"value\":10},"
+      "{\"key\":\"TransactionMessageRetryInterval\",\"readonly\":false,\"value\":60},"
+      "{\"key\":\"UnlockConnectorOnEVSideDisconnect\",\"readonly\":true,\"value\":true}"
       "]}");
 }
 
