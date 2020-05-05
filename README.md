@@ -4,9 +4,11 @@ Wallbox firmware for Shelly 1PM relay.
 
 ## Usage
 
-See [Quick Start Guide](./doc/quick-start.md) to understand how to set up and use the Wallbox.
+See [Quick Start Guide](./doc/quick-start.md) :books: to understand how to set up and use the Wallbox.
 
 ## Development
+
+![CI](https://github.com/ellavas/mongoose-app-shelly/workflows/CI/badge.svg)
 
 ### Requirements
 
