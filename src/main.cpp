@@ -341,7 +341,10 @@ static mg_str reset(const char *payload) {
 
 static mg_str getConfiguration(const char *payload) {
   LOG(LL_DEBUG, ("OCPP GetConfiguration request: %s", payload));
-  return mg_mk_str("{}");
+  return mg_mk_str(
+      "{\"configurationKey\":["
+      "{\"key\":\"SupportedFeatureProfiles\",\"readonly\":\"true\",\"value\":\"Core\"}"
+      "]}");
 }
 
 static mg_str clearCache(const char *payload) {
