@@ -611,7 +611,12 @@ enum mgos_app_init_result mgos_app_init(void) {
   mgos_set_timer(60000 /* ms */, MGOS_TIMER_REPEAT, timer_cb, NULL);
 
   mgos_gpio_set_mode(mgos_sys_config_get_gpio_relay(), MGOS_GPIO_MODE_OUTPUT);
-  mgos_gpio_write(mgos_sys_config_get_gpio_relay(), 0);
+
+  if (mgos_sys_config_get_ocpp_transaction_id() > 0) {
+    mgos_gpio_write(mgos_sys_config_get_gpio_relay(), 1);
+  } else {
+    mgos_gpio_write(mgos_sys_config_get_gpio_relay(), 0);
+  }
 
   mg_rpc_add_handler(mgos_rpc_get_global(), "Shelly.GetInfo", "", shelly_get_info_handler, NULL);
   mg_rpc_add_handler(mgos_rpc_get_global(), "Shelly.GetConso", "", shelly_get_conso_handler, NULL);
