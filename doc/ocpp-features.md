@@ -1,3 +1,4 @@
+<!-- markdownlint-disable MD013 -->
 # OCPP Features
 
 ## Messages
@@ -105,7 +106,7 @@
 |---|---|---|
 | AuthorizeRemoteTxRequests | false | true |
 | ClockAlignedDataInterval | 0 | true |
-| ConnectionTimeOut | 30 | true |
+| ConnectionTimeOut | 180 | true |
 | GetConfigurationMaxKeys | 32 | true |
 | HeartbeatInterval | 60 | true |
 | LocalAuthorizeOffline | false | true |
@@ -115,7 +116,7 @@
 | MeterValueSampleInterval | 60 | true |
 | NumberOfConnectors | 1 | true |
 | ResetRetries | 0 | true |
-| ConnectorPhaseRotation | 0.NotApplicable | true |
+| ConnectorPhaseRotation | 1.NotApplicable | true |
 | ConnectorPhaseRotationMaxLength | 1 | true |
 | StopTransactionOnEVSideDisconnect | true | true |
 | StopTransactionOnInvalidId | true | true |
@@ -207,7 +208,7 @@
 | supervisionsystem | 2 | false |
 | controlchargebyremotecommand | true | false |
 | ocppversion | 1.6 | false |
-| ocppcentraladdress | wss://chargebox.server.example.com/OCPP16/dfa7453686e48956e49f8a96 | false |
+| ocppcentraladdress | wss://ocpp.example.com/OCPP16/453686e4 | false |
 | ocppboxlocalport | 8080 | false |
 | ocppboxpublicip | 192.168.1.123 | false |
 | ocppboxpublicport | 8080 | false |

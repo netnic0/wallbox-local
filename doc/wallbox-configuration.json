@@ -13,7 +13,7 @@
         {
             "key": "ConnectionTimeOut",
             "readonly": true,
-            "value": 30
+            "value": 180
         },
         {
             "key": "GetConfigurationMaxKeys",
@@ -63,7 +63,7 @@
         {
             "key": "ConnectorPhaseRotation",
             "readonly": true,
-            "value": "0.NotApplicable"
+            "value": "1.NotApplicable"
         },
         {
             "key": "ConnectorPhaseRotationMaxLength",

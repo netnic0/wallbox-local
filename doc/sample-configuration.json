@@ -378,7 +378,7 @@
         {
             "key": "ocppcentraladdress",
             "readonly": false,
-            "value": "wss://chargebox.server.example.com/OCPP16/dfa7453686e48956e49f8a96"
+            "value": "wss://ocpp.example.com/OCPP16/453686e4"
         },
         {
             "key": "ocppboxlocalport",
