@@ -107,7 +107,7 @@
 | ClockAlignedDataInterval | 0 | true |
 | ConnectionTimeOut | 30 | true |
 | GetConfigurationMaxKeys | 32 | true |
-| HeartbeatInterval | 180 | false |
+| HeartbeatInterval | 60 | true |
 | LocalAuthorizeOffline | false | true |
 | LocalPreAuthorize | false | true |
 | MeterValuesAlignedData | Energy.Active.Import.Register | true |
@@ -124,8 +124,8 @@
 | StopTxnSampledData |  | true |
 | StopTxnSampledDataMaxLength | 0 | true |
 | SupportedFeatureProfiles | Core | true |
-| TransactionMessageAttempts | 10 | false |
-| TransactionMessageRetryInterval | 60 | false |
+| TransactionMessageAttempts | 10 | true |
+| TransactionMessageRetryInterval | 60 | true |
 | UnlockConnectorOnEVSideDisconnect | true | true |
 
 ## Example configuration

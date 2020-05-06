@@ -22,8 +22,8 @@
         },
         {
             "key": "HeartbeatInterval",
-            "readonly": false,
-            "value": 180
+            "readonly": true,
+            "value": 60
         },
         {
             "key": "LocalAuthorizeOffline",
@@ -107,12 +107,12 @@
         },
         {
             "key": "TransactionMessageAttempts",
-            "readonly": false,
+            "readonly": true,
             "value": 10
         },
         {
             "key": "TransactionMessageRetryInterval",
-            "readonly": false,
+            "readonly": true,
             "value": 60
         },
         {
