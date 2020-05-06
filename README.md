@@ -2,9 +2,15 @@
 
 Wallbox firmware for Shelly 1PM relay.
 
+## Features
+
+See [OCPP Features](./doc/ocpp-features.md) :books: to check the supported OCPP
+features.
+
 ## Usage
 
-See [Quick Start Guide](./doc/quick-start.md) :books: to understand how to set up and use the Wallbox.
+See [Quick Start Guide](./doc/quick-start.md) :books: to understand how to set
+up and use the Wallbox.
 
 ## Development
 

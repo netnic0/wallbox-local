@@ -10,6 +10,56 @@
             "id": "Core",
             "Name": "Core Profile",
             "Description": "Basic Charge Point functionality comparable with OCPP 1.5 [OCPP1.5] without support for firmware updates, local authorization list management and reservations.",
+            "Messages": [
+                {
+                    "Name": "Authorize"
+                },
+                {
+                    "Name": "BootNotification"
+                },
+                {
+                    "Name": "ChangeAvailability"
+                },
+                {
+                    "Name": "ChangeConfiguration"
+                },
+                {
+                    "Name": "ClearCache"
+                },
+                {
+                    "Name": "DataTransfer"
+                },
+                {
+                    "Name": "GetConfiguration"
+                },
+                {
+                    "Name": "Heartbeat"
+                },
+                {
+                    "Name": "MeterValues"
+                },
+                {
+                    "Name": "RemoteStartTransaction"
+                },
+                {
+                    "Name": "RemoteStopTransaction"
+                },
+                {
+                    "Name": "Reset"
+                },
+                {
+                    "Name": "StartTransaction"
+                },
+                {
+                    "Name": "StatusNotification"
+                },
+                {
+                    "Name": "StopTransaction"
+                },
+                {
+                    "Name": "UnlockConnector"
+                }
+            ],
             "ConfigurationKeys": [
                 {
                     "id": "9.1.1.",
@@ -295,12 +345,34 @@
             "id": "FirmwareManagement",
             "Name": "Firmware Management Profile",
             "Description": "Support for firmware update management and diagnostic log file download.",
+            "Messages": [
+                {
+                    "Name": "GetDiagnostics"
+                },
+                {
+                    "Name": "DiagnosticsStatusNotification"
+                },
+                {
+                    "Name": "FirmwareStatusNotification"
+                },
+                {
+                    "Name": "UpdateFirmware"
+                }
+            ],
             "ConfigurationKeys": []
         },
         {
             "id": "LocalAuthListManagement",
             "Name": "Local Auth List Management Profile",
             "Description": "Features to manage the local authorization list in Charge Points.",
+            "Messages": [
+                {
+                    "Name": "GetLocalListVersion"
+                },
+                {
+                    "Name": "SendLocalList"
+                }
+            ],
             "ConfigurationKeys": [
                 {
                     "id": "9.2.1.",
@@ -332,6 +404,14 @@
             "id": "Reservation",
             "Name": "Reservation Profile",
             "Description": "Support for reservation of a Charge Point.",
+            "Messages": [
+                {
+                    "Name": "CancelReservation"
+                },
+                {
+                    "Name": "ReserveNow"
+                }
+            ],
             "ConfigurationKeys": [
                 {
                     "id": "9.3.1.",
@@ -347,6 +427,17 @@
             "id": "SmartCharging",
             "Name": "Smart Charging Profile",
             "Description": "Support for basic Smart Charging, for instance using control pilot.",
+            "Messages": [
+                {
+                    "Name": "ClearChargingProfile"
+                },
+                {
+                    "Name": "GetCompositeSchedule"
+                },
+                {
+                    "Name": "SetChargingProfile"
+                }
+            ],
             "ConfigurationKeys": [
                 {
                     "id": "9.4.1.",
@@ -394,6 +485,11 @@
             "id": "RemoteTrigger",
             "Name": "Remote Trigger Profile",
             "Description": "Support for remote triggering of Charge Point initiated messages",
+            "Messages": [
+                {
+                    "Name": "TriggerMessage"
+                }
+            ],
             "ConfigurationKeys": []
         }
     ]
