@@ -220,7 +220,11 @@ static void send_ocpp_meter_values() {
 }
 
 static mg_str stopTransaction(const char *reason) {
-  LOG(LL_INFO, ("Stop transaction %d for tag %s, reason %s", mgos_sys_config_get_ocpp_transaction_id(), mgos_sys_config_get_ocpp_tag_id(), reason));
+  LOG(LL_INFO,
+      ("Stop transaction %d for tag %s, reason %s",
+       mgos_sys_config_get_ocpp_transaction_id(),
+       mgos_sys_config_get_ocpp_tag_id(),
+       reason));
 
   send_ocpp_status_notification(OCPP_STATUS_FINISHING);
   mgos_gpio_write(mgos_sys_config_get_gpio_relay(), 0);
@@ -254,7 +258,8 @@ static mg_str stopTransaction(const char *payload, const char *reason) {
     if (id == mgos_sys_config_get_ocpp_transaction_id()) {
       return stopTransaction(reason);
     } else {
-      LOG(LL_INFO, ("Payload %s not matching current transaction id %d", payload, mgos_sys_config_get_ocpp_transaction_id()));
+      LOG(LL_INFO,
+          ("Payload %s not matching current transaction id %d", payload, mgos_sys_config_get_ocpp_transaction_id()));
       return mg_mk_str(OCPP_RESPONSE_REJECTED);
     }
   } else {
@@ -344,7 +349,34 @@ static mg_str reset(const char *payload) {
 
 static mg_str getConfiguration(const char *payload) {
   LOG(LL_DEBUG, ("OCPP GetConfiguration request: %s", payload));
-  return mg_mk_str("{}");
+  return mg_mk_str(
+      "{\"configurationKey\":["
+      "{\"key\":\"AuthorizationCacheEnabled\",\"readonly\":true,\"value\":false},"
+      "{\"key\":\"AuthorizeRemoteTxRequests\",\"readonly\":true,\"value\":false},"
+      "{\"key\":\"ClockAlignedDataInterval\",\"readonly\":true,\"value\":0},"
+      "{\"key\":\"ConnectionTimeOut\",\"readonly\":true,\"value\":180},"
+      "{\"key\":\"GetConfigurationMaxKeys\",\"readonly\":true,\"value\":32},"
+      "{\"key\":\"HeartbeatInterval\",\"readonly\":true,\"value\":60},"
+      "{\"key\":\"LocalAuthorizeOffline\",\"readonly\":true,\"value\":false},"
+      "{\"key\":\"LocalPreAuthorize\",\"readonly\":true,\"value\":false},"
+      "{\"key\":\"MeterValuesAlignedData\",\"readonly\":true,\"value\":\"Energy.Active.Import.Register\"},"
+      "{\"key\":\"MeterValuesSampledData\",\"readonly\":true,\"value\":\"Energy.Active.Import.Register\"},"
+      "{\"key\":\"MeterValueSampleInterval\",\"readonly\":true,\"value\":60},"
+      "{\"key\":\"NumberOfConnectors\",\"readonly\":true,\"value\":1},"
+      "{\"key\":\"ResetRetries\",\"readonly\":true,\"value\":0},"
+      "{\"key\":\"ConnectorPhaseRotation\",\"readonly\":true,\"value\":\"1.NotApplicable\"},"
+      "{\"key\":\"ConnectorPhaseRotationMaxLength\",\"readonly\":true,\"value\":1},"
+      "{\"key\":\"StopTransactionOnEVSideDisconnect\",\"readonly\":true,\"value\":true},"
+      "{\"key\":\"StopTransactionOnInvalidId\",\"readonly\":true,\"value\":true},"
+      "{\"key\":\"StopTxnAlignedData\",\"readonly\":true,\"value\":\"\"},"
+      "{\"key\":\"StopTxnAlignedDataMaxLength\",\"readonly\":true,\"value\":0},"
+      "{\"key\":\"StopTxnSampledData\",\"readonly\":true,\"value\":\"\"},"
+      "{\"key\":\"StopTxnSampledDataMaxLength\",\"readonly\":true,\"value\":0},"
+      "{\"key\":\"SupportedFeatureProfiles\",\"readonly\":true,\"value\":\"Core\"},"
+      "{\"key\":\"TransactionMessageAttempts\",\"readonly\":true,\"value\":10},"
+      "{\"key\":\"TransactionMessageRetryInterval\",\"readonly\":true,\"value\":60},"
+      "{\"key\":\"UnlockConnectorOnEVSideDisconnect\",\"readonly\":true,\"value\":true}"
+      "]}");
 }
 
 static mg_str clearCache(const char *payload) {

@@ -1,3 +1,4 @@
+<!-- markdownlint-disable MD013 -->
 # OCPP Features
 
 ## Messages
@@ -52,27 +53,27 @@
 
 ### Core Profile
 
-- AuthorizeRemoteTxRequests (type: boolean) (units: -)
-- ClockAlignedDataInterval (type: int) (units: seconds)
-- ConnectionTimeOut (type: int) (units: seconds)
-- GetConfigurationMaxKeys (type: int) (units: -)
-- HeartbeatInterval (type: int) (units: seconds)
-- LocalAuthorizeOffline (type: boolean) (units: -)
-- LocalPreAuthorize (type: boolean) (units: -)
-- MeterValuesAlignedData (type: CSL) (units: -)
-- MeterValuesSampledData (type: CSL) (units: -)
-- MeterValueSampleInterval (type: int) (units: seconds)
-- NumberOfConnectors (type: int) (units: -)
-- ResetRetries (type: int) (units: times)
-- ConnectorPhaseRotation (type: CSL) (units: -)
-- StopTransactionOnEVSideDisconnect (type: boolean) (units: -)
-- StopTransactionOnInvalidId (type: boolean) (units: -)
-- StopTxnAlignedData (type: CSL) (units: -)
-- StopTxnSampledData (type: CSL) (units: -)
-- SupportedFeatureProfiles (type: CSL) (units: -)
-- TransactionMessageAttempts (type: int) (units: times)
-- TransactionMessageRetryInterval (type: int) (units: seconds)
-- UnlockConnectorOnEVSideDisconnect (type: boolean) (units: -)
+- :heavy_check_mark: AuthorizeRemoteTxRequests (type: boolean) (units: -)
+- :heavy_check_mark: ClockAlignedDataInterval (type: int) (units: seconds)
+- :heavy_check_mark: ConnectionTimeOut (type: int) (units: seconds)
+- :heavy_check_mark: GetConfigurationMaxKeys (type: int) (units: -)
+- :heavy_check_mark: HeartbeatInterval (type: int) (units: seconds)
+- :heavy_check_mark: LocalAuthorizeOffline (type: boolean) (units: -)
+- :heavy_check_mark: LocalPreAuthorize (type: boolean) (units: -)
+- :heavy_check_mark: MeterValuesAlignedData (type: CSL) (units: -)
+- :heavy_check_mark: MeterValuesSampledData (type: CSL) (units: -)
+- :heavy_check_mark: MeterValueSampleInterval (type: int) (units: seconds)
+- :heavy_check_mark: NumberOfConnectors (type: int) (units: -)
+- :heavy_check_mark: ResetRetries (type: int) (units: times)
+- :heavy_check_mark: ConnectorPhaseRotation (type: CSL) (units: -)
+- :interrobang: StopTransactionOnEVSideDisconnect (type: boolean) (units: -)
+- :interrobang: StopTransactionOnInvalidId (type: boolean) (units: -)
+- :heavy_check_mark: StopTxnAlignedData (type: CSL) (units: -)
+- :heavy_check_mark: StopTxnSampledData (type: CSL) (units: -)
+- :heavy_check_mark: SupportedFeatureProfiles (type: CSL) (units: -)
+- :interrobang: TransactionMessageAttempts (type: int) (units: times)
+- :interrobang: TransactionMessageRetryInterval (type: int) (units: seconds)
+- :heavy_check_mark: UnlockConnectorOnEVSideDisconnect (type: boolean) (units: -)
 
 ### Firmware Management Profile
 
@@ -80,9 +81,9 @@
 
 ### Local Auth List Management Profile
 
-- LocalAuthListEnabled (type: boolean) (units: -)
-- LocalAuthListMaxLength (type: int) (units: -)
-- SendLocalListMaxLength (type: int) (units: -)
+- :x: LocalAuthListEnabled (type: boolean) (units: -)
+- :x: LocalAuthListMaxLength (type: int) (units: -)
+- :x: SendLocalListMaxLength (type: int) (units: -)
 
 ### Reservation Profile
 
@@ -90,14 +91,43 @@
 
 ### Smart Charging Profile
 
-- ChargeProfileMaxStackLevel (type: int) (units: -)
-- ChargingScheduleAllowedChargingRateUnit (type: CSL) (units: -)
-- ChargingScheduleMaxPeriods (type: int) (units: -)
-- MaxChargingProfilesInstalled (type: int) (units: -)
+- :x: ChargeProfileMaxStackLevel (type: int) (units: -)
+- :x: ChargingScheduleAllowedChargingRateUnit (type: CSL) (units: -)
+- :x: ChargingScheduleMaxPeriods (type: int) (units: -)
+- :x: MaxChargingProfilesInstalled (type: int) (units: -)
 
 ### Remote Trigger Profile
 
 - *none*
+
+## Wallbox configuration
+
+| Key | Value | Read-only |
+|---|---|---|
+| AuthorizeRemoteTxRequests | false | true |
+| ClockAlignedDataInterval | 0 | true |
+| ConnectionTimeOut | 180 | true |
+| GetConfigurationMaxKeys | 32 | true |
+| HeartbeatInterval | 60 | true |
+| LocalAuthorizeOffline | false | true |
+| LocalPreAuthorize | false | true |
+| MeterValuesAlignedData | Energy.Active.Import.Register | true |
+| MeterValuesSampledData | Energy.Active.Import.Register | true |
+| MeterValueSampleInterval | 60 | true |
+| NumberOfConnectors | 1 | true |
+| ResetRetries | 0 | true |
+| ConnectorPhaseRotation | 1.NotApplicable | true |
+| ConnectorPhaseRotationMaxLength | 1 | true |
+| StopTransactionOnEVSideDisconnect | true | true |
+| StopTransactionOnInvalidId | true | true |
+| StopTxnAlignedData |  | true |
+| StopTxnAlignedDataMaxLength | 0 | true |
+| StopTxnSampledData |  | true |
+| StopTxnSampledDataMaxLength | 0 | true |
+| SupportedFeatureProfiles | Core | true |
+| TransactionMessageAttempts | 10 | true |
+| TransactionMessageRetryInterval | 60 | true |
+| UnlockConnectorOnEVSideDisconnect | true | true |
 
 ## Example configuration
 
@@ -178,7 +208,7 @@
 | supervisionsystem | 2 | false |
 | controlchargebyremotecommand | true | false |
 | ocppversion | 1.6 | false |
-| ocppcentraladdress | wss://chargebox.server.example.com/OCPP16/dfa7453686e48956e49f8a96 | false |
+| ocppcentraladdress | wss://ocpp.example.com/OCPP16/453686e4 | false |
 | ocppboxlocalport | 8080 | false |
 | ocppboxpublicip | 192.168.1.123 | false |
 | ocppboxpublicport | 8080 | false |
