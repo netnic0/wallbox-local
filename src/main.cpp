@@ -66,12 +66,10 @@ bool mgos_sys_config_get_wifi_sta_enable(void) {
 
 static struct HLW8012 *hlw8012 = NULL;
 static bool ws_connected = false;
-static bool ws_charging = false;
 static char *tag_id = NULL;
 static char start_transaction_uuid[50];
 static char stop_transaction_uuid[50];
 static char default_uuid[50];
-static int transaction_id = 0;
 static struct mg_connection *ws_connection;
 
 static void generate_uuid(char *uuid) {
@@ -213,7 +211,7 @@ static void send_ocpp_meter_values() {
   length = sprintf(
       buf,
       "{\"connectorId\":1,\"transactionId\":%d,\"meterValue\":[{\"sampledValue\":[{\"unit\":\"Wh\",\"context\":\"Sample.Periodic\",\"value\":\"%d\"}],\"timestamp\":\"%s\"}]}",
-      transaction_id,
+      mgos_sys_config_get_ocpp_transaction_id(),
       energy,
       date_buffer);
   struct mg_str content = mg_mk_str_n(buf, length);
@@ -222,7 +220,7 @@ static void send_ocpp_meter_values() {
 }
 
 static mg_str stopTransaction(const char *reason) {
-  LOG(LL_INFO, ("Stop transaction %d for tag %s, reason %s", transaction_id, tag_id, reason));
+  LOG(LL_INFO, ("Stop transaction %d for tag %s, reason %s", mgos_sys_config_get_ocpp_transaction_id(), mgos_sys_config_get_ocpp_tag_id(), reason));
 
   send_ocpp_status_notification(OCPP_STATUS_FINISHING);
   mgos_gpio_write(mgos_sys_config_get_gpio_relay(), 0);
@@ -240,20 +238,25 @@ static mg_str stopTransaction(const char *reason) {
       buf,
       "{\"meterStop\": %d,\"transactionId\": \"%d\",\"idTag\": \"%s\",\"timestamp\": \"%s\",\"reason\": \"%s\"}",
       energy,
-      transaction_id,
-      tag_id,
+      mgos_sys_config_get_ocpp_transaction_id(),
+      mgos_sys_config_get_ocpp_tag_id(),
       date_buffer,
       reason);
   struct mg_str content = mg_mk_str_n(buf, length);
   LOG(LL_INFO, ("Sending stop transaction %.*s", length, buf));
   send_ocpp_request(ws_connection, OCPP_REQUEST_STOP_TRANSACTION, stop_transaction_uuid, content);
-  ws_charging = false;
   return mg_mk_str(OCPP_RESPONSE_ACCEPTED);
 }
 
 static mg_str stopTransaction(const char *payload, const char *reason) {
-  if (json_scanf(payload, strlen(payload), "{ transactionId:%d }", &transaction_id) > 0) {
-    return stopTransaction(reason);
+  int id = 0;
+  if (json_scanf(payload, strlen(payload), "{ transactionId:%d }", &id) > 0) {
+    if (id == mgos_sys_config_get_ocpp_transaction_id()) {
+      return stopTransaction(reason);
+    } else {
+      LOG(LL_INFO, ("Payload %s not matching current transaction id %d", payload, mgos_sys_config_get_ocpp_transaction_id()));
+      return mg_mk_str(OCPP_RESPONSE_REJECTED);
+    }
   } else {
     LOG(LL_INFO, ("Unable to find transaction id in payload %s", payload));
     return mg_mk_str(OCPP_RESPONSE_REJECTED);
@@ -294,7 +297,7 @@ static mg_str startTransaction(const char *payload) {
 static mg_str reset_soft() {
   LOG(LL_INFO, ("Performing soft reset"));
 
-  if (ws_charging) {
+  if (mgos_sys_config_get_ocpp_transaction_id()) {
     stopTransaction(OCPP_STOP_TRANSACTION_REASON_SOFTRESET);
   }
 
@@ -310,7 +313,7 @@ static mg_str reset_soft() {
 static mg_str reset_hard() {
   LOG(LL_INFO, ("Performing hard reset"));
 
-  if (ws_charging) {
+  if (mgos_sys_config_get_ocpp_transaction_id()) {
     stopTransaction(OCPP_STOP_TRANSACTION_REASON_HARDRESET);
   }
 
@@ -392,22 +395,25 @@ static mg_str updateFirmware(const char *payload) {
 static void handle_ocpp_response(struct mg_connection *nc, const char *id, const char *payload) {
   LOG(LL_INFO, ("Handle ocpp response with id %s", id));
   if (strcmp(id, start_transaction_uuid) == 0) {
+    int transaction_id;
     if (json_scanf(payload, strlen(payload), "{ transactionId:%d }", &transaction_id) > 0) {
       send_ocpp_status_notification(OCPP_STATUS_CHARGING);
-      ws_charging = true;
       mgos_hlw8012_resetEnergy(hlw8012);
       mgos_gpio_write(mgos_sys_config_get_gpio_relay(), 1);
+      mgos_sys_config_set_ocpp_transaction_id(transaction_id);
+      mgos_sys_config_set_ocpp_tag_id(tag_id);
+      mgos_sys_config_save(&mgos_sys_config, false, NULL);
       LOG(LL_INFO, ("Transaction started %d", transaction_id));
     } else {
       send_ocpp_status_notification(OCPP_STATUS_AVAILABLE);
-      ws_charging = false;
-      transaction_id = -1;
+      mgos_sys_config_set_ocpp_transaction_id(-1);
+      mgos_sys_config_save(&mgos_sys_config, false, NULL);
       LOG(LL_INFO, ("Failed to start transaction"));
     }
   } else if (strcmp(id, stop_transaction_uuid) == 0) {
     send_ocpp_status_notification(OCPP_STATUS_AVAILABLE);
-    ws_charging = false;
-    transaction_id = -1;
+    mgos_sys_config_set_ocpp_transaction_id(-1);
+    mgos_sys_config_save(&mgos_sys_config, false, NULL);
     mgos_hlw8012_resetEnergy(hlw8012);
   }
 
@@ -419,7 +425,6 @@ static void handle_ocpp_cmd(struct mg_connection *nc, const char *cmd, const cha
   struct mg_str data;
   if (strcmp(cmd, OCPP_REQUEST_GET_CONFIGURATION) == 0) {
     data = getConfiguration(payload);
-    send_ocpp_status_notification(OCPP_STATUS_AVAILABLE);
   } else if (strcmp(cmd, OCPP_REQUEST_REMOTE_START_TRANSACTION) == 0) {
     data = startTransaction(payload);
   } else if (strcmp(cmd, OCPP_REQUEST_REMOTE_STOP_TRANSACTION) == 0) {
@@ -461,6 +466,11 @@ static void ev_handler(struct mg_connection *nc, int ev, void *ev_data, void *us
         struct mg_str content = mg_mk_str(
             "{\"chargeBoxSerialNumber\": \"EV.534150204C616273204672616E6365\",\"chargePointModel\": \"SHELLY\",\"chargePointSerialNumber\": \"3N4453686F70204361656E\",\"chargePointVendor\": \"SAP Labs DShop Caen\",\"firmwareVersion\": \"0.0.1\"}");
         send_ocpp_request(nc, OCPP_REQUEST_BOOT_NOTIFICATION, "1212121", content);
+        if (mgos_sys_config_get_ocpp_transaction_id() > 0) {
+          send_ocpp_status_notification(OCPP_STATUS_CHARGING);
+        } else {
+          send_ocpp_status_notification(OCPP_STATUS_AVAILABLE);
+        }
       } else {
         LOG(LL_ERROR, ("-- Connection failed! HTTP code %d", hm->resp_code));
         /* Connection will be closed after this. */
@@ -582,7 +592,7 @@ static void timer_cb(void *arg) {
     LOG(LL_INFO, ("Energy Wh %d", energy / 3600));
     LOG(LL_INFO, ("ActivePower %d", mgos_hlw8012_readActivePower(hlw8012)));
 
-    if (ws_charging == true && transaction_id > 0) {
+    if (mgos_sys_config_get_ocpp_transaction_id() > 0) {
       send_ocpp_meter_values();
     }
   } else {

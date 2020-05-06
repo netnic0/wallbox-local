@@ -1,6 +1,54 @@
-# OCPP Configuration
+# OCPP Features
 
-## Required configuration keys by feature profile
+## Messages
+
+### Core Profile
+
+- :heavy_check_mark: Authorize
+- :heavy_check_mark: BootNotification
+- ChangeAvailability
+- ChangeConfiguration
+- ClearCache
+- DataTransfer
+- :heavy_check_mark: GetConfiguration
+- :heavy_check_mark: Heartbeat
+- :heavy_check_mark: MeterValues
+- :heavy_check_mark: RemoteStartTransaction
+- :heavy_check_mark: RemoteStopTransaction
+- :heavy_check_mark: Reset
+- StartTransaction
+- :heavy_check_mark: StatusNotification
+- StopTransaction
+- UnlockConnector
+
+### Firmware Management Profile
+
+- :x: GetDiagnostics
+- :x: DiagnosticsStatusNotification
+- :x: FirmwareStatusNotification
+- :x: UpdateFirmware
+
+### Local Auth List Management Profile
+
+- :x: GetLocalListVersion
+- :x: SendLocalList
+
+### Reservation Profile
+
+- :x: CancelReservation
+- :x: ReserveNow
+
+### Smart Charging Profile
+
+- :x: ClearChargingProfile
+- :x: GetCompositeSchedule
+- :x: SetChargingProfile
+
+### Remote Trigger Profile
+
+- :x: TriggerMessage
+
+## Required configuration keys
 
 ### Core Profile
 
@@ -51,7 +99,7 @@
 
 - *none*
 
-## Example
+## Example configuration
 
 | Key | Value | Read-only |
 |---|---|---|

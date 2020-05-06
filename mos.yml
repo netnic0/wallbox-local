@@ -33,6 +33,8 @@ config_schema:
   - ["ocpp", "o", {"OCPP settings"}]
   - ["ocpp.url", "s", "", {"Url of the OCPP Backend"}]
   - ["ocpp.name", "s", "", {"Name of the wallbox in OCPP Backend"}]
+  - ["ocpp.transaction_id", "i", -1, {"Id of the current transaction"}]
+  - ["ocpp.tag_id", "s", "", {"Tag used for the current transaction"}]
 
 libs:
   - origin: https://github.com/mongoose-os-libs/mbedtls
