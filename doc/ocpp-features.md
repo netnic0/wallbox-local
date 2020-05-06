@@ -104,6 +104,7 @@
 
 | Key | Value | Read-only |
 |---|---|---|
+| AuthorizationCacheEnabled | false | true |
 | AuthorizeRemoteTxRequests | false | true |
 | ClockAlignedDataInterval | 0 | true |
 | ConnectionTimeOut | 180 | true |
