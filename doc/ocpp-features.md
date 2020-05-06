@@ -99,6 +99,35 @@
 
 - *none*
 
+## Wallbox configuration
+
+| Key | Value | Read-only |
+|---|---|---|
+| AuthorizeRemoteTxRequests | false | true |
+| ClockAlignedDataInterval | 0 | true |
+| ConnectionTimeOut | 30 | true |
+| GetConfigurationMaxKeys | 32 | true |
+| HeartbeatInterval | 180 | false |
+| LocalAuthorizeOffline | false | true |
+| LocalPreAuthorize | false | true |
+| MeterValuesAlignedData | Energy.Active.Import.Register | true |
+| MeterValuesSampledData | Energy.Active.Import.Register | true |
+| MeterValueSampleInterval | 60 | true |
+| NumberOfConnectors | 1 | true |
+| ResetRetries | 0 | true |
+| ConnectorPhaseRotation | 0.NotApplicable | true |
+| ConnectorPhaseRotationMaxLength | 1 | true |
+| StopTransactionOnEVSideDisconnect | true | true |
+| StopTransactionOnInvalidId | true | true |
+| StopTxnAlignedData |  | true |
+| StopTxnAlignedDataMaxLength | 0 | true |
+| StopTxnSampledData |  | true |
+| StopTxnSampledDataMaxLength | 0 | true |
+| SupportedFeatureProfiles | Core | true |
+| TransactionMessageAttempts | 10 | false |
+| TransactionMessageRetryInterval | 60 | false |
+| UnlockConnectorOnEVSideDisconnect | true | true |
+
 ## Example configuration
 
 | Key | Value | Read-only |
