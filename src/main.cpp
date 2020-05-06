@@ -36,8 +36,9 @@
 #define OCPP_STOP_TRANSACTION_REASON_SOFTRESET "SoftReset"
 #define OCPP_STOP_TRANSACTION_REASON_HARDRESET "HardReset"
 
-#define OCPP_RESPONSE_ACCEPTED "{\"status\": \"Accepted\"}"
-#define OCPP_RESPONSE_REJECTED "{\"status\": \"Rejected\"}"
+#define OCPP_RESPONSE_ACCEPTED "{\"status\":\"Accepted\"}"
+#define OCPP_RESPONSE_REJECTED "{\"status\":\"Rejected\"}"
+#define OCPP_RESPONSE_NOTSUPPORTED "{\"status\":\"NotSupported\"}"
 
 #define OCPP_REQUEST_BOOT_NOTIFICATION "BootNotification"
 #define OCPP_REQUEST_GET_CONFIGURATION "GetConfiguration"
@@ -51,6 +52,8 @@
 #define OCPP_REQUEST_RESET "Reset"
 #define OCPP_REQUEST_UPDATE_FIRMWARE "UpdateFirmware"
 #define OCPP_REQUEST_CLEAR_CACHE "ClearCache"
+#define OCPP_REQUEST_UNLOCK_CONNECTOR "UnlockConnector"
+#define OCPP_REQUEST_CHANGE_AVAILABILITY "ChangeAvailability"
 
 #ifndef MGOS_HAVE_WIFI
 const char *mgos_sys_config_get_wifi_sta_ssid(void) {
@@ -379,11 +382,6 @@ static mg_str getConfiguration(const char *payload) {
       "]}");
 }
 
-static mg_str clearCache(const char *payload) {
-  return mg_mk_str(OCPP_RESPONSE_REJECTED);
-  (void) payload;
-}
-
 static mg_str updateFirmware(const char *payload) {
   char *location = NULL;
 
@@ -440,7 +438,11 @@ static void handle_ocpp_cmd(struct mg_connection *nc, const char *cmd, const cha
   } else if (strcmp(cmd, OCPP_REQUEST_UPDATE_FIRMWARE) == 0) {
     data = updateFirmware(payload);
   } else if (strcmp(cmd, OCPP_REQUEST_CLEAR_CACHE) == 0) {
-    data = clearCache(payload);
+    data = mg_mk_str(OCPP_RESPONSE_REJECTED);
+  } else if (strcmp(cmd, OCPP_REQUEST_UNLOCK_CONNECTOR) == 0) {
+    data = mg_mk_str(OCPP_RESPONSE_NOTSUPPORTED);
+  } else if (strcmp(cmd, OCPP_REQUEST_CHANGE_AVAILABILITY) == 0) {
+    data = mg_mk_str(OCPP_RESPONSE_REJECTED);
   } else {
     data = mg_mk_str("{}");
   }

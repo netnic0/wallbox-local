@@ -1,6 +1,11 @@
 {
     "configurationKey": [
         {
+            "key": "AuthorizationCacheEnabled",
+            "readonly": true,
+            "value": false
+        },
+        {
             "key": "AuthorizeRemoteTxRequests",
             "readonly": true,
             "value": false

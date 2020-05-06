@@ -7,9 +7,9 @@
 
 - :heavy_check_mark: Authorize
 - :heavy_check_mark: BootNotification
-- ChangeAvailability
+- :heavy_check_mark: ChangeAvailability
 - ChangeConfiguration
-- ClearCache
+- :heavy_check_mark: ClearCache
 - DataTransfer
 - :heavy_check_mark: GetConfiguration
 - :heavy_check_mark: Heartbeat
@@ -17,10 +17,10 @@
 - :heavy_check_mark: RemoteStartTransaction
 - :heavy_check_mark: RemoteStopTransaction
 - :heavy_check_mark: Reset
-- StartTransaction
+- :no_entry: StartTransaction
 - :heavy_check_mark: StatusNotification
-- StopTransaction
-- UnlockConnector
+- :no_entry: StopTransaction
+- :heavy_check_mark: UnlockConnector
 
 ### Firmware Management Profile
 
@@ -104,6 +104,7 @@
 
 | Key | Value | Read-only |
 |---|---|---|
+| AuthorizationCacheEnabled | false | true |
 | AuthorizeRemoteTxRequests | false | true |
 | ClockAlignedDataInterval | 0 | true |
 | ConnectionTimeOut | 180 | true |
