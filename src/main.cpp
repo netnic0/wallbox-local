@@ -42,6 +42,7 @@
 
 #define OCPP_REQUEST_BOOT_NOTIFICATION "BootNotification"
 #define OCPP_REQUEST_GET_CONFIGURATION "GetConfiguration"
+#define OCPP_REQUEST_CHANGE_CONFIGURATION "ChangeConfiguration"
 #define OCPP_REQUEST_METER_VALUES "MeterValues"
 #define OCPP_REQUEST_REMOTE_START_TRANSACTION "RemoteStartTransaction"
 #define OCPP_REQUEST_REMOTE_STOP_TRANSACTION "RemoteStopTransaction"
@@ -154,7 +155,7 @@ static void shelly_get_uid_handler(struct mg_rpc_request_info *ri,
 }
 
 static void send_ocpp_response(struct mg_connection *nc, const char *id, struct mg_str data) {
-  char buf[1024];
+  char buf[2048];
   int length;
   length = sprintf(buf, "[3, \"%s\", %s]", id, data.p);
   LOG(LL_INFO, ("Sending response %.*s", length, buf));
@@ -352,6 +353,7 @@ static mg_str reset(const char *payload) {
 
 static mg_str getConfiguration(const char *payload) {
   LOG(LL_DEBUG, ("OCPP GetConfiguration request: %s", payload));
+
   return mg_mk_str(
       "{\"configurationKey\":["
       "{\"key\":\"AuthorizationCacheEnabled\",\"readonly\":true,\"value\":false},"
@@ -359,7 +361,7 @@ static mg_str getConfiguration(const char *payload) {
       "{\"key\":\"ClockAlignedDataInterval\",\"readonly\":true,\"value\":0},"
       "{\"key\":\"ConnectionTimeOut\",\"readonly\":true,\"value\":180},"
       "{\"key\":\"GetConfigurationMaxKeys\",\"readonly\":true,\"value\":32},"
-      "{\"key\":\"HeartbeatInterval\",\"readonly\":true,\"value\":60},"
+      "{\"key\":\"HeartbeatInterval\",\"readonly\":false,\"value\":60},"
       "{\"key\":\"LocalAuthorizeOffline\",\"readonly\":true,\"value\":false},"
       "{\"key\":\"LocalPreAuthorize\",\"readonly\":true,\"value\":false},"
       "{\"key\":\"MeterValuesAlignedData\",\"readonly\":true,\"value\":\"Energy.Active.Import.Register\"},"
@@ -380,6 +382,74 @@ static mg_str getConfiguration(const char *payload) {
       "{\"key\":\"TransactionMessageRetryInterval\",\"readonly\":true,\"value\":60},"
       "{\"key\":\"UnlockConnectorOnEVSideDisconnect\",\"readonly\":true,\"value\":true}"
       "]}");
+  /*
+    char buf[1700];
+    int length;
+
+    length = sprintf(buf,
+                     "{\"configurationKey\":["
+                     "{\"key\":\"AuthorizationCacheEnabled\",\"readonly\":true,\"value\":false},"
+                     "{\"key\":\"AuthorizeRemoteTxRequests\",\"readonly\":true,\"value\":false},"
+                     "{\"key\":\"ClockAlignedDataInterval\",\"readonly\":true,\"value\":0},"
+                     "{\"key\":\"ConnectionTimeOut\",\"readonly\":true,\"value\":180},"
+                     "{\"key\":\"GetConfigurationMaxKeys\",\"readonly\":true,\"value\":32},"
+                     "{\"key\":\"HeartbeatInterval\",\"readonly\":false,\"value\":%d},"
+                     "{\"key\":\"LocalAuthorizeOffline\",\"readonly\":true,\"value\":false},"
+                     "{\"key\":\"LocalPreAuthorize\",\"readonly\":true,\"value\":false},"
+                     "{\"key\":\"MeterValuesAlignedData\",\"readonly\":true,\"value\":\"Energy.Active.Import.Register\"},"
+                     "{\"key\":\"MeterValuesSampledData\",\"readonly\":true,\"value\":\"Energy.Active.Import.Register\"},"
+                     "{\"key\":\"MeterValueSampleInterval\",\"readonly\":true,\"value\":60},"
+                     "{\"key\":\"NumberOfConnectors\",\"readonly\":true,\"value\":1},"
+                     "{\"key\":\"ResetRetries\",\"readonly\":true,\"value\":0},"
+                     "{\"key\":\"ConnectorPhaseRotation\",\"readonly\":true,\"value\":\"1.NotApplicable\"},"
+                     "{\"key\":\"ConnectorPhaseRotationMaxLength\",\"readonly\":true,\"value\":1},"
+                     "{\"key\":\"StopTransactionOnEVSideDisconnect\",\"readonly\":true,\"value\":true},"
+                     "{\"key\":\"StopTransactionOnInvalidId\",\"readonly\":true,\"value\":true},"
+                     "{\"key\":\"StopTxnAlignedData\",\"readonly\":true,\"value\":\"\"},"
+                     "{\"key\":\"StopTxnAlignedDataMaxLength\",\"readonly\":true,\"value\":0},"
+                     "{\"key\":\"StopTxnSampledData\",\"readonly\":true,\"value\":\"\"},"
+                     "{\"key\":\"StopTxnSampledDataMaxLength\",\"readonly\":true,\"value\":0},"
+                     "{\"key\":\"SupportedFeatureProfiles\",\"readonly\":true,\"value\":\"Core\"},"
+                     "{\"key\":\"TransactionMessageAttempts\",\"readonly\":true,\"value\":10},"
+                     "{\"key\":\"TransactionMessageRetryInterval\",\"readonly\":true,\"value\":60},"
+                     "{\"key\":\"UnlockConnectorOnEVSideDisconnect\",\"readonly\":true,\"value\":true}"
+                     "]}",
+                     mgos_sys_config_get_ocpp_config_heartbeat_interval());
+
+    // return mg_mk_str(buf);
+    return mg_mk_str_n(buf, length);
+    */
+}
+
+static mg_str changeConfiguration(const char *payload) {
+  LOG(LL_DEBUG, ("OCPP ChangeConfiguration request: %s", payload));
+  char *key = NULL;
+
+  if (json_scanf(payload, strlen(payload), "{ key:%Q }", &key) > 0) {
+    // HeartbeatInterval
+    if (strcmp("HeartbeatInterval", key) == 0) {
+      int value;
+      if (json_scanf(payload, strlen(payload), "{ value:%d }", &value) > 0) {
+        LOG(LL_DEBUG, ("Change configuration key \"%s\", value \"%d\"", key, value));
+        if (value >= 60) {
+          mgos_sys_config_set_ocpp_config_heartbeat_interval(value);
+          mgos_sys_config_save_level(&mgos_sys_config, MGOS_CONFIG_LEVEL_USER, false, NULL);
+          return mg_mk_str(OCPP_RESPONSE_ACCEPTED);
+        } else {
+          LOG(LL_ERROR, ("ChangeConfiguration request with incorrect value for key: \"%s\", value \"%d\"", key, value));
+        }
+      } else {
+        LOG(LL_ERROR, ("ChangeConfiguration request without value for key: \"%s\"", key));
+      }
+    } else {
+      LOG(LL_ERROR, ("ChangeConfiguration request for unsupported key: \"%s\"", key));
+      return mg_mk_str(OCPP_RESPONSE_NOTSUPPORTED);
+    }
+  } else {
+    LOG(LL_ERROR, ("No key for ChangeConfiguration request"));
+  }
+
+  return mg_mk_str(OCPP_RESPONSE_REJECTED);
 }
 
 static mg_str updateFirmware(const char *payload) {
@@ -429,6 +499,8 @@ static void handle_ocpp_cmd(struct mg_connection *nc, const char *cmd, const cha
   struct mg_str data;
   if (strcmp(cmd, OCPP_REQUEST_GET_CONFIGURATION) == 0) {
     data = getConfiguration(payload);
+  } else if (strcmp(cmd, OCPP_REQUEST_CHANGE_CONFIGURATION) == 0) {
+    data = changeConfiguration(payload);
   } else if (strcmp(cmd, OCPP_REQUEST_REMOTE_START_TRANSACTION) == 0) {
     data = startTransaction(payload);
   } else if (strcmp(cmd, OCPP_REQUEST_REMOTE_STOP_TRANSACTION) == 0) {

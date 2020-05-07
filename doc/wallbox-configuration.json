@@ -27,7 +27,7 @@
         },
         {
             "key": "HeartbeatInterval",
-            "readonly": true,
+            "readonly": false,
             "value": 60
         },
         {

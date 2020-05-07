@@ -109,7 +109,7 @@
 | ClockAlignedDataInterval | 0 | true |
 | ConnectionTimeOut | 180 | true |
 | GetConfigurationMaxKeys | 32 | true |
-| HeartbeatInterval | 60 | true |
+| HeartbeatInterval | 60 | false |
 | LocalAuthorizeOffline | false | true |
 | LocalPreAuthorize | false | true |
 | MeterValuesAlignedData | Energy.Active.Import.Register | true |
