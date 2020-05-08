@@ -156,9 +156,10 @@ static void shelly_get_uid_handler(struct mg_rpc_request_info *ri,
 }
 
 static void send_ocpp_response(struct mg_connection *nc, const char *id, struct mg_str data) {
-  char buf[2048];
+  char buf[2048], copy[2048];
   int length;
-  length = sprintf(buf, "[3, \"%s\", %s]", id, data.p);
+  strcpy(copy, data.p);
+  length = sprintf(buf, "[3, \"%s\", %s]", id, copy);
   LOG(LL_INFO, ("Sending response %.*s", length, buf));
   mg_send_websocket_frame(nc, WEBSOCKET_OP_TEXT, buf, length);
   time(&last_ocpp_interaction);
@@ -361,71 +362,41 @@ static mg_str reset(const char *payload) {
 }
 
 static mg_str getConfiguration(const char *payload) {
+  char buf[1800];
+  int length;
   LOG(LL_INFO, ("OCPP GetConfiguration request: %s", payload));
 
-  return mg_mk_str(
-      "{\"configurationKey\":["
-      "{\"key\":\"AuthorizationCacheEnabled\",\"readonly\":true,\"value\":false},"
-      "{\"key\":\"AuthorizeRemoteTxRequests\",\"readonly\":true,\"value\":false},"
-      "{\"key\":\"ClockAlignedDataInterval\",\"readonly\":true,\"value\":0},"
-      "{\"key\":\"ConnectionTimeOut\",\"readonly\":true,\"value\":180},"
-      "{\"key\":\"GetConfigurationMaxKeys\",\"readonly\":true,\"value\":32},"
-      "{\"key\":\"HeartbeatInterval\",\"readonly\":false,\"value\":60},"
-      "{\"key\":\"LocalAuthorizeOffline\",\"readonly\":true,\"value\":false},"
-      "{\"key\":\"LocalPreAuthorize\",\"readonly\":true,\"value\":false},"
-      "{\"key\":\"MeterValuesAlignedData\",\"readonly\":true,\"value\":\"Energy.Active.Import.Register\"},"
-      "{\"key\":\"MeterValuesSampledData\",\"readonly\":true,\"value\":\"Energy.Active.Import.Register\"},"
-      "{\"key\":\"MeterValueSampleInterval\",\"readonly\":true,\"value\":60},"
-      "{\"key\":\"NumberOfConnectors\",\"readonly\":true,\"value\":1},"
-      "{\"key\":\"ResetRetries\",\"readonly\":true,\"value\":0},"
-      "{\"key\":\"ConnectorPhaseRotation\",\"readonly\":true,\"value\":\"1.NotApplicable\"},"
-      "{\"key\":\"ConnectorPhaseRotationMaxLength\",\"readonly\":true,\"value\":1},"
-      "{\"key\":\"StopTransactionOnEVSideDisconnect\",\"readonly\":true,\"value\":true},"
-      "{\"key\":\"StopTransactionOnInvalidId\",\"readonly\":true,\"value\":true},"
-      "{\"key\":\"StopTxnAlignedData\",\"readonly\":true,\"value\":\"\"},"
-      "{\"key\":\"StopTxnAlignedDataMaxLength\",\"readonly\":true,\"value\":0},"
-      "{\"key\":\"StopTxnSampledData\",\"readonly\":true,\"value\":\"\"},"
-      "{\"key\":\"StopTxnSampledDataMaxLength\",\"readonly\":true,\"value\":0},"
-      "{\"key\":\"SupportedFeatureProfiles\",\"readonly\":true,\"value\":\"Core\"},"
-      "{\"key\":\"TransactionMessageAttempts\",\"readonly\":true,\"value\":10},"
-      "{\"key\":\"TransactionMessageRetryInterval\",\"readonly\":true,\"value\":60},"
-      "{\"key\":\"UnlockConnectorOnEVSideDisconnect\",\"readonly\":true,\"value\":true}"
-      "]}");
-  /*
-  char buf[1800];
+  length = sprintf(buf,
+                   "{\"configurationKey\":["
+                   "{\"key\":\"AuthorizationCacheEnabled\",\"readonly\":true,\"value\":false},"
+                   "{\"key\":\"AuthorizeRemoteTxRequests\",\"readonly\":true,\"value\":false},"
+                   "{\"key\":\"ClockAlignedDataInterval\",\"readonly\":true,\"value\":0},"
+                   "{\"key\":\"ConnectionTimeOut\",\"readonly\":true,\"value\":180},"
+                   "{\"key\":\"GetConfigurationMaxKeys\",\"readonly\":true,\"value\":32},"
+                   "{\"key\":\"HeartbeatInterval\",\"readonly\":false,\"value\":%d},"
+                   "{\"key\":\"LocalAuthorizeOffline\",\"readonly\":true,\"value\":false},"
+                   "{\"key\":\"LocalPreAuthorize\",\"readonly\":true,\"value\":false},"
+                   "{\"key\":\"MeterValuesAlignedData\",\"readonly\":true,\"value\":\"Energy.Active.Import.Register\"},"
+                   "{\"key\":\"MeterValuesSampledData\",\"readonly\":true,\"value\":\"Energy.Active.Import.Register\"},"
+                   "{\"key\":\"MeterValueSampleInterval\",\"readonly\":true,\"value\":60},"
+                   "{\"key\":\"NumberOfConnectors\",\"readonly\":true,\"value\":1},"
+                   "{\"key\":\"ResetRetries\",\"readonly\":true,\"value\":0},"
+                   "{\"key\":\"ConnectorPhaseRotation\",\"readonly\":true,\"value\":\"1.NotApplicable\"},"
+                   "{\"key\":\"ConnectorPhaseRotationMaxLength\",\"readonly\":true,\"value\":1},"
+                   "{\"key\":\"StopTransactionOnEVSideDisconnect\",\"readonly\":true,\"value\":true},"
+                   "{\"key\":\"StopTransactionOnInvalidId\",\"readonly\":true,\"value\":true},"
+                   "{\"key\":\"StopTxnAlignedData\",\"readonly\":true,\"value\":\"\"},"
+                   "{\"key\":\"StopTxnAlignedDataMaxLength\",\"readonly\":true,\"value\":0},"
+                   "{\"key\":\"StopTxnSampledData\",\"readonly\":true,\"value\":\"\"},"
+                   "{\"key\":\"StopTxnSampledDataMaxLength\",\"readonly\":true,\"value\":0},"
+                   "{\"key\":\"SupportedFeatureProfiles\",\"readonly\":true,\"value\":\"Core\"},"
+                   "{\"key\":\"TransactionMessageAttempts\",\"readonly\":true,\"value\":10},"
+                   "{\"key\":\"TransactionMessageRetryInterval\",\"readonly\":true,\"value\":60},"
+                   "{\"key\":\"UnlockConnectorOnEVSideDisconnect\",\"readonly\":true,\"value\":true}"
+                   "]}",
+                   mgos_sys_config_get_ocpp_config_heartbeat_interval());
 
-  sprintf(buf,
-          "{\"configurationKey\":["
-          "{\"key\":\"AuthorizationCacheEnabled\",\"readonly\":true,\"value\":false},"
-          "{\"key\":\"AuthorizeRemoteTxRequests\",\"readonly\":true,\"value\":false},"
-          "{\"key\":\"ClockAlignedDataInterval\",\"readonly\":true,\"value\":0},"
-          "{\"key\":\"ConnectionTimeOut\",\"readonly\":true,\"value\":180},"
-          "{\"key\":\"GetConfigurationMaxKeys\",\"readonly\":true,\"value\":32},"
-          "{\"key\":\"HeartbeatInterval\",\"readonly\":false,\"value\":%d},"
-          "{\"key\":\"LocalAuthorizeOffline\",\"readonly\":true,\"value\":false},"
-          "{\"key\":\"LocalPreAuthorize\",\"readonly\":true,\"value\":false},"
-          "{\"key\":\"MeterValuesAlignedData\",\"readonly\":true,\"value\":\"Energy.Active.Import.Register\"},"
-          "{\"key\":\"MeterValuesSampledData\",\"readonly\":true,\"value\":\"Energy.Active.Import.Register\"},"
-          "{\"key\":\"MeterValueSampleInterval\",\"readonly\":true,\"value\":60},"
-          "{\"key\":\"NumberOfConnectors\",\"readonly\":true,\"value\":1},"
-          "{\"key\":\"ResetRetries\",\"readonly\":true,\"value\":0},"
-          "{\"key\":\"ConnectorPhaseRotation\",\"readonly\":true,\"value\":\"1.NotApplicable\"},"
-          "{\"key\":\"ConnectorPhaseRotationMaxLength\",\"readonly\":true,\"value\":1},"
-          "{\"key\":\"StopTransactionOnEVSideDisconnect\",\"readonly\":true,\"value\":true},"
-          "{\"key\":\"StopTransactionOnInvalidId\",\"readonly\":true,\"value\":true},"
-          "{\"key\":\"StopTxnAlignedData\",\"readonly\":true,\"value\":\"\"},"
-          "{\"key\":\"StopTxnAlignedDataMaxLength\",\"readonly\":true,\"value\":0},"
-          "{\"key\":\"StopTxnSampledData\",\"readonly\":true,\"value\":\"\"},"
-          "{\"key\":\"StopTxnSampledDataMaxLength\",\"readonly\":true,\"value\":0},"
-          "{\"key\":\"SupportedFeatureProfiles\",\"readonly\":true,\"value\":\"Core\"},"
-          "{\"key\":\"TransactionMessageAttempts\",\"readonly\":true,\"value\":10},"
-          "{\"key\":\"TransactionMessageRetryInterval\",\"readonly\":true,\"value\":60},"
-          "{\"key\":\"UnlockConnectorOnEVSideDisconnect\",\"readonly\":true,\"value\":true}"
-          "]}",
-          mgos_sys_config_get_ocpp_config_heartbeat_interval());
-
-  return mg_mk_str(buf);
-  */
+  return mg_mk_str_n(buf, length);
 }
 
 static mg_str changeConfiguration(const char *payload) {
