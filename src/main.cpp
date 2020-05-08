@@ -75,6 +75,7 @@ static char start_transaction_uuid[50];
 static char stop_transaction_uuid[50];
 static char default_uuid[50];
 static struct mg_connection *ws_connection;
+static time_t last_ocpp_interaction;
 
 static void generate_uuid(char *uuid) {
   int random = mgos_rand_range(0.0, 999.0);
@@ -160,6 +161,7 @@ static void send_ocpp_response(struct mg_connection *nc, const char *id, struct 
   length = sprintf(buf, "[3, \"%s\", %s]", id, data.p);
   LOG(LL_INFO, ("Sending response %.*s", length, buf));
   mg_send_websocket_frame(nc, WEBSOCKET_OP_TEXT, buf, length);
+  time(&last_ocpp_interaction);
 }
 
 static void send_ocpp_request(struct mg_connection *nc, const char *cmd, const char *id, struct mg_str data) {
@@ -168,6 +170,7 @@ static void send_ocpp_request(struct mg_connection *nc, const char *cmd, const c
   length = sprintf(buf, "[2, \"%s\", \"%s\", %s]", id, cmd, data.p);
   LOG(LL_INFO, ("Sending request %.*s", length, buf));
   mg_send_websocket_frame(nc, WEBSOCKET_OP_TEXT, buf, length);
+  time(&last_ocpp_interaction);
 }
 
 static void get_current_date(char *buffer) {
@@ -182,8 +185,14 @@ static void get_current_date(char *buffer) {
 }
 
 static void send_ocpp_heartbeat() {
-  generate_uuid(default_uuid);
-  send_ocpp_request(ws_connection, OCPP_REQUEST_HEARTBEAT, default_uuid, mg_mk_str("{}"));
+  time_t now;
+  time(&now);
+  int interval = mgos_sys_config_get_ocpp_config_heartbeat_interval();
+  double diff = difftime(now, last_ocpp_interaction);
+  if (diff >= interval) {
+    generate_uuid(default_uuid);
+    send_ocpp_request(ws_connection, OCPP_REQUEST_HEARTBEAT, default_uuid, mg_mk_str("{}"));
+  }
 }
 
 static void send_ocpp_status_notification(const char *status) {
@@ -335,7 +344,7 @@ static mg_str reset(const char *payload) {
   char *reset_type = NULL;
 
   if (json_scanf(payload, strlen(payload), "{ type:%Q }", &reset_type) > 0) {
-    LOG(LL_DEBUG, ("Resetting in mode %s", reset_type));
+    LOG(LL_INFO, ("Resetting in mode %s", reset_type));
 
     if (strcmp(OCPP_RESET_TYPE_SOFT, reset_type) == 0) {
       return reset_soft();
@@ -352,7 +361,7 @@ static mg_str reset(const char *payload) {
 }
 
 static mg_str getConfiguration(const char *payload) {
-  LOG(LL_DEBUG, ("OCPP GetConfiguration request: %s", payload));
+  LOG(LL_INFO, ("OCPP GetConfiguration request: %s", payload));
 
   return mg_mk_str(
       "{\"configurationKey\":["
@@ -383,46 +392,44 @@ static mg_str getConfiguration(const char *payload) {
       "{\"key\":\"UnlockConnectorOnEVSideDisconnect\",\"readonly\":true,\"value\":true}"
       "]}");
   /*
-    char buf[1700];
-    int length;
+  char buf[1800];
 
-    length = sprintf(buf,
-                     "{\"configurationKey\":["
-                     "{\"key\":\"AuthorizationCacheEnabled\",\"readonly\":true,\"value\":false},"
-                     "{\"key\":\"AuthorizeRemoteTxRequests\",\"readonly\":true,\"value\":false},"
-                     "{\"key\":\"ClockAlignedDataInterval\",\"readonly\":true,\"value\":0},"
-                     "{\"key\":\"ConnectionTimeOut\",\"readonly\":true,\"value\":180},"
-                     "{\"key\":\"GetConfigurationMaxKeys\",\"readonly\":true,\"value\":32},"
-                     "{\"key\":\"HeartbeatInterval\",\"readonly\":false,\"value\":%d},"
-                     "{\"key\":\"LocalAuthorizeOffline\",\"readonly\":true,\"value\":false},"
-                     "{\"key\":\"LocalPreAuthorize\",\"readonly\":true,\"value\":false},"
-                     "{\"key\":\"MeterValuesAlignedData\",\"readonly\":true,\"value\":\"Energy.Active.Import.Register\"},"
-                     "{\"key\":\"MeterValuesSampledData\",\"readonly\":true,\"value\":\"Energy.Active.Import.Register\"},"
-                     "{\"key\":\"MeterValueSampleInterval\",\"readonly\":true,\"value\":60},"
-                     "{\"key\":\"NumberOfConnectors\",\"readonly\":true,\"value\":1},"
-                     "{\"key\":\"ResetRetries\",\"readonly\":true,\"value\":0},"
-                     "{\"key\":\"ConnectorPhaseRotation\",\"readonly\":true,\"value\":\"1.NotApplicable\"},"
-                     "{\"key\":\"ConnectorPhaseRotationMaxLength\",\"readonly\":true,\"value\":1},"
-                     "{\"key\":\"StopTransactionOnEVSideDisconnect\",\"readonly\":true,\"value\":true},"
-                     "{\"key\":\"StopTransactionOnInvalidId\",\"readonly\":true,\"value\":true},"
-                     "{\"key\":\"StopTxnAlignedData\",\"readonly\":true,\"value\":\"\"},"
-                     "{\"key\":\"StopTxnAlignedDataMaxLength\",\"readonly\":true,\"value\":0},"
-                     "{\"key\":\"StopTxnSampledData\",\"readonly\":true,\"value\":\"\"},"
-                     "{\"key\":\"StopTxnSampledDataMaxLength\",\"readonly\":true,\"value\":0},"
-                     "{\"key\":\"SupportedFeatureProfiles\",\"readonly\":true,\"value\":\"Core\"},"
-                     "{\"key\":\"TransactionMessageAttempts\",\"readonly\":true,\"value\":10},"
-                     "{\"key\":\"TransactionMessageRetryInterval\",\"readonly\":true,\"value\":60},"
-                     "{\"key\":\"UnlockConnectorOnEVSideDisconnect\",\"readonly\":true,\"value\":true}"
-                     "]}",
-                     mgos_sys_config_get_ocpp_config_heartbeat_interval());
+  sprintf(buf,
+          "{\"configurationKey\":["
+          "{\"key\":\"AuthorizationCacheEnabled\",\"readonly\":true,\"value\":false},"
+          "{\"key\":\"AuthorizeRemoteTxRequests\",\"readonly\":true,\"value\":false},"
+          "{\"key\":\"ClockAlignedDataInterval\",\"readonly\":true,\"value\":0},"
+          "{\"key\":\"ConnectionTimeOut\",\"readonly\":true,\"value\":180},"
+          "{\"key\":\"GetConfigurationMaxKeys\",\"readonly\":true,\"value\":32},"
+          "{\"key\":\"HeartbeatInterval\",\"readonly\":false,\"value\":%d},"
+          "{\"key\":\"LocalAuthorizeOffline\",\"readonly\":true,\"value\":false},"
+          "{\"key\":\"LocalPreAuthorize\",\"readonly\":true,\"value\":false},"
+          "{\"key\":\"MeterValuesAlignedData\",\"readonly\":true,\"value\":\"Energy.Active.Import.Register\"},"
+          "{\"key\":\"MeterValuesSampledData\",\"readonly\":true,\"value\":\"Energy.Active.Import.Register\"},"
+          "{\"key\":\"MeterValueSampleInterval\",\"readonly\":true,\"value\":60},"
+          "{\"key\":\"NumberOfConnectors\",\"readonly\":true,\"value\":1},"
+          "{\"key\":\"ResetRetries\",\"readonly\":true,\"value\":0},"
+          "{\"key\":\"ConnectorPhaseRotation\",\"readonly\":true,\"value\":\"1.NotApplicable\"},"
+          "{\"key\":\"ConnectorPhaseRotationMaxLength\",\"readonly\":true,\"value\":1},"
+          "{\"key\":\"StopTransactionOnEVSideDisconnect\",\"readonly\":true,\"value\":true},"
+          "{\"key\":\"StopTransactionOnInvalidId\",\"readonly\":true,\"value\":true},"
+          "{\"key\":\"StopTxnAlignedData\",\"readonly\":true,\"value\":\"\"},"
+          "{\"key\":\"StopTxnAlignedDataMaxLength\",\"readonly\":true,\"value\":0},"
+          "{\"key\":\"StopTxnSampledData\",\"readonly\":true,\"value\":\"\"},"
+          "{\"key\":\"StopTxnSampledDataMaxLength\",\"readonly\":true,\"value\":0},"
+          "{\"key\":\"SupportedFeatureProfiles\",\"readonly\":true,\"value\":\"Core\"},"
+          "{\"key\":\"TransactionMessageAttempts\",\"readonly\":true,\"value\":10},"
+          "{\"key\":\"TransactionMessageRetryInterval\",\"readonly\":true,\"value\":60},"
+          "{\"key\":\"UnlockConnectorOnEVSideDisconnect\",\"readonly\":true,\"value\":true}"
+          "]}",
+          mgos_sys_config_get_ocpp_config_heartbeat_interval());
 
-    // return mg_mk_str(buf);
-    return mg_mk_str_n(buf, length);
-    */
+  return mg_mk_str(buf);
+  */
 }
 
 static mg_str changeConfiguration(const char *payload) {
-  LOG(LL_DEBUG, ("OCPP ChangeConfiguration request: %s", payload));
+  LOG(LL_INFO, ("OCPP ChangeConfiguration request: %s", payload));
   char *key = NULL;
 
   if (json_scanf(payload, strlen(payload), "{ key:%Q }", &key) > 0) {
@@ -430,25 +437,23 @@ static mg_str changeConfiguration(const char *payload) {
     if (strcmp("HeartbeatInterval", key) == 0) {
       int value;
       if (json_scanf(payload, strlen(payload), "{ value:%d }", &value) > 0) {
-        LOG(LL_DEBUG, ("Change configuration key \"%s\", value \"%d\"", key, value));
+        LOG(LL_INFO, ("Change configuration key \"%s\", value \"%d\"", key, value));
         if (value >= 60) {
           mgos_sys_config_set_ocpp_config_heartbeat_interval(value);
           mgos_sys_config_save_level(&mgos_sys_config, MGOS_CONFIG_LEVEL_USER, false, NULL);
           return mg_mk_str(OCPP_RESPONSE_ACCEPTED);
-        } else {
-          LOG(LL_ERROR, ("ChangeConfiguration request with incorrect value for key: \"%s\", value \"%d\"", key, value));
         }
-      } else {
-        LOG(LL_ERROR, ("ChangeConfiguration request without value for key: \"%s\"", key));
+        LOG(LL_ERROR, ("ChangeConfiguration request with incorrect value for key: \"%s\", value \"%d\"", key, value));
+        return mg_mk_str(OCPP_RESPONSE_REJECTED);
       }
+      LOG(LL_ERROR, ("ChangeConfiguration request without number value for key: \"%s\"", key));
+      return mg_mk_str(OCPP_RESPONSE_REJECTED);
     } else {
       LOG(LL_ERROR, ("ChangeConfiguration request for unsupported key: \"%s\"", key));
       return mg_mk_str(OCPP_RESPONSE_NOTSUPPORTED);
     }
-  } else {
-    LOG(LL_ERROR, ("No key for ChangeConfiguration request"));
   }
-
+  LOG(LL_ERROR, ("No key for ChangeConfiguration request"));
   return mg_mk_str(OCPP_RESPONSE_REJECTED);
 }
 
@@ -456,7 +461,7 @@ static mg_str updateFirmware(const char *payload) {
   char *location = NULL;
 
   if (json_scanf(payload, strlen(payload), "{ location:%Q }", &location) > 0) {
-    LOG(LL_DEBUG, ("Updating firmware from %s", location));
+    LOG(LL_INFO, ("Updating firmware from %s", location));
 
     mgos_ota_http_start(location, NULL);
     return mg_mk_str(OCPP_RESPONSE_ACCEPTED);
@@ -732,5 +737,6 @@ enum mgos_app_init_result mgos_app_init(void) {
   mg_rpc_add_handler(mgos_rpc_get_global(), "Shelly.Reset", "", shelly_reset_handler, NULL);
 
   connect_ocpp_backend();
+  time(&last_ocpp_interaction);
   return MGOS_APP_INIT_SUCCESS;
 }
