@@ -8,7 +8,7 @@
 - :heavy_check_mark: Authorize
 - :heavy_check_mark: BootNotification
 - :heavy_check_mark: ChangeAvailability
-- ChangeConfiguration
+- :heavy_check_mark: ChangeConfiguration
 - :heavy_check_mark: ClearCache
 - DataTransfer
 - :heavy_check_mark: GetConfiguration
@@ -109,7 +109,7 @@
 | ClockAlignedDataInterval | 0 | true |
 | ConnectionTimeOut | 180 | true |
 | GetConfigurationMaxKeys | 32 | true |
-| HeartbeatInterval | 60 | false |
+| HeartbeatInterval | 180 | false |
 | LocalAuthorizeOffline | false | true |
 | LocalPreAuthorize | false | true |
 | MeterValuesAlignedData | Energy.Active.Import.Register | true |
