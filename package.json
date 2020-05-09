@@ -4,7 +4,7 @@
   "description": "Wallbox firmware for Shelly 1PM relay",
   "author": "Sébastien Savalle",
   "homepage": "https://github.com/ellavas/mongoose-app-shelly#readme",
-  "license": "SEE LICENSE IN LICENSE.txt",
+  "license": "SEE LICENSE IN LICENSE",
   "scripts": {
     "mos-build": "mos build --local --platform esp8266",
     "lint": "./node_modules/.bin/eslint .",
