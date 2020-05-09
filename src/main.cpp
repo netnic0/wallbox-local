@@ -56,6 +56,8 @@
 #define OCPP_REQUEST_UNLOCK_CONNECTOR "UnlockConnector"
 #define OCPP_REQUEST_CHANGE_AVAILABILITY "ChangeAvailability"
 
+#define OCPP_BOOTNOTIFICATION_TID "1212121"
+
 const char *OCPP_CONFIGURATION =
     "{\"configurationKey\":["
     "{\"key\":\"AuthorizationCacheEnabled\",\"readonly\":true,\"value\":false},"
@@ -464,6 +466,16 @@ static void handle_ocpp_response(struct mg_connection *nc, const char *id, const
     mgos_sys_config_set_ocpp_transaction_id(-1);
     mgos_sys_config_save(&mgos_sys_config, false, NULL);
     mgos_hlw8012_resetEnergy(hlw8012);
+  } else if (strcmp(id, OCPP_BOOTNOTIFICATION_TID) == 0) {
+    int value;
+    if (json_scanf(payload, strlen(payload), "{ interval:%d }", &value) > 0) {
+      int interval = mgos_sys_config_get_ocpp_config_heartbeat_interval();
+      if (value > 0 && value != interval) {
+        mgos_sys_config_set_ocpp_config_heartbeat_interval(value);
+        mgos_sys_config_save_level(&mgos_sys_config, MGOS_CONFIG_LEVEL_USER, false, NULL);
+        LOG(LL_INFO, ("Heartbeat interval set to %d as per server request", value));
+      }
+    }
   }
 
   (void) nc;
@@ -520,7 +532,7 @@ static void ev_handler(struct mg_connection *nc, int ev, void *ev_data, void *us
         ws_connected = true;
         struct mg_str content = mg_mk_str(
             "{\"chargeBoxSerialNumber\": \"EV.534150204C616273204672616E6365\",\"chargePointModel\": \"SHELLY\",\"chargePointSerialNumber\": \"3N4453686F70204361656E\",\"chargePointVendor\": \"SAP Labs DShop Caen\",\"firmwareVersion\": \"0.0.1\"}");
-        send_ocpp_request(nc, OCPP_REQUEST_BOOT_NOTIFICATION, "1212121", content);
+        send_ocpp_request(nc, OCPP_REQUEST_BOOT_NOTIFICATION, OCPP_BOOTNOTIFICATION_TID, content);
         if (mgos_sys_config_get_ocpp_transaction_id() > 0) {
           send_ocpp_status_notification(OCPP_STATUS_CHARGING);
         } else {
