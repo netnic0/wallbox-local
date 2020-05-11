@@ -22,6 +22,7 @@ config_schema:
   - ["device.id", "wallbox-??????"]
   - ["wifi.ap.ssid", "Wallbox-Hotspot"]
   - ["wifi.ap.pass", "Wallbox1"]
+  - ["wifi.ap.trigger_on_gpio", 2]
   - ["device.sn", "000000"]
   - ["http.index_files", "index.html.gz,index.html"]
   - ["gpio", "o", {"GPIO settings"}]
@@ -37,6 +38,12 @@ config_schema:
   - ["ocpp.tag_id", "s", "", {"Tag used for the current transaction"}]
   - ["ocpp.config", "o", {"OCPP configuration"}]
   - ["ocpp.config.heartbeat_interval", "i", 180, {"Interval of inactivity with CS after which CP should send HB."}]
+  - ["provision.stable_state", 2]
+  - ["provision.btn.pin", 2]
+  - ["provision.btn.pull_up", true]
+  - ["provision.btn.hold_ms", 5000]
+  - ["provision.led.pin", 0]
+  - ["provision.led.active_high", false]
 
 libs:
   - origin: https://github.com/mongoose-os-libs/mbedtls
@@ -54,7 +61,7 @@ libs:
   - origin: https://github.com/mongoose-os-libs/rpc-service-ota
   - origin: https://github.com/mongoose-os-libs/wifi
   - origin: https://github.com/mongoose-os-libs/sntp
-  # - origin: https://github.com/mongoose-os-libs/mjs
+  - origin: https://github.com/ellavas/provision
   - origin: https://github.com/ellavas/mongoose-lib-hlw8012
   # - origin: ../mongoose-lib-hlw8012
     name: hlw8012
