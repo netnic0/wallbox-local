@@ -27,8 +27,8 @@
         },
         {
             "key": "HeartbeatInterval",
-            "readonly": true,
-            "value": 60
+            "readonly": false,
+            "value": 180
         },
         {
             "key": "LocalAuthorizeOffline",

@@ -42,6 +42,7 @@
 
 #define OCPP_REQUEST_BOOT_NOTIFICATION "BootNotification"
 #define OCPP_REQUEST_GET_CONFIGURATION "GetConfiguration"
+#define OCPP_REQUEST_CHANGE_CONFIGURATION "ChangeConfiguration"
 #define OCPP_REQUEST_METER_VALUES "MeterValues"
 #define OCPP_REQUEST_REMOTE_START_TRANSACTION "RemoteStartTransaction"
 #define OCPP_REQUEST_REMOTE_STOP_TRANSACTION "RemoteStopTransaction"
@@ -54,6 +55,37 @@
 #define OCPP_REQUEST_CLEAR_CACHE "ClearCache"
 #define OCPP_REQUEST_UNLOCK_CONNECTOR "UnlockConnector"
 #define OCPP_REQUEST_CHANGE_AVAILABILITY "ChangeAvailability"
+
+#define OCPP_BOOTNOTIFICATION_TID "1212121"
+
+const char *OCPP_CONFIGURATION =
+    "{\"configurationKey\":["
+    "{\"key\":\"AuthorizationCacheEnabled\",\"readonly\":true,\"value\":false},"
+    "{\"key\":\"AuthorizeRemoteTxRequests\",\"readonly\":true,\"value\":false},"
+    "{\"key\":\"ClockAlignedDataInterval\",\"readonly\":true,\"value\":0},"
+    "{\"key\":\"ConnectionTimeOut\",\"readonly\":true,\"value\":180},"
+    "{\"key\":\"GetConfigurationMaxKeys\",\"readonly\":true,\"value\":32},"
+    "{\"key\":\"HeartbeatInterval\",\"readonly\":false,\"value\":%d},"
+    "{\"key\":\"LocalAuthorizeOffline\",\"readonly\":true,\"value\":false},"
+    "{\"key\":\"LocalPreAuthorize\",\"readonly\":true,\"value\":false},"
+    "{\"key\":\"MeterValuesAlignedData\",\"readonly\":true,\"value\":\"Energy.Active.Import.Register\"},"
+    "{\"key\":\"MeterValuesSampledData\",\"readonly\":true,\"value\":\"Energy.Active.Import.Register\"},"
+    "{\"key\":\"MeterValueSampleInterval\",\"readonly\":true,\"value\":60},"
+    "{\"key\":\"NumberOfConnectors\",\"readonly\":true,\"value\":1},"
+    "{\"key\":\"ResetRetries\",\"readonly\":true,\"value\":0},"
+    "{\"key\":\"ConnectorPhaseRotation\",\"readonly\":true,\"value\":\"1.NotApplicable\"},"
+    "{\"key\":\"ConnectorPhaseRotationMaxLength\",\"readonly\":true,\"value\":1},"
+    "{\"key\":\"StopTransactionOnEVSideDisconnect\",\"readonly\":true,\"value\":true},"
+    "{\"key\":\"StopTransactionOnInvalidId\",\"readonly\":true,\"value\":true},"
+    "{\"key\":\"StopTxnAlignedData\",\"readonly\":true,\"value\":\"\"},"
+    "{\"key\":\"StopTxnAlignedDataMaxLength\",\"readonly\":true,\"value\":0},"
+    "{\"key\":\"StopTxnSampledData\",\"readonly\":true,\"value\":\"\"},"
+    "{\"key\":\"StopTxnSampledDataMaxLength\",\"readonly\":true,\"value\":0},"
+    "{\"key\":\"SupportedFeatureProfiles\",\"readonly\":true,\"value\":\"Core\"},"
+    "{\"key\":\"TransactionMessageAttempts\",\"readonly\":true,\"value\":10},"
+    "{\"key\":\"TransactionMessageRetryInterval\",\"readonly\":true,\"value\":60},"
+    "{\"key\":\"UnlockConnectorOnEVSideDisconnect\",\"readonly\":true,\"value\":true}"
+    "]}";
 
 #ifndef MGOS_HAVE_WIFI
 const char *mgos_sys_config_get_wifi_sta_ssid(void) {
@@ -74,6 +106,7 @@ static char start_transaction_uuid[50];
 static char stop_transaction_uuid[50];
 static char default_uuid[50];
 static struct mg_connection *ws_connection;
+static time_t last_ocpp_interaction;
 
 static void generate_uuid(char *uuid) {
   int random = mgos_rand_range(0.0, 999.0);
@@ -154,11 +187,13 @@ static void shelly_get_uid_handler(struct mg_rpc_request_info *ri,
 }
 
 static void send_ocpp_response(struct mg_connection *nc, const char *id, struct mg_str data) {
-  char buf[1024];
-  int length;
-  length = sprintf(buf, "[3, \"%s\", %s]", id, data.p);
+  int length, max_msg_size = 2048;
+  char buf[max_msg_size], copy[max_msg_size];
+  strcpy(copy, data.p);
+  length = sprintf(buf, "[3, \"%s\", %s]", id, copy);
   LOG(LL_INFO, ("Sending response %.*s", length, buf));
   mg_send_websocket_frame(nc, WEBSOCKET_OP_TEXT, buf, length);
+  time(&last_ocpp_interaction);
 }
 
 static void send_ocpp_request(struct mg_connection *nc, const char *cmd, const char *id, struct mg_str data) {
@@ -167,6 +202,7 @@ static void send_ocpp_request(struct mg_connection *nc, const char *cmd, const c
   length = sprintf(buf, "[2, \"%s\", \"%s\", %s]", id, cmd, data.p);
   LOG(LL_INFO, ("Sending request %.*s", length, buf));
   mg_send_websocket_frame(nc, WEBSOCKET_OP_TEXT, buf, length);
+  time(&last_ocpp_interaction);
 }
 
 static void get_current_date(char *buffer) {
@@ -181,8 +217,14 @@ static void get_current_date(char *buffer) {
 }
 
 static void send_ocpp_heartbeat() {
-  generate_uuid(default_uuid);
-  send_ocpp_request(ws_connection, OCPP_REQUEST_HEARTBEAT, default_uuid, mg_mk_str("{}"));
+  time_t now;
+  time(&now);
+  int interval = mgos_sys_config_get_ocpp_config_heartbeat_interval();
+  double diff = difftime(now, last_ocpp_interaction);
+  if (diff >= interval) {
+    generate_uuid(default_uuid);
+    send_ocpp_request(ws_connection, OCPP_REQUEST_HEARTBEAT, default_uuid, mg_mk_str("{}"));
+  }
 }
 
 static void send_ocpp_status_notification(const char *status) {
@@ -334,7 +376,7 @@ static mg_str reset(const char *payload) {
   char *reset_type = NULL;
 
   if (json_scanf(payload, strlen(payload), "{ type:%Q }", &reset_type) > 0) {
-    LOG(LL_DEBUG, ("Resetting in mode %s", reset_type));
+    LOG(LL_INFO, ("Resetting in mode %s", reset_type));
 
     if (strcmp(OCPP_RESET_TYPE_SOFT, reset_type) == 0) {
       return reset_soft();
@@ -351,42 +393,47 @@ static mg_str reset(const char *payload) {
 }
 
 static mg_str getConfiguration(const char *payload) {
-  LOG(LL_DEBUG, ("OCPP GetConfiguration request: %s", payload));
-  return mg_mk_str(
-      "{\"configurationKey\":["
-      "{\"key\":\"AuthorizationCacheEnabled\",\"readonly\":true,\"value\":false},"
-      "{\"key\":\"AuthorizeRemoteTxRequests\",\"readonly\":true,\"value\":false},"
-      "{\"key\":\"ClockAlignedDataInterval\",\"readonly\":true,\"value\":0},"
-      "{\"key\":\"ConnectionTimeOut\",\"readonly\":true,\"value\":180},"
-      "{\"key\":\"GetConfigurationMaxKeys\",\"readonly\":true,\"value\":32},"
-      "{\"key\":\"HeartbeatInterval\",\"readonly\":true,\"value\":60},"
-      "{\"key\":\"LocalAuthorizeOffline\",\"readonly\":true,\"value\":false},"
-      "{\"key\":\"LocalPreAuthorize\",\"readonly\":true,\"value\":false},"
-      "{\"key\":\"MeterValuesAlignedData\",\"readonly\":true,\"value\":\"Energy.Active.Import.Register\"},"
-      "{\"key\":\"MeterValuesSampledData\",\"readonly\":true,\"value\":\"Energy.Active.Import.Register\"},"
-      "{\"key\":\"MeterValueSampleInterval\",\"readonly\":true,\"value\":60},"
-      "{\"key\":\"NumberOfConnectors\",\"readonly\":true,\"value\":1},"
-      "{\"key\":\"ResetRetries\",\"readonly\":true,\"value\":0},"
-      "{\"key\":\"ConnectorPhaseRotation\",\"readonly\":true,\"value\":\"1.NotApplicable\"},"
-      "{\"key\":\"ConnectorPhaseRotationMaxLength\",\"readonly\":true,\"value\":1},"
-      "{\"key\":\"StopTransactionOnEVSideDisconnect\",\"readonly\":true,\"value\":true},"
-      "{\"key\":\"StopTransactionOnInvalidId\",\"readonly\":true,\"value\":true},"
-      "{\"key\":\"StopTxnAlignedData\",\"readonly\":true,\"value\":\"\"},"
-      "{\"key\":\"StopTxnAlignedDataMaxLength\",\"readonly\":true,\"value\":0},"
-      "{\"key\":\"StopTxnSampledData\",\"readonly\":true,\"value\":\"\"},"
-      "{\"key\":\"StopTxnSampledDataMaxLength\",\"readonly\":true,\"value\":0},"
-      "{\"key\":\"SupportedFeatureProfiles\",\"readonly\":true,\"value\":\"Core\"},"
-      "{\"key\":\"TransactionMessageAttempts\",\"readonly\":true,\"value\":10},"
-      "{\"key\":\"TransactionMessageRetryInterval\",\"readonly\":true,\"value\":60},"
-      "{\"key\":\"UnlockConnectorOnEVSideDisconnect\",\"readonly\":true,\"value\":true}"
-      "]}");
+  char buf[1800];
+  int length;
+  LOG(LL_INFO, ("OCPP GetConfiguration request: %s", payload));
+  length = sprintf(buf, OCPP_CONFIGURATION, mgos_sys_config_get_ocpp_config_heartbeat_interval());
+  return mg_mk_str_n(buf, length);
+}
+
+static mg_str changeConfiguration(const char *payload) {
+  LOG(LL_INFO, ("OCPP ChangeConfiguration request: %s", payload));
+  char *key = NULL;
+
+  if (json_scanf(payload, strlen(payload), "{ key:%Q }", &key) > 0) {
+    // HeartbeatInterval
+    if (strcmp("HeartbeatInterval", key) == 0) {
+      int value;
+      if (json_scanf(payload, strlen(payload), "{ value:%d }", &value) > 0) {
+        LOG(LL_INFO, ("Change configuration key \"%s\", value \"%d\"", key, value));
+        if (value >= 60) {
+          mgos_sys_config_set_ocpp_config_heartbeat_interval(value);
+          mgos_sys_config_save_level(&mgos_sys_config, MGOS_CONFIG_LEVEL_USER, false, NULL);
+          return mg_mk_str(OCPP_RESPONSE_ACCEPTED);
+        }
+        LOG(LL_ERROR, ("ChangeConfiguration request with incorrect value for key: \"%s\", value \"%d\"", key, value));
+        return mg_mk_str(OCPP_RESPONSE_REJECTED);
+      }
+      LOG(LL_ERROR, ("ChangeConfiguration request without number value for key: \"%s\"", key));
+      return mg_mk_str(OCPP_RESPONSE_REJECTED);
+    } else {
+      LOG(LL_ERROR, ("ChangeConfiguration request for unsupported key: \"%s\"", key));
+      return mg_mk_str(OCPP_RESPONSE_NOTSUPPORTED);
+    }
+  }
+  LOG(LL_ERROR, ("No key for ChangeConfiguration request"));
+  return mg_mk_str(OCPP_RESPONSE_REJECTED);
 }
 
 static mg_str updateFirmware(const char *payload) {
   char *location = NULL;
 
   if (json_scanf(payload, strlen(payload), "{ location:%Q }", &location) > 0) {
-    LOG(LL_DEBUG, ("Updating firmware from %s", location));
+    LOG(LL_INFO, ("Updating firmware from %s", location));
 
     mgos_ota_http_start(location, NULL);
     return mg_mk_str(OCPP_RESPONSE_ACCEPTED);
@@ -419,6 +466,16 @@ static void handle_ocpp_response(struct mg_connection *nc, const char *id, const
     mgos_sys_config_set_ocpp_transaction_id(-1);
     mgos_sys_config_save(&mgos_sys_config, false, NULL);
     mgos_hlw8012_resetEnergy(hlw8012);
+  } else if (strcmp(id, OCPP_BOOTNOTIFICATION_TID) == 0) {
+    int value;
+    if (json_scanf(payload, strlen(payload), "{ interval:%d }", &value) > 0) {
+      int interval = mgos_sys_config_get_ocpp_config_heartbeat_interval();
+      if (value > 0 && value != interval) {
+        mgos_sys_config_set_ocpp_config_heartbeat_interval(value);
+        mgos_sys_config_save_level(&mgos_sys_config, MGOS_CONFIG_LEVEL_USER, false, NULL);
+        LOG(LL_INFO, ("Heartbeat interval set to %d as per server request", value));
+      }
+    }
   }
 
   (void) nc;
@@ -429,6 +486,8 @@ static void handle_ocpp_cmd(struct mg_connection *nc, const char *cmd, const cha
   struct mg_str data;
   if (strcmp(cmd, OCPP_REQUEST_GET_CONFIGURATION) == 0) {
     data = getConfiguration(payload);
+  } else if (strcmp(cmd, OCPP_REQUEST_CHANGE_CONFIGURATION) == 0) {
+    data = changeConfiguration(payload);
   } else if (strcmp(cmd, OCPP_REQUEST_REMOTE_START_TRANSACTION) == 0) {
     data = startTransaction(payload);
   } else if (strcmp(cmd, OCPP_REQUEST_REMOTE_STOP_TRANSACTION) == 0) {
@@ -473,7 +532,7 @@ static void ev_handler(struct mg_connection *nc, int ev, void *ev_data, void *us
         ws_connected = true;
         struct mg_str content = mg_mk_str(
             "{\"chargeBoxSerialNumber\": \"EV.534150204C616273204672616E6365\",\"chargePointModel\": \"SHELLY\",\"chargePointSerialNumber\": \"3N4453686F70204361656E\",\"chargePointVendor\": \"SAP Labs DShop Caen\",\"firmwareVersion\": \"0.0.1\"}");
-        send_ocpp_request(nc, OCPP_REQUEST_BOOT_NOTIFICATION, "1212121", content);
+        send_ocpp_request(nc, OCPP_REQUEST_BOOT_NOTIFICATION, OCPP_BOOTNOTIFICATION_TID, content);
         if (mgos_sys_config_get_ocpp_transaction_id() > 0) {
           send_ocpp_status_notification(OCPP_STATUS_CHARGING);
         } else {
@@ -660,5 +719,6 @@ enum mgos_app_init_result mgos_app_init(void) {
   mg_rpc_add_handler(mgos_rpc_get_global(), "Shelly.Reset", "", shelly_reset_handler, NULL);
 
   connect_ocpp_backend();
+  time(&last_ocpp_interaction);
   return MGOS_APP_INIT_SUCCESS;
 }
