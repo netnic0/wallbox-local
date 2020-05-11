@@ -10,7 +10,7 @@
 - :heavy_check_mark: ChangeAvailability
 - :heavy_check_mark: ChangeConfiguration
 - :heavy_check_mark: ClearCache
-- DataTransfer
+- :no_entry: DataTransfer
 - :heavy_check_mark: GetConfiguration
 - :heavy_check_mark: Heartbeat
 - :heavy_check_mark: MeterValues
