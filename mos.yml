@@ -35,6 +35,8 @@ config_schema:
   - ["ocpp.name", "s", "", {"Name of the wallbox in OCPP Backend"}]
   - ["ocpp.transaction_id", "i", -1, {"Id of the current transaction"}]
   - ["ocpp.tag_id", "s", "", {"Tag used for the current transaction"}]
+  - ["ocpp.config", "o", {"OCPP configuration"}]
+  - ["ocpp.config.heartbeat_interval", "i", 180, {"Interval of inactivity with CS after which CP should send HB."}]
 
 libs:
   - origin: https://github.com/mongoose-os-libs/mbedtls
