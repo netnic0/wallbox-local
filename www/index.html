@@ -12,16 +12,9 @@
   </head>
   <body>
 
-    <div class="container popup hidden" id="info_container">
-      <h1 id="info_title"></h1>
-      <div class="centered">
-        <span id="info_spinner" class="spin reboot"></span>
-        <span id="info_message"></span>
-      </div>
-    </div>
-
     <div class="container" id="main_container">
-      <h1 class="">Wallbox</h1>
+      <h1>Wallbox</h1>
+      <h2>Information and status of the wallbox</h2>
       <div class="form">
         <div class="">
           <div class="form-control">
@@ -40,11 +33,10 @@
             <label>Power (Wh):</label>
             <span id="power"></span>
           </div>
-          <div class="form-control">
-            <label></label>
+          <div class="form-actions">
             <button class="btn" id="refresh_btn">
-              <span id="refresh_spinner"></span>
               Refresh
+              <span id="refresh_spinner"></span>
             </button>
           </div>
         </div>
@@ -52,7 +44,8 @@
     </div>
 
     <div class="container" id="wifi_container">
-      <h1 class="">WiFi Setup</h1>
+      <h1 class="">WiFi</h1>
+      <h2>Configuration of the WiFi connection</h2>
       <div class="form">
         <div class="">
           <form id="wifi_form">
@@ -64,11 +57,10 @@
               <label>Password:</label>
               <input type="password" id="wifi_pass" autocomplete="wifi current-password">
             </div>
-            <div class="form-control">
-              <label></label>
+            <div class="form-actions">
               <button class="btn" id="wifi_save_btn">
-                <span id="wifi_spinner"></span>
                 Save
+                <span id="wifi_spinner"></span>
               </button>
             </div>
           </form>
@@ -77,7 +69,8 @@
     </div>
 
     <div class="container" id="ocpp_container">
-      <h1 class="">e-Mobility Setup</h1>
+      <h1 class="">e-Mobility</h1>
+      <h2>Configuration of the connection to the OCPP server</h2>
       <div class="form">
         <div class="">
           <div class="form-control">
@@ -88,11 +81,10 @@
             <label>Backend URL:</label>
             <input type="text" id="ocpp_url" autocomplete="ocpp backend-url">
           </div>
-          <div class="form-control">
-            <label></label>
+          <div class="form-actions">
             <button class="btn" id="ocpp_save_btn">
-              <span id="ocpp_spinner"></span>
               Save
+              <span id="ocpp_spinner"></span>
             </button>
           </div>
         </div>
@@ -101,6 +93,7 @@
 
     <div class="container" id="fw_container">
       <h1 class="">Firmware</h1>
+      <h2>Information and configuration of the wallbox firmware</h2>
       <div class="form">
         <div class="">
           <div class="form-control">
@@ -119,14 +112,16 @@
             <label>Build number:</label>
             <span id="app_build"></span>
           </div>
-          <form id="fw_upload_form" method="POST" action="/update" enctype="multipart/form-data">
+          <form id="fw_upload_form">
             <div class="form-control">
               <label>Update:</label>
               <input type="file" id="fw_select_file" name="file" accept=".zip" />
             </div>
-            <div class="form-control">
-              <label></label>
-              <button class="btn" id="fw_upload_btn"><span id="fw_spinner"></span> Upload</button>
+            <div class="form-actions">
+              <button class="btn" id="fw_upload_btn">
+                Upload
+                <span id="fw_spinner"></span>
+              </button>
             </div>
           </form>
         </div>
@@ -135,23 +130,30 @@
 
     <div class="container" id="admin_container">
       <h1 class="">Administration</h1>
+      <h2>Configuration and tasks to administer the wallbox</h2>
       <div class="form">
         <div class="">
-          <div class="form-control">
-            <label>Reboot:</label>
+          <div class="form-actions">
             <button class="admin-btn" id="reboot_btn">
-              <span id="reboot_spinner"></span>
               Reboot
+              <span id="reboot_spinner"></span>
             </button>
-          </div>
-          <div class="form-control">
-            <label>Factory reset:</label>
             <button class="admin-btn" id="reset_btn">
+              Factory Reset
               <span id="reset_spinner"></span>
-              Reset
             </button>
           </div>
         </div>
+      </div>
+    </div>
+
+    <div class="popup" id="info_container">
+      <div class="dialog">
+        <h1 id="info_title"></h1>
+        <p>
+          <span id="info_spinner" class="spin reboot"></span>
+          <span id="info_message"></span>
+        </p>
       </div>
     </div>
 

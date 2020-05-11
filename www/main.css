@@ -1,7 +1,7 @@
 html, body {
   height: 100vh;
-  padding: 0;
   margin: 0;
+  padding: 0;
 }
 
 * {
@@ -10,12 +10,9 @@ html, body {
 
 body {
   background: #fafafa;
-  color: #454955;
-  font: 15px/1.5 Verdana, Helvetica, Arial, sans-serif;
-}
-
-h1, h2, h3, h4, h5, h6, b, th, strong, .nav-link {
-  color: #777;
+  color: #666666;
+  font-family: Roboto, Verdana, Helvetica, Arial, sans-serif;
+  font-size: medium;
 }
 
 input, button, div, pre, p {
@@ -23,48 +20,63 @@ input, button, div, pre, p {
 }
 
 button {
-  color: white;
-  padding: 0.4em 1em;
-  border-radius: 0.3em;
+  background-color: #ffffff;
+  border-radius: 4px;
   border: none;
+  /* box-sizing: border-box; */
+  color: #666666;
   cursor: pointer;
+  font-size: small;
+  font-weight: bold;
+  letter-spacing: .09em;
+  padding: 10px;
+  text-decoration: none;
+  text-transform: uppercase;
+  vertical-align: middle;
 }
 
-input[type=text] input[type=password] {
+input[type=text], input[type=password] {
+  background-color: #ffffff;
+  border: 1px solid rgba(0, 0, 0, .25);
+  color: #666666;
   padding: 0.2em 0.7em;
   position: relative;
-  border: 1px solid #cdcdcd;
-  border-color: rgba(0, 0, 0, .15);
-  background-color: white;
-  font-size: 16px;
+}
+
+input[type=text]:hover, input[type=password]:hover {
+  border: 1px solid rgba(0, 0, 0, .5);
+  box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 3px 1px -2px rgba(0, 0, 0, 0.12), 0 1px 5px 0 rgba(0, 0, 0, 0.2);
+  -webkit-box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 3px 1px -2px rgba(0, 0, 0, 0.12), 0 1px 5px 0 rgba(0, 0, 0, 0.2);
 }
 
 h1 {
+  color: #333333;
+  font-size: xx-large;
+  font-weight: normal;
   margin: 0;
-  padding-top: 0.5em;
-  text-align: center;
-  font-size: 1.4em;
+  padding-top: 0.75em;
+  text-align: left;
 }
 
-.centered {
-  text-align: center;
-}
-
-.hidden {
-  display: none;
+h2 {
+  color: #999999;
+  font-size: medium;
+  font-weight: normal;
+  margin: 0;
+  padding-bottom: 0.2em;
+  padding-top: 0.2em;
+  text-align: left;
 }
 
 .container {
-  padding: 0 1em;
+  background: #ffffff;
+  border-radius: 4px;
+  box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 3px 1px -2px rgba(0, 0, 0, 0.12), 0 1px 5px 0 rgba(0, 0, 0, 0.2);
+  -webkit-box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 3px 1px -2px rgba(0, 0, 0, 0.12), 0 1px 5px 0 rgba(0, 0, 0, 0.2);
+  box-sizing: border-box;
   margin: 1em auto;
   max-width: 640px;
-  background: #ffffff;
-  border: solid 1px #dddddd;
-}
-
-.popup {
-  background: #ffee0044;
-  padding: 1em 1em;
+  padding: 0 1em;
 }
 
 .form-control {
@@ -76,28 +88,34 @@ h1 {
 }
 
 .form label {
-  min-width: 10em;
+  color: #333333;
   display: inline-block;
+  min-width: 10em;
 }
 
 .form {
   padding: 1em 0;
 }
 
+.form-actions {
+  margin: 0.5em 0;
+  padding-top: 1em;
+}
+
 .btn {
-  background: #2079b0;
+  color: #3399dd;
 }
 
 .btn:hover {
-  background: #399ad6;
+  background-color: #3399dd11;
 }
 
 .admin-btn {
-  background: #ff3333;
+  color: #ff3333;
 }
 
 .admin-btn:hover {
-  background: #ff6464;
+  background-color: #ff333311;
 }
 
 .form span.connected {
@@ -108,14 +126,49 @@ h1 {
   color: #cc3333;
 }
 
+.popup {
+  display: none;
+  background: #00000099;
+  height: 100vh;
+  left: 0;
+  margin: 0;
+  padding-top: 20vh;
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 1;
+}
+
+.popup .dialog {
+  background: #ffffff;
+  border: solid 2px #999999;
+  margin: 1em auto;
+  max-width: 640px;
+  padding: 1em;
+}
+
+.popup .dialog h1 {
+  border-bottom: solid 1px #eeeeee;
+  font-size: x-large;
+  margin-bottom: 10pt;
+  padding: 10pt;
+  text-align: center;
+}
+
+.popup .dialog p {
+  font-size: medium;
+  padding: 10pt;
+  text-align: center;
+}
+
 .spin {
+  border-radius: 50%;
+  border-top-color: #ffffff;
+  border: 0.15em solid rgba(255, 255, 255, .5);
   display: inline-block;
-  width: 0.9em;
   height: 0.9em;
   margin-bottom: -0.2em;
-  border: 0.15em solid rgba(255, 255, 255, .5);
-  border-radius: 50%;
-  border-top-color: #fff;
+  width: 0.9em;
   animation: spin 1s linear infinite;
   -webkit-animation: spin 1s linear infinite;
 }
@@ -133,8 +186,8 @@ h1 {
 }
 
 .spin.reboot {
-  width: 1.1em;
+  border-top-color: #555555;
+  border: 0.15em solid #55555577;
   height: 1.1em;
-  border: 0.15em solid #45495577;
-  border-top-color: #454955;
+  width: 1.1em;
 }
