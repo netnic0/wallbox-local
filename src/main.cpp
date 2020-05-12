@@ -62,7 +62,7 @@ const char *OCPP_BOOTNOTIFICATION =
     "{"
     "\"chargePointModel\": \"%s\","
     "\"chargePointSerialNumber\": \"%s\","
-    "\"chargePointVendor\": \"%s\","
+    "\"chargePointVendor\": \"SAP Labs France Caen\","
     "\"firmwareVersion\": \"%s\""
     "}";
 
@@ -125,6 +125,10 @@ static void generate_uuid(char *uuid) {
           (unsigned long) mgos_uptime() & 0xFFFUL,
           (unsigned long) random,
           mgos_sys_ro_vars_get_mac_address());
+}
+
+static void generate_chargepoint_serial_number(char *sn) {
+  sprintf(sn, "534c46434652%s", mgos_sys_ro_vars_get_mac_address());
 }
 
 static void wallbox_get_info_handler(struct mg_rpc_request_info *ri,
@@ -554,16 +558,11 @@ static void ev_handler(struct mg_connection *nc, int ev, void *ev_data, void *us
         LOG(LL_INFO, ("-- Connected"));
         ws_connected = true;
 
+        char sn[25];
+        generate_chargepoint_serial_number(sn);
         char buf[1024];
-        int length =
-            sprintf(buf, OCPP_BOOTNOTIFICATION, "SHELLY", "3N4453686F70204361656E", "SAP Labs DShop Caen", "0.0.1");
+        int length = sprintf(buf, OCPP_BOOTNOTIFICATION, MGOS_APP, sn, mgos_sys_ro_vars_get_fw_version());
         struct mg_str content = mg_mk_str_n(buf, length);
-
-        // struct mg_str content = mg_mk_str(
-        //     "{\"chargeBoxSerialNumber\":\"EV.534150204C616273204672616E6365\",\"chargePointModel\":
-        //     \"SHELLY\",\"chargePointSerialNumber\": \"3N4453686F70204361656E\",\"chargePointVendor\": \"SAP Labs
-        //     DShop Caen\",\"firmwareVersion\": \"0.0.1\"}");
-
         send_ocpp_request(nc, OCPP_REQUEST_BOOT_NOTIFICATION, OCPP_BOOTNOTIFICATION_TID, content);
 
         if (mgos_sys_config_get_ocpp_transaction_id() > 0) {

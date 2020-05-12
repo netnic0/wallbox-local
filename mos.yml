@@ -22,7 +22,6 @@ config_schema:
   - ["device.id", "wallbox-??????"]
   - ["wifi.ap.ssid", "Wallbox-Hotspot"]
   - ["wifi.ap.pass", "Wallbox1"]
-  - ["device.sn", "000000"]
   - ["http.index_files", "index.html.gz,index.html"]
   - ["gpio", "o", {"GPIO settings"}]
   - ["gpio.relay", "i", 15, {"Relay pin"}]
