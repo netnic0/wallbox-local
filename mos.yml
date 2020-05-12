@@ -39,7 +39,7 @@ config_schema:
   - ["ocpp.config", "o", {"OCPP configuration"}]
   - ["ocpp.config.heartbeat_interval", "i", 180, {"Interval of inactivity with CS after which CP should send HB."}]
   - ["provision.stable_state", 2]
-  - ["provision.btn.pin", 2]
+  # - ["provision.btn.pin", 2]
   - ["provision.btn.pull_up", true]
   - ["provision.btn.hold_ms", 5000]
   - ["provision.led.pin", 0]
