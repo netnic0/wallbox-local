@@ -1,6 +1,6 @@
 const gulp = require('gulp');
 const pump = require('pump');
-const uglify = require('gulp-uglify');
+const terser = require('gulp-terser');
 const htmlmin = require('gulp-htmlmin');
 const cleancss = require('gulp-clean-css');
 const gzip = require('gulp-gzip');
@@ -36,7 +36,7 @@ gulp.task('minify-css', function (cb) {
 gulp.task('minify-js', function (cb) {
     pump([
             gulp.src(jsSrc),
-            uglify({
+            terser({
                 compress: {
                     'drop_console': true
                 }

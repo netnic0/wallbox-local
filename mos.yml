@@ -1,8 +1,8 @@
-author: 'Sébastien Savalle'
-description: Wallbox firmware for Shelly 1PM relay
-version: 1.0
+author: 'SAP Labs France Caen'
+name: Wallbox-Shelly1PM
+description: SAP e-Mobility Wallbox firmware for Shelly 1PM
+version: 0.1.0
 platform: esp8266
-name: Wallbox
 
 libs_version: ${mos.version}
 modules_version: ${mos.version}

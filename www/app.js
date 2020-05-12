@@ -1,50 +1,69 @@
 /*eslint no-alert: "off"*/
 /*eslint no-console: "off"*/
-var axios;
-
-var host = "";
+const host = "";
 var refreshTimer;
 
-var wifiSSID = document.getElementById("wifi_ssid");
-var wifiPass = document.getElementById("wifi_pass");
-var ocppUrl = document.getElementById("ocpp_url");
-var ocppName = document.getElementById("ocpp_name");
-var deviceState = document.getElementById("state");
-var ocppState = document.getElementById("ocpp_state");
+const wifiSSID = document.getElementById("wifi_ssid");
+const wifiPass = document.getElementById("wifi_pass");
+const ocppUrl = document.getElementById("ocpp_url");
+const ocppName = document.getElementById("ocpp_name");
+const deviceState = document.getElementById("state");
+const ocppState = document.getElementById("ocpp_state");
 
-var infoContainer = document.getElementById("info_container");
+const infoContainer = document.getElementById("info_container");
 
-var infoSpinner = document.getElementById("info_spinner");
-var refreshSpinner = document.getElementById("refresh_spinner");
-var wifiSpinner = document.getElementById("wifi_spinner");
-var ocppSpinner = document.getElementById("ocpp_spinner");
-var rebootSpinner = document.getElementById("reboot_spinner");
-var resetSpinner = document.getElementById("reset_spinner");
-var firmwareSpinner = document.getElementById("fw_spinner");
+const infoSpinner = document.getElementById("info_spinner");
+const refreshSpinner = document.getElementById("refresh_spinner");
+const wifiSpinner = document.getElementById("wifi_spinner");
+const ocppSpinner = document.getElementById("ocpp_spinner");
+const rebootSpinner = document.getElementById("reboot_spinner");
+const resetSpinner = document.getElementById("reset_spinner");
+const firmwareSpinner = document.getElementById("fw_spinner");
 
-var infoTitle = document.getElementById("info_title");
-var infoMessage = document.getElementById("info_message");
+const infoTitle = document.getElementById("info_title");
+const infoMessage = document.getElementById("info_message");
 
-function showInfoDialog(message, title, spin, reboot) {
+const showInfoDialog = (message, title, spin, reboot) => {
     clearInterval(refreshTimer);
     if (reboot) {
         setTimeout(function(){ document.location.reload() }, 6000);
     }
 
     infoSpinner.style.display = spin ? "block" : "none";
-
     infoContainer.style.display = "block";
     infoTitle.innerHTML = title;
     infoMessage.innerHTML = message;
 }
 
-function hideInfoDialog() {
+const hideInfoDialog = () => {
     infoContainer.style.display = "none";
 }
 
+const TimeLevels = {
+    scale: [24, 60, 60, 1],
+    units: ['d ', 'h ', 'm ', 's ']
+};
+
+const intervalToLevels = (interval, levels) => {
+    const cbFun = (d, c) => {
+      let bb = d[1] % c[0],
+        aa = (d[1] - bb) / c[0];
+      aa = aa > 0 ? aa + c[1] : '';
+
+      return [d[0] + aa, bb];
+    };
+
+    let rslt = levels.scale.map((d, i, a) => a.slice(i).reduce((d, c) => d * c))
+      .map((d, i) => ([d, levels.units[i]]))
+      .reduce(cbFun, ['', interval]);
+    return rslt[0];
+};
+
+const secondsToString = interval => intervalToLevels(interval, TimeLevels);
+
 document.getElementById("ocpp_save_btn").onclick = function() {
     ocppSpinner.className = "spin";
-    var data = {
+    const data = {
         config: {
             ocpp: {
                 url: ocppUrl.value,
@@ -60,7 +79,7 @@ document.getElementById("ocpp_save_btn").onclick = function() {
             "Configuration", true, true);
     }).catch(function(err) {
         console.error(err);
-        var msg = err;
+        const msg = err;
         if (err.response) {
             msg = err.response.data.message;
         }
@@ -72,7 +91,7 @@ document.getElementById("ocpp_save_btn").onclick = function() {
 
 document.getElementById("wifi_save_btn").onclick = function() {
     wifiSpinner.className = "spin";
-    var data = {
+    const data = {
         config: {
             wifi: {
                 sta: { enable: true, ssid: wifiSSID.value, pass: wifiPass.value},
@@ -83,7 +102,7 @@ document.getElementById("wifi_save_btn").onclick = function() {
         reboot: true,
     };
     axios.post(host + "/rpc/Config.Set", data).then(function() {
-        var deviceIdStr = document.getElementById("device_id").innerText;
+        const deviceIdStr = document.getElementById("device_id").innerText;
         showInfoDialog(
             "Device is rebooting and connecting to " + wifiSSID.value + ".<br/>" +
             "Connect to the same network and visit <a href='http://" + deviceIdStr + ".local/'>" +
@@ -91,7 +110,7 @@ document.getElementById("wifi_save_btn").onclick = function() {
             "Configuration", false, false);
     }).catch(function(err) {
         console.error(err);
-        var msg = err;
+        const msg = err;
         if (err.response) {
             msg = err.response.data.message;
         }
@@ -102,14 +121,14 @@ document.getElementById("wifi_save_btn").onclick = function() {
 };
 
 document.getElementById("reset_btn").onclick = function() {
-    var ok = confirm("This action will wipe all user configuration\n" +
+    const ok = confirm("This action will wipe all user configuration\n" +
         "and reset the device to factory settings.\nDo you want to proceed?");
     if (!ok) {
         return;
     }
     resetSpinner.className = "spin";
-    var data = {};
-    axios.post(host + "/rpc/Shelly.Reset", data).then(function() {
+    const data = {};
+    axios.post(host + "/rpc/Wallbox.Reset", data).then(function() {
         showInfoDialog(
             "Device configuration is reset.<br>" +
             "Reconnect to Wallbox Hotspot to configure the WiFi.",
@@ -118,7 +137,7 @@ document.getElementById("reset_btn").onclick = function() {
             false);
     }).catch(function(err) {
         console.error(err);
-        var msg = err;
+        const msg = err;
         if (err.response) {
             msg = err.response.data.message;
         }
@@ -129,13 +148,13 @@ document.getElementById("reset_btn").onclick = function() {
 };
 
 document.getElementById("reboot_btn").onclick = function() {
-    var ok = confirm("This action will restart the device.\nDo you want to proceed?");
+    const ok = confirm("This action will restart the device.\nDo you want to proceed?");
     if (!ok) {
         return;
     }
     rebootSpinner.className = "spin";
-    var data = {};
-    axios.post(host + "/rpc/Shelly.Reboot", data).then(function() {
+    const data = {};
+    axios.post(host + "/rpc/Wallbox.Reboot", data).then(function() {
         showInfoDialog(
             "Device is rebooting. Please wait...",
             "Reboot",
@@ -143,7 +162,7 @@ document.getElementById("reboot_btn").onclick = function() {
             true);
     }).catch(function(err) {
         console.error(err);
-        var msg = err;
+        const msg = err;
         if (err.response) {
             msg = err.response.data.message;
         }
@@ -153,19 +172,22 @@ document.getElementById("reboot_btn").onclick = function() {
     });
 };
 
-function getInfo() {
+const getInfo = () => {
     refreshSpinner.className = "spin";
-    axios.get(host + "/rpc/Shelly.GetInfo").then(function(res) {
+    axios.get(host + "/rpc/Wallbox.GetInfo").then(function(res) {
         wifiSSID.value = res.data.wifi_ssid;
         ocppUrl.value = res.data.ocpp_url;
         ocppName.value = res.data.ocpp_name;
         document.getElementById("device_id").innerText = res.data.id;
+        document.getElementById("device_mac").innerText = res.data.mac;
         document.getElementById("app_name").innerText = res.data.app;
         document.getElementById("app_version").innerText = res.data.version;
         document.getElementById("app_build").innerText = res.data.fw_build;
+        document.getElementById("app_date").innerText = res.data.fw_ts;
         document.getElementById("energy").innerText = (res.data.energy ? res.data.energy / 3600 : 0).toFixed(2);
         document.getElementById("power").innerText = (res.data.power ? res.data.power.toFixed(2) : "-");
-        var state = res.data.state;
+        document.getElementById("uptime").innerText = (res.data.uptime ? secondsToString(res.data.uptime) : "-");
+        const state = res.data.state;
         deviceState.innerText = state ? "Charging" : "Available";
         deviceState.className = state ? "connected" : "";
         state = res.data.ocpp_state;
@@ -179,12 +201,13 @@ function getInfo() {
     });
 }
 
-function refreshInfo() {
+const refreshInfo = () => {
     refreshSpinner.className = "spin";
-    axios.get(host + "/rpc/Shelly.GetInfo").then(function(res) {
+    axios.get(host + "/rpc/Wallbox.GetInfo").then(function(res) {
         document.getElementById("energy").innerText = (res.data.energy ? res.data.energy / 3600 : 0).toFixed(2);
         document.getElementById("power").innerText = (res.data.power ? res.data.power.toFixed(2) : "-");
-        var state = res.data.state;
+        document.getElementById("uptime").innerText = (res.data.uptime ? secondsToString(res.data.uptime) : "-");
+        const state = res.data.state;
         deviceState.innerText = state ? "Charging" : "Available";
         deviceState.className = state ? "connected" : "";
         state = res.data.ocpp_state;
@@ -200,14 +223,14 @@ function refreshInfo() {
 
 document.getElementById("refresh_btn").onclick = getInfo;
 
-function updateFirmware(evt) {
+const updateFirmware = evt => {
     evt.preventDefault();
-    var selectedFile = document.getElementById("fw_select_file").files[0];
+    const selectedFile = document.getElementById("fw_select_file").files[0];
 
     if (selectedFile) {
         console.info("Updating firmware...");
         firmwareSpinner.className = "spin";
-        var formData = new FormData();
+        const formData = new FormData();
         formData.append("file", selectedFile);
 
         showInfoDialog(
