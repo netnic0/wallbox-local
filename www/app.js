@@ -1,7 +1,7 @@
 /*eslint no-alert: "off"*/
 /*eslint no-console: "off"*/
 const host = "";
-var refreshTimer;
+let refreshTimer;
 
 const wifiSSID = document.getElementById("wifi_ssid");
 const wifiPass = document.getElementById("wifi_pass");
@@ -79,7 +79,7 @@ document.getElementById("ocpp_save_btn").onclick = function() {
             "Configuration", true, true);
     }).catch(function(err) {
         console.error(err);
-        const msg = err;
+        let msg = err;
         if (err.response) {
             msg = err.response.data.message;
         }
@@ -110,7 +110,7 @@ document.getElementById("wifi_save_btn").onclick = function() {
             "Configuration", false, false);
     }).catch(function(err) {
         console.error(err);
-        const msg = err;
+        let msg = err;
         if (err.response) {
             msg = err.response.data.message;
         }
@@ -137,7 +137,7 @@ document.getElementById("reset_btn").onclick = function() {
             false);
     }).catch(function(err) {
         console.error(err);
-        const msg = err;
+        let msg = err;
         if (err.response) {
             msg = err.response.data.message;
         }
@@ -162,7 +162,7 @@ document.getElementById("reboot_btn").onclick = function() {
             true);
     }).catch(function(err) {
         console.error(err);
-        const msg = err;
+        let msg = err;
         if (err.response) {
             msg = err.response.data.message;
         }
@@ -185,9 +185,9 @@ const getInfo = () => {
         document.getElementById("app_build").innerText = res.data.fw_build;
         document.getElementById("app_date").innerText = res.data.fw_ts;
         document.getElementById("energy").innerText = (res.data.energy ? res.data.energy / 3600 : 0).toFixed(2);
-        document.getElementById("power").innerText = (res.data.power ? res.data.power.toFixed(2) : "-");
+        document.getElementById("power").innerText = (res.data.power ? res.data.power : 0).toFixed(2);
         document.getElementById("uptime").innerText = (res.data.uptime ? secondsToString(res.data.uptime) : "-");
-        const state = res.data.state;
+        let state = res.data.state;
         deviceState.innerText = state ? "Charging" : "Available";
         deviceState.className = state ? "connected" : "";
         state = res.data.ocpp_state;
@@ -205,9 +205,9 @@ const refreshInfo = () => {
     refreshSpinner.className = "spin";
     axios.get(host + "/rpc/Wallbox.GetInfo").then(function(res) {
         document.getElementById("energy").innerText = (res.data.energy ? res.data.energy / 3600 : 0).toFixed(2);
-        document.getElementById("power").innerText = (res.data.power ? res.data.power.toFixed(2) : "-");
+        document.getElementById("power").innerText = (res.data.power ? res.data.power : 0).toFixed(2);
         document.getElementById("uptime").innerText = (res.data.uptime ? secondsToString(res.data.uptime) : "-");
-        const state = res.data.state;
+        let state = res.data.state;
         deviceState.innerText = state ? "Charging" : "Available";
         deviceState.className = state ? "connected" : "";
         state = res.data.ocpp_state;
