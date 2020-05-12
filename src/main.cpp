@@ -128,15 +128,19 @@ static void generate_uuid(char *uuid) {
 }
 
 static void generate_chargepoint_serial_number(char *sn) {
-  sprintf(sn, "534c46434652%s", mgos_sys_ro_vars_get_mac_address());
+  sprintf(sn, "534C46434652%s", mgos_sys_ro_vars_get_mac_address());
 }
 
 static void wallbox_get_info_handler(struct mg_rpc_request_info *ri,
                                      void *cb_arg,
                                      struct mg_rpc_frame_info *fi,
                                      struct mg_str args) {
+  char sn[25];
+  generate_chargepoint_serial_number(sn);
+
   mg_rpc_send_responsef(ri,
                         "{id: %Q, "
+                        "sn: %Q, "
                         "app: %Q, "
                         "version: %Q, "
                         "fw_build: %Q, "
@@ -151,6 +155,7 @@ static void wallbox_get_info_handler(struct mg_rpc_request_info *ri,
                         "ocpp_name: %Q, "
                         "ocpp_state: %B}",
                         mgos_sys_config_get_device_id(),
+                        sn,
                         MGOS_APP,
                         mgos_sys_ro_vars_get_fw_version(),
                         mgos_sys_ro_vars_get_fw_id(),

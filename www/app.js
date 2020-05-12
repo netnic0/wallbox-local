@@ -179,6 +179,7 @@ const getInfo = () => {
         ocppUrl.value = res.data.ocpp_url;
         ocppName.value = res.data.ocpp_name;
         document.getElementById("device_id").innerText = res.data.id;
+        document.getElementById("device_sn").innerText = res.data.sn;
         document.getElementById("device_mac").innerText = res.data.mac;
         document.getElementById("app_name").innerText = res.data.app;
         document.getElementById("app_version").innerText = res.data.version;

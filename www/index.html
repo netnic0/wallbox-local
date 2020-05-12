@@ -33,10 +33,6 @@
             <label>Power (Wh):</label>
             <span id="power"></span>
           </div>
-          <div class="form-control">
-            <label>Uptime:</label>
-            <span id="uptime"></span>
-          </div>
           <div class="form-actions">
             <button class="btn" id="refresh_btn">
               Refresh
@@ -60,10 +56,6 @@
             <div class="form-control">
               <label>Password:</label>
               <input type="password" id="wifi_pass" autocomplete="wifi current-password">
-            </div>
-            <div class="form-control">
-              <label>Device MAC:</label>
-              <span id="device_mac"></span>
             </div>
             <div class="form-actions">
               <button class="btn" id="wifi_save_btn">
@@ -105,10 +97,6 @@
       <div class="form">
         <div class="">
           <div class="form-control">
-            <label>Device:</label>
-            <span id="device_id"></span>
-          </div>
-          <div class="form-control">
             <label>App:</label>
             <span id="app_name"></span>
           </div>
@@ -145,6 +133,22 @@
       <h2>Configuration and tasks to administer the wallbox</h2>
       <div class="form">
         <div class="">
+          <div class="form-control">
+            <label>Device:</label>
+            <span id="device_id"></span>
+          </div>
+          <div class="form-control">
+            <label>Serial number:</label>
+            <span id="device_sn"></span>
+          </div>
+          <div class="form-control">
+            <label>MAC address:</label>
+            <span id="device_mac"></span>
+          </div>
+          <div class="form-control">
+            <label>Up time:</label>
+            <span id="uptime"></span>
+          </div>
           <div class="form-actions">
             <button class="admin-btn" id="reboot_btn">
               Reboot
