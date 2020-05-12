@@ -20,6 +20,7 @@
 #include "mgos_hlw8012.h"
 #include "mgos_ota_http_client.h"
 #include "mgos_rpc.h"
+#include "mgos_provision.h"
 #ifdef MGOS_HAVE_OTA_COMMON
 #include "mgos_ota.h"
 #endif
@@ -561,6 +562,7 @@ static void ev_handler(struct mg_connection *nc, int ev, void *ev_data, void *us
       }
       if (hm->resp_code == 101) {
         LOG(LL_INFO, ("-- Connected"));
+        mgos_provision_set_cur_state(MGOS_PROVISION_ST_CLOUD_CONNECTED);
         ws_connected = true;
 
         char sn[25];
