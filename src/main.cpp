@@ -59,6 +59,14 @@
 
 #define OCPP_BOOTNOTIFICATION_TID "1212121"
 
+const char *OCPP_BOOTNOTIFICATION =
+    "{"
+    "\"chargePointModel\": \"%s\","
+    "\"chargePointSerialNumber\": \"%s\","
+    "\"chargePointVendor\": \"SAP Labs France Caen\","
+    "\"firmwareVersion\": \"%s\""
+    "}";
+
 const char *OCPP_CONFIGURATION =
     "{\"configurationKey\":["
     "{\"key\":\"AuthorizationCacheEnabled\",\"readonly\":true,\"value\":false},"
@@ -120,33 +128,57 @@ static void generate_uuid(char *uuid) {
           mgos_sys_ro_vars_get_mac_address());
 }
 
-static void shelly_get_info_handler(struct mg_rpc_request_info *ri,
-                                    void *cb_arg,
-                                    struct mg_rpc_frame_info *fi,
-                                    struct mg_str args) {
-  mg_rpc_send_responsef(
-      ri,
-      "{id: %Q, app: %Q, version: %Q, fw_build: %Q, wifi_ssid: %Q, energy: %d, power: %d, state: %B, ocpp_url: %Q, ocpp_name: %Q, ocpp_state: %B}",
-      mgos_sys_config_get_device_id(),
-      MGOS_APP,
-      mgos_sys_ro_vars_get_fw_version(),
-      mgos_sys_ro_vars_get_fw_id(),
-      mgos_sys_config_get_wifi_sta_ssid(),
-      mgos_hlw8012_readEnergy(hlw8012),
-      mgos_hlw8012_readActivePower(hlw8012),
-      mgos_gpio_read(mgos_sys_config_get_gpio_relay()),
-      mgos_sys_config_get_ocpp_url(),
-      mgos_sys_config_get_ocpp_name(),
-      ws_connected);
+static void generate_chargepoint_serial_number(char *sn) {
+  sprintf(sn, "534C46434652%s", mgos_sys_ro_vars_get_mac_address());
+}
+
+static void wallbox_get_info_handler(struct mg_rpc_request_info *ri,
+                                     void *cb_arg,
+                                     struct mg_rpc_frame_info *fi,
+                                     struct mg_str args) {
+  char sn[25];
+  generate_chargepoint_serial_number(sn);
+
+  mg_rpc_send_responsef(ri,
+                        "{id: %Q, "
+                        "sn: %Q, "
+                        "app: %Q, "
+                        "version: %Q, "
+                        "fw_build: %Q, "
+                        "fw_ts: %Q, "
+                        "mac: %Q, "
+                        "uptime: %f, "
+                        "wifi_ssid: %Q, "
+                        "energy: %d, "
+                        "power: %d, "
+                        "state: %B, "
+                        "ocpp_url: %Q, "
+                        "ocpp_name: %Q, "
+                        "ocpp_state: %B}",
+                        mgos_sys_config_get_device_id(),
+                        sn,
+                        MGOS_APP,
+                        mgos_sys_ro_vars_get_fw_version(),
+                        mgos_sys_ro_vars_get_fw_id(),
+                        mgos_sys_ro_vars_get_fw_timestamp(),
+                        mgos_sys_ro_vars_get_mac_address(),
+                        mgos_uptime(),
+                        mgos_sys_config_get_wifi_sta_ssid(),
+                        mgos_hlw8012_readEnergy(hlw8012),
+                        mgos_hlw8012_readActivePower(hlw8012),
+                        mgos_gpio_read(mgos_sys_config_get_gpio_relay()),
+                        mgos_sys_config_get_ocpp_url(),
+                        mgos_sys_config_get_ocpp_name(),
+                        ws_connected);
   (void) cb_arg;
   (void) fi;
   (void) args;
 }
 
-static void shelly_set_switch_handler(struct mg_rpc_request_info *ri,
-                                      void *cb_arg,
-                                      struct mg_rpc_frame_info *fi,
-                                      struct mg_str args) {
+static void wallbox_set_switch_handler(struct mg_rpc_request_info *ri,
+                                       void *cb_arg,
+                                       struct mg_rpc_frame_info *fi,
+                                       struct mg_str args) {
   bool currentValue = mgos_gpio_read(mgos_sys_config_get_gpio_relay());
   mgos_gpio_toggle(mgos_sys_config_get_gpio_relay());
   mg_rpc_send_responsef(ri, "{currentValue: %B, newValue: %B}", currentValue, !currentValue);
@@ -156,10 +188,10 @@ static void shelly_set_switch_handler(struct mg_rpc_request_info *ri,
   (void) args;
 }
 
-static void shelly_get_conso_handler(struct mg_rpc_request_info *ri,
-                                     void *cb_arg,
-                                     struct mg_rpc_frame_info *fi,
-                                     struct mg_str args) {
+static void wallbox_get_conso_handler(struct mg_rpc_request_info *ri,
+                                      void *cb_arg,
+                                      struct mg_rpc_frame_info *fi,
+                                      struct mg_str args) {
   mg_rpc_send_responsef(
       ri,
       "{status: %Q,Current: %d, Voltage: %d, Energy: %d, ActivePower: %d, ApparentPower: %d, PowerFactor: %d, ReactivePower: %d}",
@@ -176,10 +208,10 @@ static void shelly_get_conso_handler(struct mg_rpc_request_info *ri,
   (void) args;
 }
 
-static void shelly_get_uid_handler(struct mg_rpc_request_info *ri,
-                                   void *cb_arg,
-                                   struct mg_rpc_frame_info *fi,
-                                   struct mg_str args) {
+static void wallbox_get_uid_handler(struct mg_rpc_request_info *ri,
+                                    void *cb_arg,
+                                    struct mg_rpc_frame_info *fi,
+                                    struct mg_str args) {
   generate_uuid(default_uuid);
   mg_rpc_send_responsef(ri, "{uid: %Q}", default_uuid);
   (void) cb_arg;
@@ -532,9 +564,14 @@ static void ev_handler(struct mg_connection *nc, int ev, void *ev_data, void *us
         LOG(LL_INFO, ("-- Connected"));
         mgos_provision_set_cur_state(MGOS_PROVISION_ST_CLOUD_CONNECTED);
         ws_connected = true;
-        struct mg_str content = mg_mk_str(
-            "{\"chargeBoxSerialNumber\": \"EV.534150204C616273204672616E6365\",\"chargePointModel\": \"SHELLY\",\"chargePointSerialNumber\": \"3N4453686F70204361656E\",\"chargePointVendor\": \"SAP Labs DShop Caen\",\"firmwareVersion\": \"0.0.1\"}");
+
+        char sn[25];
+        generate_chargepoint_serial_number(sn);
+        char buf[1024];
+        int length = sprintf(buf, OCPP_BOOTNOTIFICATION, MGOS_APP, sn, mgos_sys_ro_vars_get_fw_version());
+        struct mg_str content = mg_mk_str_n(buf, length);
         send_ocpp_request(nc, OCPP_REQUEST_BOOT_NOTIFICATION, OCPP_BOOTNOTIFICATION_TID, content);
+
         if (mgos_sys_config_get_ocpp_transaction_id() > 0) {
           send_ocpp_status_notification(OCPP_STATUS_CHARGING);
         } else {
@@ -619,10 +656,10 @@ static void connect_ocpp_backend() {
   }
 }
 
-static void shelly_reboot_handler(struct mg_rpc_request_info *ri,
-                                  void *cb_arg,
-                                  struct mg_rpc_frame_info *fi,
-                                  struct mg_str args) {
+static void wallbox_reboot_handler(struct mg_rpc_request_info *ri,
+                                   void *cb_arg,
+                                   struct mg_rpc_frame_info *fi,
+                                   struct mg_str args) {
   LOG(LL_INFO, ("RPC request to reboot"));
 
   // OCPP reset and reboot
@@ -634,10 +671,10 @@ static void shelly_reboot_handler(struct mg_rpc_request_info *ri,
   (void) args;
 }
 
-static void shelly_reset_handler(struct mg_rpc_request_info *ri,
-                                 void *cb_arg,
-                                 struct mg_rpc_frame_info *fi,
-                                 struct mg_str args) {
+static void wallbox_reset_handler(struct mg_rpc_request_info *ri,
+                                  void *cb_arg,
+                                  struct mg_rpc_frame_info *fi,
+                                  struct mg_str args) {
   LOG(LL_INFO, ("RPC request to reset to factory settings"));
 
   // OCPP reset and reboot
@@ -689,7 +726,7 @@ enum mgos_app_init_result mgos_app_init(void) {
     LOG(LL_INFO, ("Unable to initialize HLW8012"));
   }
 
-  LOG(LL_INFO, ("Starting Shelly Wallbox"));
+  LOG(LL_INFO, ("Starting Wallbox"));
 
   mgos_hlw8012_begin(hlw8012,
                      mgos_sys_config_get_gpio_cf(),
@@ -713,12 +750,12 @@ enum mgos_app_init_result mgos_app_init(void) {
     mgos_gpio_write(mgos_sys_config_get_gpio_relay(), 0);
   }
 
-  mg_rpc_add_handler(mgos_rpc_get_global(), "Shelly.GetInfo", "", shelly_get_info_handler, NULL);
-  mg_rpc_add_handler(mgos_rpc_get_global(), "Shelly.GetConso", "", shelly_get_conso_handler, NULL);
-  mg_rpc_add_handler(mgos_rpc_get_global(), "Shelly.SetSwitch", "", shelly_set_switch_handler, NULL);
-  mg_rpc_add_handler(mgos_rpc_get_global(), "Shelly.GetUid", "", shelly_get_uid_handler, NULL);
-  mg_rpc_add_handler(mgos_rpc_get_global(), "Shelly.Reboot", "", shelly_reboot_handler, NULL);
-  mg_rpc_add_handler(mgos_rpc_get_global(), "Shelly.Reset", "", shelly_reset_handler, NULL);
+  mg_rpc_add_handler(mgos_rpc_get_global(), "Wallbox.GetInfo", "", wallbox_get_info_handler, NULL);
+  mg_rpc_add_handler(mgos_rpc_get_global(), "Wallbox.GetConso", "", wallbox_get_conso_handler, NULL);
+  mg_rpc_add_handler(mgos_rpc_get_global(), "Wallbox.SetSwitch", "", wallbox_set_switch_handler, NULL);
+  mg_rpc_add_handler(mgos_rpc_get_global(), "Wallbox.GetUid", "", wallbox_get_uid_handler, NULL);
+  mg_rpc_add_handler(mgos_rpc_get_global(), "Wallbox.Reboot", "", wallbox_reboot_handler, NULL);
+  mg_rpc_add_handler(mgos_rpc_get_global(), "Wallbox.Reset", "", wallbox_reset_handler, NULL);
 
   connect_ocpp_backend();
   time(&last_ocpp_interaction);

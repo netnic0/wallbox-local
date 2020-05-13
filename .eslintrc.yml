@@ -4,7 +4,7 @@ env:
   node: true
 extends: 'eslint:recommended'
 globals:
-  jQuery: true
+  axios: true
 parserOptions:
   ecmaVersion: 2018
 rules:
@@ -60,7 +60,7 @@ rules:
   func-names: 'off'
   func-style:
     - error
-    - declaration
+    - expression
   function-call-argument-newline: 'off'
   function-paren-newline: 'off'
   generator-star-spacing: error
