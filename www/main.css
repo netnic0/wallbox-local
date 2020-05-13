@@ -83,7 +83,7 @@ h2 {
   margin: 0.5em 0;
 }
 
-.form-control input, .form-control button {
+.form-control input[type=text], .form-control input[type=password], .form-control button {
   min-width: 15em;
 }
 
@@ -91,6 +91,10 @@ h2 {
   color: #333333;
   display: inline-block;
   min-width: 10em;
+}
+
+#wifi_pass_show_label {
+  font-size: 0.8rem;
 }
 
 .form {
