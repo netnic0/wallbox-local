@@ -265,6 +265,21 @@ const updateFirmware = evt => {
 
 document.getElementById("fw_upload_btn").onclick = updateFirmware;
 
+const showPassword = () => {
+    const input = document.getElementById("wifi_pass");
+    const cb = document.getElementById("wifi_pass_show");
+    if (input.type === "text") {
+        input.type = "password";
+        cb.checked = false;
+    } else {
+        input.type = "text";
+        cb.checked = true;
+    }
+};
+document.getElementById("wifi_pass_show").onclick = showPassword;
+document.getElementById("wifi_pass_show_label").onclick = showPassword;
+
+
 (function(){
     getInfo();
     refreshTimer = setInterval(refreshInfo, 10000);
