@@ -7,9 +7,11 @@
   "license": "SEE LICENSE IN LICENSE",
   "scripts": {
     "mos-build": "mos build --local --platform esp8266",
+    "mos-build:remote": "mos build --platform esp8266",
     "lint": "./node_modules/.bin/eslint .",
     "gulp": "./node_modules/.bin/gulp gzip",
     "build": "npm run lint && npm run gulp && npm run mos-build",
+    "build:remote": "npm run lint && npm run gulp && npm run mos-build:remote",
     "console": "mos --port udp://:1993/ console"
   },
   "repository": {
