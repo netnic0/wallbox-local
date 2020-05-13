@@ -19,8 +19,8 @@
 #include "mgos_app.h"
 #include "mgos_hlw8012.h"
 #include "mgos_ota_http_client.h"
-#include "mgos_rpc.h"
 #include "mgos_provision.h"
+#include "mgos_rpc.h"
 #ifdef MGOS_HAVE_OTA_COMMON
 #include "mgos_ota.h"
 #endif
@@ -380,7 +380,7 @@ static mg_str startTransaction(const char *payload) {
 static mg_str reset_soft() {
   LOG(LL_INFO, ("Performing soft reset"));
 
-  if (mgos_sys_config_get_ocpp_transaction_id()) {
+  if (mgos_sys_config_get_ocpp_transaction_id() > 0) {
     stopTransaction(OCPP_STOP_TRANSACTION_REASON_SOFTRESET);
   }
 
@@ -396,11 +396,11 @@ static mg_str reset_soft() {
 static mg_str reset_hard() {
   LOG(LL_INFO, ("Performing hard reset"));
 
-  if (mgos_sys_config_get_ocpp_transaction_id()) {
+  if (mgos_sys_config_get_ocpp_transaction_id() > 0) {
     stopTransaction(OCPP_STOP_TRANSACTION_REASON_HARDRESET);
   }
 
-  mgos_system_restart_after(5000);
+  mgos_system_restart_after(10000);
 
   return mg_mk_str(OCPP_RESPONSE_ACCEPTED);
 }
@@ -665,7 +665,7 @@ static void wallbox_reboot_handler(struct mg_rpc_request_info *ri,
   // OCPP reset and reboot
   reset_hard();
 
-  mg_rpc_send_responsef(ri, NULL);
+  mg_rpc_send_responsef(ri, "{}");
   (void) cb_arg;
   (void) fi;
   (void) args;
@@ -683,7 +683,7 @@ static void wallbox_reset_handler(struct mg_rpc_request_info *ri,
   // Reset config
   mgos_config_reset(MGOS_CONFIG_LEVEL_USER);
 
-  mg_rpc_send_responsef(ri, NULL);
+  mg_rpc_send_responsef(ri, "{}");
   (void) cb_arg;
   (void) fi;
   (void) args;
