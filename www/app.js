@@ -3,6 +3,8 @@
 const host = "";
 let refreshTimer;
 
+const toast = document.getElementById("toast");
+
 const wifiSSID = document.getElementById("wifi_ssid");
 const wifiPass = document.getElementById("wifi_pass");
 const ocppUrl = document.getElementById("ocpp_url");
@@ -22,6 +24,23 @@ const firmwareSpinner = document.getElementById("fw_spinner");
 
 const infoTitle = document.getElementById("info_title");
 const infoMessage = document.getElementById("info_message");
+
+const showToast = message => {
+    toast.innerHTML = message;
+    toast.className = "show";
+    setTimeout(() => {
+        toast.className = toast.className.replace("show", "");
+    }, 4000);
+}
+
+const handleAxiosError = err => {
+    console.error(err);
+    let msg = err;
+    if (err.response) {
+        msg = err.response.data.message;
+    }
+    showToast(msg);
+}
 
 const showInfoDialog = (message, title, spin, reboot) => {
     clearInterval(refreshTimer);
@@ -78,12 +97,7 @@ document.getElementById("ocpp_save_btn").onclick = function () {
             "Device is rebooting and connecting to OCPP backend.",
             "Configuration", true, true);
     }).catch(function (err) {
-        console.error(err);
-        let msg = err;
-        if (err.response) {
-            msg = err.response.data.message;
-        }
-        alert(msg);
+        handleAxiosError(err);
     }).then(function () {
         ocppSpinner.className = "";
     });
@@ -109,12 +123,7 @@ document.getElementById("wifi_save_btn").onclick = function () {
             deviceIdStr + ".local.</a>.",
             "Configuration", false, false);
     }).catch(function (err) {
-        console.error(err);
-        let msg = err;
-        if (err.response) {
-            msg = err.response.data.message;
-        }
-        alert(msg);
+        handleAxiosError(err);
     }).then(function () {
         wifiSpinner.className = "";
     });
@@ -136,12 +145,7 @@ document.getElementById("reset_btn").onclick = function () {
             false,
             false);
     }).catch(function (err) {
-        console.error(err);
-        let msg = err;
-        if (err.response) {
-            msg = err.response.data.message;
-        }
-        alert(msg);
+        handleAxiosError(err);
     }).then(function () {
         resetSpinner.className = "";
     });
@@ -154,19 +158,14 @@ document.getElementById("reboot_btn").onclick = function () {
     }
     rebootSpinner.className = "spin";
     const data = {};
-    axios.post(host + "/rpc/Wallbox.Reboot", data).then(function () {
+    axios.post(host + "/rpc/Wallbox.Rebootoo", data).then(function () {
         showInfoDialog(
             "Device is rebooting. Please wait...",
             "Reboot",
             true,
             true);
     }).catch(function (err) {
-        console.error(err);
-        let msg = err;
-        if (err.response) {
-            msg = err.response.data.message;
-        }
-        alert(msg);
+        handleAxiosError(err);
     }).then(function () {
         rebootSpinner.className = "";
     });
@@ -190,12 +189,7 @@ const getLogs = () => {
             });
         }
     }).catch(function (err) {
-        console.error(err);
-        let msg = err;
-        if (err.response) {
-            msg = err.response.data.message;
-        }
-        alert(msg);
+        handleAxiosError(err);
     });
 }
 
@@ -222,8 +216,7 @@ const getInfo = () => {
         ocppState.innerText = state ? "Connected" : "Disconnected";
         ocppState.className = state ? "connected" : "disconnected";
     }).catch(function (err) {
-        console.error(err);
-        alert(err);
+        handleAxiosError(err);
     }).then(function () {
         refreshSpinner.className = "";
     });
@@ -242,7 +235,7 @@ const refreshInfo = () => {
         ocppState.innerText = state ? "Connected" : "Disconnected";
         ocppState.className = state ? "connected" : "disconnected";
     }).catch(function (err) {
-        console.error(err);
+        handleAxiosError(err);
     }).then(function () {
         refreshSpinner.className = "";
     });
@@ -284,7 +277,7 @@ const updateFirmware = evt => {
             firmwareSpinner.className = "";
             console.error(error);
             hideInfoDialog();
-            alert("Update failed. Check firmware file.");
+            showToast("Update failed. Check firmware file.");
         });
     }
 }
