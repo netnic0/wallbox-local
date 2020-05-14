@@ -189,7 +189,7 @@ h2 {
   }
 }
 
-#logs {
+.flex-list {
   display: flex;
   flex-direction: column;
 }
@@ -199,10 +199,6 @@ h2 {
   border: 0.15em solid #55555577;
   height: 1.1em;
   width: 1.1em;
-}
-
-.show_password {
-  background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAASCAYAAABWzo5XAAAAxklEQVR4Ae3QgQbCUBiG4TAMIUAIEKA7CaELCCGEIQQYQhiGXcAAIUDoAgYYhgBDgAECDMPfiy9qy8wA7OWBD8fxj3o3NMURdzyR4oIdXHRqhxKGDCEi5DAUWKG1ACYnOPjkIoahgoe/bWCSaJshgI8JXOQwWeKnMQqYHLTHMPG1RTDJ4dSPW8LE036FSaAtrD3UOL4Pk5u2Ba6IMYODDCZrNHJqP9ii3gkmIVo7o/r6mYcDEhgq7NGpOSKkeKHCAwHm6NHQG2sPR0nboudmAAAAAElFTkSuQmCC) no-repeat right center;
 }
 
 #main_container h1 {
