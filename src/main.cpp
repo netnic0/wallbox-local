@@ -132,6 +132,18 @@ static void generate_chargepoint_serial_number(char *sn) {
   sprintf(sn, "534C46434652%s", mgos_sys_ro_vars_get_mac_address());
 }
 
+static int compute_energy() {
+  int energy = mgos_hlw8012_readEnergy(hlw8012) / 3600;
+  int previousEnergy = mgos_sys_config_get_ocpp_transaction_consumption();
+
+  if (previousEnergy > energy) {
+    energy = previousEnergy + energy;
+  }
+  mgos_sys_config_set_ocpp_transaction_consumption(energy);
+  mgos_sys_config_save(&mgos_sys_config, false, NULL);
+  return energy;
+}
+
 static void wallbox_get_info_handler(struct mg_rpc_request_info *ri,
                                      void *cb_arg,
                                      struct mg_rpc_frame_info *fi,
@@ -164,56 +176,12 @@ static void wallbox_get_info_handler(struct mg_rpc_request_info *ri,
                         mgos_sys_ro_vars_get_mac_address(),
                         mgos_uptime(),
                         mgos_sys_config_get_wifi_sta_ssid(),
-                        mgos_hlw8012_readEnergy(hlw8012),
+                        mgos_sys_config_get_ocpp_transaction_consumption(),
                         mgos_hlw8012_readActivePower(hlw8012),
                         mgos_gpio_read(mgos_sys_config_get_gpio_relay()),
                         mgos_sys_config_get_ocpp_url(),
                         mgos_sys_config_get_ocpp_name(),
                         ws_connected);
-  (void) cb_arg;
-  (void) fi;
-  (void) args;
-}
-
-static void wallbox_set_switch_handler(struct mg_rpc_request_info *ri,
-                                       void *cb_arg,
-                                       struct mg_rpc_frame_info *fi,
-                                       struct mg_str args) {
-  bool currentValue = mgos_gpio_read(mgos_sys_config_get_gpio_relay());
-  mgos_gpio_toggle(mgos_sys_config_get_gpio_relay());
-  mg_rpc_send_responsef(ri, "{currentValue: %B, newValue: %B}", currentValue, !currentValue);
-
-  (void) cb_arg;
-  (void) fi;
-  (void) args;
-}
-
-static void wallbox_get_conso_handler(struct mg_rpc_request_info *ri,
-                                      void *cb_arg,
-                                      struct mg_rpc_frame_info *fi,
-                                      struct mg_str args) {
-  mg_rpc_send_responsef(
-      ri,
-      "{status: %Q,Current: %d, Voltage: %d, Energy: %d, ActivePower: %d, ApparentPower: %d, PowerFactor: %d, ReactivePower: %d}",
-      (hlw8012 == NULL) ? "failed" : "ok",
-      mgos_hlw8012_readCurrent(hlw8012),
-      mgos_hlw8012_readVoltage(hlw8012),
-      mgos_hlw8012_readEnergy(hlw8012),
-      mgos_hlw8012_readActivePower(hlw8012),
-      mgos_hlw8012_readApparentPower(hlw8012),
-      mgos_hlw8012_readPowerFactor(hlw8012),
-      mgos_hlw8012_readReactivePower(hlw8012));
-  (void) cb_arg;
-  (void) fi;
-  (void) args;
-}
-
-static void wallbox_get_uid_handler(struct mg_rpc_request_info *ri,
-                                    void *cb_arg,
-                                    struct mg_rpc_frame_info *fi,
-                                    struct mg_str args) {
-  generate_uuid(default_uuid);
-  mg_rpc_send_responsef(ri, "{uid: %Q}", default_uuid);
   (void) cb_arg;
   (void) fi;
   (void) args;
@@ -284,7 +252,7 @@ static void send_ocpp_meter_values() {
   char date_buffer[30];
   get_current_date(date_buffer);
   generate_uuid(default_uuid);
-  int energy = mgos_hlw8012_readEnergy(hlw8012) / 3600;
+  int energy = compute_energy();
 
   length = sprintf(
       buf,
@@ -301,7 +269,7 @@ static mg_str stopTransaction(const char *reason) {
   LOG(LL_DEBUG,
       ("Stop transaction %d for tag %s, reason %s",
        mgos_sys_config_get_ocpp_transaction_id(),
-       mgos_sys_config_get_ocpp_tag_id(),
+       mgos_sys_config_get_ocpp_transaction_tag_id(),
        reason));
 
   send_ocpp_status_notification(OCPP_STATUS_FINISHING);
@@ -314,14 +282,14 @@ static mg_str stopTransaction(const char *reason) {
   get_current_date(date_buffer);
   generate_uuid(stop_transaction_uuid);
 
-  int energy = mgos_hlw8012_readEnergy(hlw8012) / 3600;
+  int energy = compute_energy();
 
   length = sprintf(
       buf,
       "{\"meterStop\": %d,\"transactionId\": \"%d\",\"idTag\": \"%s\",\"timestamp\": \"%s\",\"reason\": \"%s\"}",
       energy,
       mgos_sys_config_get_ocpp_transaction_id(),
-      mgos_sys_config_get_ocpp_tag_id(),
+      mgos_sys_config_get_ocpp_transaction_tag_id(),
       date_buffer,
       reason);
   struct mg_str content = mg_mk_str_n(buf, length);
@@ -485,7 +453,8 @@ static void handle_ocpp_response(struct mg_connection *nc, const char *id, const
       mgos_hlw8012_resetEnergy(hlw8012);
       mgos_gpio_write(mgos_sys_config_get_gpio_relay(), 1);
       mgos_sys_config_set_ocpp_transaction_id(transaction_id);
-      mgos_sys_config_set_ocpp_tag_id(tag_id);
+      mgos_sys_config_set_ocpp_transaction_tag_id(tag_id);
+      mgos_sys_config_set_ocpp_transaction_consumption(0);
       mgos_sys_config_save(&mgos_sys_config, false, NULL);
       LOG(LL_INFO, ("Transaction started %d", transaction_id));
     } else {
@@ -690,7 +659,6 @@ static void wallbox_reset_handler(struct mg_rpc_request_info *ri,
 }
 
 static void timer_cb(void *arg) {
-  LOG(LL_INFO, ("Timer callback connected ? %d", ws_connected));
   if (ws_connected == true) {
     send_ocpp_heartbeat();
     int energy = mgos_hlw8012_readEnergy(hlw8012);
@@ -716,9 +684,6 @@ enum mgos_app_init_result mgos_app_init(void) {
     remove("passwd");
     remove("relaydata");
   }
-#endif
-#ifdef LED_PIN
-  mgos_gpio_setup_output(LED_PIN, 0);
 #endif
   if ((hlw8012 = mgos_hlw8012_create()) == NULL) {
     LOG(LL_ERROR, ("Unable to initialize HLW8012"));
@@ -749,9 +714,6 @@ enum mgos_app_init_result mgos_app_init(void) {
   }
 
   mg_rpc_add_handler(mgos_rpc_get_global(), "Wallbox.GetInfo", "", wallbox_get_info_handler, NULL);
-  mg_rpc_add_handler(mgos_rpc_get_global(), "Wallbox.GetConso", "", wallbox_get_conso_handler, NULL);
-  mg_rpc_add_handler(mgos_rpc_get_global(), "Wallbox.SetSwitch", "", wallbox_set_switch_handler, NULL);
-  mg_rpc_add_handler(mgos_rpc_get_global(), "Wallbox.GetUid", "", wallbox_get_uid_handler, NULL);
   mg_rpc_add_handler(mgos_rpc_get_global(), "Wallbox.Reboot", "", wallbox_reboot_handler, NULL);
   mg_rpc_add_handler(mgos_rpc_get_global(), "Wallbox.Reset", "", wallbox_reset_handler, NULL);
 
