@@ -175,6 +175,8 @@ document.getElementById("reboot_btn").onclick = function () {
 const getLogs = () => {
     axios.get(host + "/rpc/FS.List").then(function (res) {
         if (res && res.data && res.data.length > 0) {
+            res.data.sort();
+            res.data.reverse();
             res.data.forEach(function (filename) {
                 if (filename.startsWith("log_")) {
                     const a = document.createElement('a');
@@ -182,7 +184,7 @@ const getLogs = () => {
                     a.appendChild(link);
                     a.title = filename;
                     a.href = host + filename;
-
+                    a.target = "_blank";
                     document.getElementById("logs").appendChild(a);
                 }
             });
@@ -241,7 +243,6 @@ const refreshInfo = () => {
         ocppState.className = state ? "connected" : "disconnected";
     }).catch(function (err) {
         console.error(err);
-        alert(err);
     }).then(function () {
         refreshSpinner.className = "";
     });
