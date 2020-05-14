@@ -233,7 +233,7 @@ static void send_ocpp_request(struct mg_connection *nc, const char *cmd, const c
   char buf[1024];
   int length;
   length = sprintf(buf, "[2, \"%s\", \"%s\", %s]", id, cmd, data.p);
-  LOG(LL_INFO, ("Sending request %.*s", length, buf));
+  LOG(LL_DEBUG, ("Sending request %.*s", length, buf));
   mg_send_websocket_frame(nc, WEBSOCKET_OP_TEXT, buf, length);
   time(&last_ocpp_interaction);
 }
@@ -273,7 +273,7 @@ static void send_ocpp_status_notification(const char *status) {
                    status,
                    date_buffer);
   struct mg_str content = mg_mk_str_n(buf, length);
-  LOG(LL_INFO, ("Sending status notification %.*s", length, buf));
+  LOG(LL_DEBUG, ("Sending status notification %.*s", length, buf));
   send_ocpp_request(ws_connection, OCPP_REQUEST_STATUS_NOTIFICATION, default_uuid, content);
 }
 
@@ -293,12 +293,12 @@ static void send_ocpp_meter_values() {
       energy,
       date_buffer);
   struct mg_str content = mg_mk_str_n(buf, length);
-  LOG(LL_INFO, ("Sending meter values %.*s", length, buf));
+  LOG(LL_DEBUG, ("Sending meter values %.*s", length, buf));
   send_ocpp_request(ws_connection, OCPP_REQUEST_METER_VALUES, default_uuid, content);
 }
 
 static mg_str stopTransaction(const char *reason) {
-  LOG(LL_INFO,
+  LOG(LL_DEBUG,
       ("Stop transaction %d for tag %s, reason %s",
        mgos_sys_config_get_ocpp_transaction_id(),
        mgos_sys_config_get_ocpp_tag_id(),
@@ -325,7 +325,7 @@ static mg_str stopTransaction(const char *reason) {
       date_buffer,
       reason);
   struct mg_str content = mg_mk_str_n(buf, length);
-  LOG(LL_INFO, ("Sending stop transaction %.*s", length, buf));
+  LOG(LL_DEBUG, ("Sending stop transaction %.*s", length, buf));
   send_ocpp_request(ws_connection, OCPP_REQUEST_STOP_TRANSACTION, stop_transaction_uuid, content);
   return mg_mk_str(OCPP_RESPONSE_ACCEPTED);
 }
@@ -336,12 +336,12 @@ static mg_str stopTransaction(const char *payload, const char *reason) {
     if (id == mgos_sys_config_get_ocpp_transaction_id()) {
       return stopTransaction(reason);
     } else {
-      LOG(LL_INFO,
+      LOG(LL_ERROR,
           ("Payload %s not matching current transaction id %d", payload, mgos_sys_config_get_ocpp_transaction_id()));
       return mg_mk_str(OCPP_RESPONSE_REJECTED);
     }
   } else {
-    LOG(LL_INFO, ("Unable to find transaction id in payload %s", payload));
+    LOG(LL_ERROR, ("Unable to find transaction id in payload %s", payload));
     return mg_mk_str(OCPP_RESPONSE_REJECTED);
   }
 }
@@ -362,11 +362,11 @@ static mg_str startTransaction(const char *payload) {
     length = sprintf(
         buf, "{\"connectorId\": 1, \"meterStart\": 0, \"idTag\": \"%s\",\"timestamp\": \"%s\"}", tag_id, date_buffer);
     struct mg_str content = mg_mk_str_n(buf, length);
-    LOG(LL_INFO, ("Sending start transaction %.*s", length, buf));
+    LOG(LL_DEBUG, ("Sending start transaction %.*s", length, buf));
     send_ocpp_request(ws_connection, OCPP_REQUEST_START_TRANSACTION, start_transaction_uuid, content);
     return mg_mk_str(OCPP_RESPONSE_ACCEPTED);
   } else {
-    LOG(LL_INFO, ("Unable to find tag id in payload %s", payload));
+    LOG(LL_WARN, ("Unable to find tag id in payload %s", payload));
     return mg_mk_str(OCPP_RESPONSE_REJECTED);
   }
 }
@@ -421,20 +421,20 @@ static mg_str reset(const char *payload) {
     }
   }
 
-  LOG(LL_INFO, ("Unable to find reset type in payload %s", payload));
+  LOG(LL_WARN, ("Unable to find reset type in payload %s", payload));
   return mg_mk_str(OCPP_RESPONSE_REJECTED);
 }
 
 static mg_str getConfiguration(const char *payload) {
   char buf[1800];
   int length;
-  LOG(LL_INFO, ("OCPP GetConfiguration request: %s", payload));
+  LOG(LL_DEBUG, ("OCPP GetConfiguration request: %s", payload));
   length = sprintf(buf, OCPP_CONFIGURATION, mgos_sys_config_get_ocpp_config_heartbeat_interval());
   return mg_mk_str_n(buf, length);
 }
 
 static mg_str changeConfiguration(const char *payload) {
-  LOG(LL_INFO, ("OCPP ChangeConfiguration request: %s", payload));
+  LOG(LL_DEBUG, ("OCPP ChangeConfiguration request: %s", payload));
   char *key = NULL;
 
   if (json_scanf(payload, strlen(payload), "{ key:%Q }", &key) > 0) {
@@ -472,12 +472,12 @@ static mg_str updateFirmware(const char *payload) {
     return mg_mk_str(OCPP_RESPONSE_ACCEPTED);
   }
 
-  LOG(LL_INFO, ("Unable to find location in payload %s", payload));
+  LOG(LL_WARN, ("Unable to find location in payload %s", payload));
   return mg_mk_str(OCPP_RESPONSE_REJECTED);
 }
 
 static void handle_ocpp_response(struct mg_connection *nc, const char *id, const char *payload) {
-  LOG(LL_INFO, ("Handle ocpp response with id %s", id));
+  LOG(LL_DEBUG, ("Handle ocpp response with id %s", id));
   if (strcmp(id, start_transaction_uuid) == 0) {
     int transaction_id;
     if (json_scanf(payload, strlen(payload), "{ transactionId:%d }", &transaction_id) > 0) {
@@ -492,7 +492,7 @@ static void handle_ocpp_response(struct mg_connection *nc, const char *id, const
       send_ocpp_status_notification(OCPP_STATUS_AVAILABLE);
       mgos_sys_config_set_ocpp_transaction_id(-1);
       mgos_sys_config_save(&mgos_sys_config, false, NULL);
-      LOG(LL_INFO, ("Failed to start transaction"));
+      LOG(LL_ERROR, ("Failed to start transaction"));
     }
   } else if (strcmp(id, stop_transaction_uuid) == 0) {
     send_ocpp_status_notification(OCPP_STATUS_AVAILABLE);
@@ -515,7 +515,7 @@ static void handle_ocpp_response(struct mg_connection *nc, const char *id, const
 }
 
 static void handle_ocpp_cmd(struct mg_connection *nc, const char *cmd, const char *id, const char *payload) {
-  LOG(LL_INFO, ("Handle ocpp cmd %s with id %s", cmd, id));
+  LOG(LL_DEBUG, ("Handle ocpp cmd %s with id %s", cmd, id));
   struct mg_str data;
   if (strcmp(cmd, OCPP_REQUEST_GET_CONFIGURATION) == 0) {
     data = getConfiguration(payload);
@@ -545,14 +545,14 @@ static void ev_handler(struct mg_connection *nc, int ev, void *ev_data, void *us
   switch (ev) {
     case MG_EV_CONNECT: {
       int status = *((int *) ev_data);
-      LOG(LL_INFO, ("-- Connection status: %d", status));
+      LOG(LL_DEBUG, ("-- Connection status: %d", status));
       if (status != 0) {
         LOG(LL_ERROR, ("-- Connection error: %d", status));
       }
       break;
     }
     case MG_EV_WEBSOCKET_HANDSHAKE_REQUEST:
-      LOG(LL_INFO, ("-- handshake Request"));
+      LOG(LL_DEBUG, ("-- handshake Request"));
       break;
     case MG_EV_WEBSOCKET_HANDSHAKE_DONE: {
       struct http_message *hm = (struct http_message *) ev_data;
@@ -585,7 +585,7 @@ static void ev_handler(struct mg_connection *nc, int ev, void *ev_data, void *us
     }
     case MG_EV_WEBSOCKET_FRAME: {
       struct websocket_message *wm = (struct websocket_message *) ev_data;
-      LOG(LL_INFO, ("-- Frame %.*s", (int) wm->size, wm->data));
+      LOG(LL_DEBUG, ("-- Frame %.*s", (int) wm->size, wm->data));
       if (wm->size < 2) {
         break;
       } else if (wm->data[1] == '2') {
@@ -694,9 +694,7 @@ static void timer_cb(void *arg) {
   if (ws_connected == true) {
     send_ocpp_heartbeat();
     int energy = mgos_hlw8012_readEnergy(hlw8012);
-    LOG(LL_INFO, ("Energy Ws  %d", energy));
-    LOG(LL_INFO, ("Energy Wh %d", energy / 3600));
-    LOG(LL_INFO, ("ActivePower %d", mgos_hlw8012_readActivePower(hlw8012)));
+    LOG(LL_INFO, ("Energy Ws  %d, Energy Wh %d, ActivePower %d", energy, energy / 3600, mgos_hlw8012_readActivePower(hlw8012)));
 
     if (mgos_sys_config_get_ocpp_transaction_id() > 0) {
       send_ocpp_meter_values();
@@ -723,7 +721,7 @@ enum mgos_app_init_result mgos_app_init(void) {
   mgos_gpio_setup_output(LED_PIN, 0);
 #endif
   if ((hlw8012 = mgos_hlw8012_create()) == NULL) {
-    LOG(LL_INFO, ("Unable to initialize HLW8012"));
+    LOG(LL_ERROR, ("Unable to initialize HLW8012"));
   }
 
   LOG(LL_INFO, ("Starting Wallbox"));

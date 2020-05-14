@@ -15,16 +15,16 @@ body {
   font-size: medium;
 }
 
-input, button, div, pre, p {
+input, button, div, pre, p, a {
   font: inherit;
 }
 
-button {
+button, a {
   background-color: #ffffff;
   border-radius: 4px;
   border: none;
   /* box-sizing: border-box; */
-  color: #666666;
+  color: #3399dd;
   cursor: pointer;
   font-size: small;
   font-weight: bold;
@@ -33,6 +33,10 @@ button {
   text-decoration: none;
   text-transform: uppercase;
   vertical-align: middle;
+}
+
+button:hover {
+  background-color: #3399dd11;
 }
 
 input[type=text], input[type=password] {
@@ -80,11 +84,15 @@ h2 {
 }
 
 .form-control {
+  display: flex;
+  width: 100%;
   margin: 0.5em 0;
 }
 
 .form-control input[type=text], .form-control input[type=password], .form-control button {
   min-width: 15em;
+  margin-right: 1em;
+  flex-grow: 1;
 }
 
 .form label {
@@ -104,14 +112,6 @@ h2 {
 .form-actions {
   margin: 0.5em 0;
   padding-top: 1em;
-}
-
-.btn {
-  color: #3399dd;
-}
-
-.btn:hover {
-  background-color: #3399dd11;
 }
 
 .admin-btn {
@@ -189,11 +189,20 @@ h2 {
   }
 }
 
+#logs {
+  display: flex;
+  flex-direction: column;
+}
+
 .spin.reboot {
   border-top-color: #555555;
   border: 0.15em solid #55555577;
   height: 1.1em;
   width: 1.1em;
+}
+
+.show_password {
+  background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAASCAYAAABWzo5XAAAAxklEQVR4Ae3QgQbCUBiG4TAMIUAIEKA7CaELCCGEIQQYQhiGXcAAIUDoAgYYhgBDgAECDMPfiy9qy8wA7OWBD8fxj3o3NMURdzyR4oIdXHRqhxKGDCEi5DAUWKG1ACYnOPjkIoahgoe/bWCSaJshgI8JXOQwWeKnMQqYHLTHMPG1RTDJ4dSPW8LE036FSaAtrD3UOL4Pk5u2Ba6IMYODDCZrNHJqP9ii3gkmIVo7o/r6mYcDEhgq7NGpOSKkeKHCAwHm6NHQG2sPR0nboudmAAAAAElFTkSuQmCC) no-repeat right center;
 }
 
 #main_container h1 {

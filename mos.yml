@@ -43,6 +43,9 @@ config_schema:
   - ["provision.btn.hold_ms", 5000]
   - ["provision.led.pin", 0]
   - ["provision.led.active_high", false]
+  - ["file_logger.enable", true]
+  - ["file_logger.max_file_size", 8000]
+  - ["file_logger.level", 0]
 
 libs:
   - origin: https://github.com/mongoose-os-libs/mbedtls
@@ -60,6 +63,7 @@ libs:
   - origin: https://github.com/mongoose-os-libs/rpc-service-ota
   - origin: https://github.com/mongoose-os-libs/wifi
   - origin: https://github.com/mongoose-os-libs/sntp
+  - origin: https://github.com/mongoose-os-libs/file-logger
   - origin: https://github.com/ellavas/provision
   - origin: https://github.com/ellavas/mongoose-lib-hlw8012
   # - origin: ../mongoose-lib-hlw8012

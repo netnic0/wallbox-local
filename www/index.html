@@ -30,11 +30,11 @@
             <span id="energy"></span>
           </div>
           <div class="form-control">
-            <label>Power (Wh):</label>
+            <label>Power (W):</label>
             <span id="power"></span>
           </div>
           <div class="form-actions">
-            <button class="btn" id="refresh_btn">
+            <button id="refresh_btn">
               Refresh
               <span id="refresh_spinner"></span>
             </button>
@@ -53,6 +53,7 @@
               <label>Network SSID:</label>
               <input type="text" id="wifi_ssid" autocomplete="wifi ssid">
             </div>
+            
             <div class="form-control">
               <label>Password:</label>
               <input type="password" id="wifi_pass" autocomplete="wifi current-password">
@@ -63,7 +64,7 @@
                 <span id="wifi_pass_show_label">Show password</span>
             </div>
             <div class="form-actions">
-              <button class="btn" id="wifi_save_btn">
+              <button id="wifi_save_btn">
                 Save
                 <span id="wifi_spinner"></span>
               </button>
@@ -87,7 +88,7 @@
             <input type="text" id="ocpp_url" autocomplete="ocpp backend-url">
           </div>
           <div class="form-actions">
-            <button class="btn" id="ocpp_save_btn">
+            <button id="ocpp_save_btn">
               Save
               <span id="ocpp_spinner"></span>
             </button>
@@ -123,7 +124,7 @@
               <input type="file" id="fw_select_file" name="file" accept=".zip" />
             </div>
             <div class="form-actions">
-              <button class="btn" id="fw_upload_btn">
+              <button id="fw_upload_btn">
                 Upload
                 <span id="fw_spinner"></span>
               </button>
@@ -153,6 +154,9 @@
           <div class="form-control">
             <label>Up time:</label>
             <span id="uptime"></span>
+          </div>
+          <div id="logs">
+
           </div>
           <div class="form-actions">
             <button class="admin-btn" id="reboot_btn">
