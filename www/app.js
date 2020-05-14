@@ -158,7 +158,7 @@ document.getElementById("reboot_btn").onclick = function () {
     }
     rebootSpinner.className = "spin";
     const data = {};
-    axios.post(host + "/rpc/Wallbox.Rebootoo", data).then(function () {
+    axios.post(host + "/rpc/Wallbox.Reboot", data).then(function () {
         showInfoDialog(
             "Device is rebooting. Please wait...",
             "Reboot",
