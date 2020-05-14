@@ -1,194 +1,201 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <title>Wallbox</title>
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <meta name="description" content="Wallbox configuration">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="./main.css.gz" type="text/css" />
-    <link rel="shortcut icon" href="./favicon.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="./favicon.png">
-  </head>
-  <body>
 
-    <div class="container" id="main_container">
-      <h1>Wallbox</h1>
-      <h2>Information and status of the wallbox</h2>
-      <div class="form">
-        <div class="">
-          <div class="form-control">
-            <label>Status:</label>
-            <span id="state" class=""></span>
-          </div>
-          <div class="form-control">
-            <label>e-Mobility:</label>
-            <span id="ocpp_state" class="disconnected"></span>
-          </div>
-          <div class="form-control">
-            <label>Energy (Wh):</label>
-            <span id="energy"></span>
-          </div>
-          <div class="form-control">
-            <label>Power (W):</label>
-            <span id="power"></span>
-          </div>
-          <div class="form-actions">
-            <button id="refresh_btn">
-              Refresh
-              <span id="refresh_spinner"></span>
-            </button>
-          </div>
+<head>
+  <title>Wallbox</title>
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta name="description" content="Wallbox configuration">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <link rel="stylesheet" href="./main.css.gz" type="text/css" />
+  <link rel="shortcut icon" href="./favicon.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="./favicon.png">
+
+</head>
+
+<body>
+
+  <div class="container" id="main_container">
+    <h1>Wallbox</h1>
+    <h2>Information and status of the wallbox</h2>
+    <div class="form">
+      <div class="">
+        <div class="form-control">
+          <label>Status:</label>
+          <span id="state" class=""></span>
+        </div>
+        <div class="form-control">
+          <label>e-Mobility:</label>
+          <span id="ocpp_state" class="disconnected"></span>
+        </div>
+        <div class="form-control">
+          <label>Energy (Wh):</label>
+          <span id="energy"></span>
+        </div>
+        <div class="form-control">
+          <label>Power (W):</label>
+          <span id="power"></span>
+        </div>
+        <div class="form-actions">
+          <button id="refresh_btn">
+            Refresh
+            <span id="refresh_spinner"></span>
+          </button>
         </div>
       </div>
     </div>
+  </div>
 
-    <div class="container" id="wifi_container">
-      <h1 class="">Wi-Fi</h1>
-      <h2>Configuration of the Wi-Fi connection</h2>
-      <div class="form">
-        <div class="">
-          <form id="wifi_form">
-            <div class="form-control">
-              <label>Network SSID:</label>
-              <input type="text" id="wifi_ssid" autocomplete="wifi ssid">
-            </div>
-
-            <div class="form-control">
-              <label>Password:</label>
-              <input type="password" id="wifi_pass" autocomplete="wifi current-password">
-            </div>
-            <div class="form-control">
-                <label> </label>
-                <input type="checkbox" id="wifi_pass_show">
-                <span id="wifi_pass_show_label">Show password</span>
-            </div>
-            <div class="form-actions">
-              <button id="wifi_save_btn">
-                Save
-                <span id="wifi_spinner"></span>
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-
-    <div class="container" id="ocpp_container">
-      <h1 class="">e-Mobility</h1>
-      <h2>Configuration of the connection to the OCPP server</h2>
-      <div class="form">
-        <div class="">
+  <div class="container" id="wifi_container">
+    <h1 class="">Wi-Fi</h1>
+    <h2>Configuration of the Wi-Fi connection</h2>
+    <div class="form">
+      <div class="">
+        <form id="wifi_form">
           <div class="form-control">
-            <label>Wallbox name:</label>
-            <input type="text" id="ocpp_name" autocomplete="ocpp wallbox-name">
+            <label>Network SSID:</label>
+            <input type="text" id="wifi_ssid" autocomplete="wifi ssid">
+          </div>
+
+          <div class="form-control">
+            <label>Password:</label>
+            <input type="password" id="wifi_pass" autocomplete="wifi current-password">
           </div>
           <div class="form-control">
-            <label>Backend URL:</label>
-            <input type="text" id="ocpp_url" autocomplete="ocpp backend-url">
+            <label> </label>
+            <input type="checkbox" id="wifi_pass_show">
+            <label for="wifi_pass_show" id="wifi_pass_show_label">Show password</label>
           </div>
           <div class="form-actions">
-            <button id="ocpp_save_btn">
+            <button id="wifi_save_btn">
               Save
-              <span id="ocpp_spinner"></span>
+              <span id="wifi_spinner"></span>
             </button>
           </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="container" id="ocpp_container">
+    <h1 class="">e-Mobility</h1>
+    <h2>Configuration of the connection to the OCPP server</h2>
+    <div class="form">
+      <div class="">
+        <div class="form-control">
+          <label>Wallbox name:</label>
+          <input type="text" id="ocpp_name" autocomplete="ocpp wallbox-name">
+        </div>
+        <div class="form-control">
+          <label>Backend URL:</label>
+          <input type="text" id="ocpp_url" autocomplete="ocpp backend-url">
+        </div>
+        <div class="form-actions">
+          <button id="ocpp_save_btn">
+            Save
+            <span id="ocpp_spinner"></span>
+          </button>
         </div>
       </div>
     </div>
+  </div>
 
-    <div class="container" id="fw_container">
-      <h1 class="">Firmware</h1>
-      <h2>Information and configuration of the wallbox firmware</h2>
-      <div class="form">
-        <div class="">
-          <div class="form-control">
-            <label>App:</label>
-            <span id="app_name"></span>
-          </div>
-          <div class="form-control">
-            <label>Version:</label>
-            <span id="app_version"></span>
-          </div>
-          <div class="form-control">
-            <label>Date:</label>
-            <span id="app_date"></span>
-          </div>
-          <div class="form-control">
-            <label>Build number:</label>
-            <span id="app_build"></span>
-          </div>
-          <form id="fw_upload_form">
-            <div class="form-control">
-              <label>Update:</label>
-              <input type="file" id="fw_select_file" name="file" accept=".zip" />
-            </div>
-            <div class="form-actions">
-              <button id="fw_upload_btn">
-                Upload
-                <span id="fw_spinner"></span>
-              </button>
-            </div>
-          </form>
+  <div class="container" id="fw_container">
+    <h1 class="">Firmware</h1>
+    <h2>Information and configuration of the wallbox firmware</h2>
+    <div class="form">
+      <div class="">
+        <div class="form-control">
+          <label>App:</label>
+          <span id="app_name"></span>
         </div>
-      </div>
-    </div>
-
-    <div class="container" id="admin_container">
-      <h1 class="">Administration</h1>
-      <h2>Configuration and tasks to administer the wallbox</h2>
-      <div class="form">
-        <div class="">
+        <div class="form-control">
+          <label>Version:</label>
+          <span id="app_version"></span>
+        </div>
+        <div class="form-control">
+          <label>Date:</label>
+          <span id="app_date"></span>
+        </div>
+        <div class="form-control">
+          <label>Build number:</label>
+          <span id="app_build"></span>
+        </div>
+        <form id="fw_upload_form">
           <div class="form-control">
-            <label>Device:</label>
-            <span id="device_id"></span>
-          </div>
-          <div class="form-control">
-            <label>Serial number:</label>
-            <span id="device_sn"></span>
-          </div>
-          <div class="form-control">
-            <label>MAC address:</label>
-            <span id="device_mac"></span>
-          </div>
-          <div class="form-control">
-            <label>Up time:</label>
-            <span id="uptime"></span>
+            <label>Update:</label>
+            <input type="file" id="fw_select_file" name="file" accept=".zip" />
           </div>
           <div class="form-actions">
-            <button class="admin-btn" id="reboot_btn">
-              Reboot
-              <span id="reboot_spinner"></span>
-            </button>
-            <button class="admin-btn" id="reset_btn">
-              Factory Reset
-              <span id="reset_spinner"></span>
+            <button id="fw_upload_btn">
+              Upload
+              <span id="fw_spinner"></span>
             </button>
           </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="container" id="admin_container">
+    <h1 class="">Administration</h1>
+    <h2>Configuration and tasks to administer the wallbox</h2>
+    <div class="form">
+      <div class="">
+        <div class="form-control">
+          <label>Device:</label>
+          <span id="device_id"></span>
+        </div>
+        <div class="form-control">
+          <label>Serial number:</label>
+          <span id="device_sn"></span>
+        </div>
+        <div class="form-control">
+          <label>MAC address:</label>
+          <span id="device_mac"></span>
+        </div>
+        <div class="form-control">
+          <label>Up time:</label>
+          <span id="uptime"></span>
+        </div>
+        <div class="form-actions">
+          <button class="admin-btn" id="reboot_btn">
+            Reboot
+            <span id="reboot_spinner"></span>
+          </button>
+          <button class="admin-btn" id="reset_btn">
+            Factory Reset
+            <span id="reset_spinner"></span>
+          </button>
         </div>
       </div>
     </div>
+  </div>
 
-    <div class="container" id="logs_container">
-      <h1 class="">Logs</h1>
-      <h2>Download Wallbox log files</h2>
-      <div id="logs" class="flex-list">
-      </div>
+  <div class="container" id="logs_container">
+    <h1 class="">Logs</h1>
+    <h2>Download Wallbox log files</h2>
+    <div id="logs" class="flex-list">
     </div>
+  </div>
 
-    <div class="popup" id="info_container">
-      <div class="dialog">
-        <h1 id="info_title"></h1>
-        <p>
-          <span id="info_spinner" class="spin reboot"></span>
-          <span id="info_message"></span>
-        </p>
-      </div>
+  <div class="popup" id="info_container">
+    <div class="dialog">
+      <h1 id="info_title"></h1>
+      <p>
+        <span id="info_spinner" class="spin reboot"></span>
+        <span id="info_message"></span>
+      </p>
     </div>
+  </div>
 
-    <div id="toast"/>
+  <div id="toast" />
 
-    <script src="./axios.min.js.gz"></script>
-    <script type="text/javascript" src="./app.js.gz"></script>
-  </body>
+  <script src="./axios.min.js.gz"></script>
+  <script type="text/javascript" src="./app.js.gz"></script>
+</body>
+
 </html>

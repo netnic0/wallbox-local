@@ -85,11 +85,12 @@ h2 {
 
 .form-control {
   display: flex;
+  flex-wrap: wrap;
   width: 100%;
   margin: 0.5em 0;
 }
 
-.form-control input[type=text], .form-control input[type=password], .form-control button {
+.form-control input[type=text], .form-control input[type=password], .form-control button, .form-control span {
   min-width: 15em;
   margin-right: 1em;
   flex-grow: 1;
