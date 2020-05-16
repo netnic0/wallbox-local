@@ -187,11 +187,10 @@ static void wallbox_get_info_handler(struct mg_rpc_request_info *ri,
   (void) args;
 }
 
-static void send_ocpp_response(struct mg_connection *nc, const char *id, struct mg_str data) {
-  int length, max_msg_size = 2048;
-  char buf[max_msg_size], copy[max_msg_size];
-  strcpy(copy, data.p);
-  length = sprintf(buf, "[3, \"%s\", %s]", id, copy);
+static void send_ocpp_response(struct mg_connection *nc, const char *id, const char *data) {
+  int length;
+  char buf[2048];
+  length = sprintf(buf, "[3, \"%s\", %s]", id, data);
   LOG(LL_INFO, ("Sending response %.*s", length, buf));
   mg_send_websocket_frame(nc, WEBSOCKET_OP_TEXT, buf, length);
   time(&last_ocpp_interaction);
@@ -507,7 +506,7 @@ static void handle_ocpp_cmd(struct mg_connection *nc, const char *cmd, const cha
   } else {
     data = mg_mk_str("{}");
   }
-  send_ocpp_response(nc, id, data);
+  send_ocpp_response(nc, id, data.p);
 }
 
 static void ev_handler(struct mg_connection *nc, int ev, void *ev_data, void *user_data) {
@@ -662,7 +661,8 @@ static void timer_cb(void *arg) {
   if (ws_connected == true) {
     send_ocpp_heartbeat();
     int energy = mgos_hlw8012_readEnergy(hlw8012);
-    LOG(LL_INFO, ("Energy Ws  %d, Energy Wh %d, ActivePower %d", energy, energy / 3600, mgos_hlw8012_readActivePower(hlw8012)));
+    LOG(LL_INFO,
+        ("Energy Ws  %d, Energy Wh %d, ActivePower %d", energy, energy / 3600, mgos_hlw8012_readActivePower(hlw8012)));
 
     if (mgos_sys_config_get_ocpp_transaction_id() > 0) {
       send_ocpp_meter_values();
