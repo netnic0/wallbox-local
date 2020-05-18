@@ -48,6 +48,8 @@ config_schema:
   - ["file_logger.enable", true]
   - ["file_logger.max_file_size", 8000]
   - ["file_logger.level", 0]
+  - ["dns_sd.enable", true]
+  - ["dns_sd.host_name", "wallbox-??????"]
 
 libs:
   - origin: https://github.com/mongoose-os-libs/mbedtls
@@ -70,6 +72,7 @@ libs:
   - origin: https://github.com/ellavas/mongoose-lib-hlw8012
   # - origin: ../mongoose-lib-hlw8012
     name: hlw8012
+  - origin: https://github.com/mongoose-os-libs/dns-sd
 
 build_vars:
   FLASH_SIZE: 2097152
