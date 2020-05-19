@@ -85,10 +85,48 @@ const char *RPC_GETINFO =
 
 const char *OCPP_BOOTNOTIFICATION =
     "{"
-    "\"chargePointModel\": \"%s\","
-    "\"chargePointSerialNumber\": \"%s\","
-    "\"chargePointVendor\": \"SAP Labs France Caen\","
-    "\"firmwareVersion\": \"%s\""
+    "\"chargePointModel\":\"%s\","
+    "\"chargePointSerialNumber\":\"%s\","
+    "\"chargePointVendor\":\"SAP Labs France Caen\","
+    "\"firmwareVersion\":\"%s\""
+    "}";
+
+const char *OCPP_STATUSNOTIFICATION =
+    "{"
+    "\"connectorId\":1,"
+    "\"errorCode\":\"NoError\","
+    "\"status\":\"%s\","
+    "\"timestamp\":\"%s\""
+    "}";
+
+const char *OCPP_METERVALUES =
+    "{"
+    "\"connectorId\":1,"
+    "\"transactionId\":%d,"
+    "\"meterValue\":[{"
+    "\"sampledValue\":[{"
+    "\"unit\":\"Wh\","
+    "\"context\":\"Sample.Periodic\","
+    "\"value\":\"%d\""
+    "}],"
+    "\"timestamp\":\"%s\""
+    "}]}";
+
+const char *OCPP_STARTTRANSACTION =
+    "{"
+    "\"connectorId\":1,"
+    "\"meterStart\":0,"
+    "\"idTag\":\"%s\","
+    "\"timestamp\":\"%s\""
+    "}";
+
+const char *OCPP_STOPTRANSACTION =
+    "{"
+    "\"meterStop\":%d,"
+    "\"transactionId\":\"%d\","
+    "\"idTag\":\"%s\","
+    "\"timestamp\":\"%s\","
+    "\"reason\":\"%s\""
     "}";
 
 const char *OCPP_CONFIGURATION =
@@ -130,6 +168,7 @@ const char *MQTT_ANNOUNCE =
     "mac: %Q,"
     "ip: %Q"
     "}";
+
 const char *MQTT_STATE =
     "{"
     "uptime: %d,"
@@ -313,10 +352,7 @@ static void send_ocpp_status_notification(const char *status) {
   get_current_date(date_buffer);
   generate_uuid(default_uuid);
 
-  length = sprintf(buf,
-                   "{\"connectorId\": 1,\"errorCode\": \"NoError\",\"status\": \"%s\",\"timestamp\": \"%s\"}",
-                   status,
-                   date_buffer);
+  length = sprintf(buf, OCPP_STATUSNOTIFICATION, status, date_buffer);
   struct mg_str content = mg_mk_str_n(buf, length);
   LOG(LL_DEBUG, ("Sending status notification %.*s", length, buf));
   send_ocpp_request(ws_connection, OCPP_REQUEST_STATUS_NOTIFICATION, default_uuid, content);
@@ -331,12 +367,7 @@ static void send_ocpp_meter_values() {
   generate_uuid(default_uuid);
   int energy = compute_energy();
 
-  length = sprintf(
-      buf,
-      "{\"connectorId\":1,\"transactionId\":%d,\"meterValue\":[{\"sampledValue\":[{\"unit\":\"Wh\",\"context\":\"Sample.Periodic\",\"value\":\"%d\"}],\"timestamp\":\"%s\"}]}",
-      mgos_sys_config_get_ocpp_transaction_id(),
-      energy,
-      date_buffer);
+  length = sprintf(buf, OCPP_METERVALUES, mgos_sys_config_get_ocpp_transaction_id(), energy, date_buffer);
   struct mg_str content = mg_mk_str_n(buf, length);
   LOG(LL_DEBUG, ("Sending meter values %.*s", length, buf));
   send_ocpp_request(ws_connection, OCPP_REQUEST_METER_VALUES, default_uuid, content);
@@ -361,14 +392,13 @@ static mg_str stopTransaction(const char *reason) {
 
   int energy = compute_energy();
 
-  length = sprintf(
-      buf,
-      "{\"meterStop\": %d,\"transactionId\": \"%d\",\"idTag\": \"%s\",\"timestamp\": \"%s\",\"reason\": \"%s\"}",
-      energy,
-      mgos_sys_config_get_ocpp_transaction_id(),
-      mgos_sys_config_get_ocpp_transaction_tag_id(),
-      date_buffer,
-      reason);
+  length = sprintf(buf,
+                   OCPP_STOPTRANSACTION,
+                   energy,
+                   mgos_sys_config_get_ocpp_transaction_id(),
+                   mgos_sys_config_get_ocpp_transaction_tag_id(),
+                   date_buffer,
+                   reason);
   struct mg_str content = mg_mk_str_n(buf, length);
   LOG(LL_DEBUG, ("Sending stop transaction %.*s", length, buf));
   send_ocpp_request(ws_connection, OCPP_REQUEST_STOP_TRANSACTION, stop_transaction_uuid, content);
@@ -409,8 +439,7 @@ static mg_str startTransaction(const char *payload) {
 
     send_ocpp_status_notification(OCPP_STATUS_PREPARING);
 
-    length = sprintf(
-        buf, "{\"connectorId\": 1, \"meterStart\": 0, \"idTag\": \"%s\",\"timestamp\": \"%s\"}", tag_id, date_buffer);
+    length = sprintf(buf, OCPP_STARTTRANSACTION, tag_id, date_buffer);
     struct mg_str content = mg_mk_str_n(buf, length);
     LOG(LL_DEBUG, ("Sending start transaction %.*s", length, buf));
     send_ocpp_request(ws_connection, OCPP_REQUEST_START_TRANSACTION, start_transaction_uuid, content);
