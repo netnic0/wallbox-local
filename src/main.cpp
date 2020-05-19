@@ -204,7 +204,7 @@ static void wallbox_get_info_handler(struct mg_rpc_request_info *ri,
                         "fw_build: %Q, "
                         "fw_ts: %Q, "
                         "mac: %Q, "
-                        "uptime: %f, "
+                        "uptime: %d, "
                         "wifi_ssid: %Q, "
                         "energy: %d, "
                         "power: %d, "
@@ -222,7 +222,7 @@ static void wallbox_get_info_handler(struct mg_rpc_request_info *ri,
                         mgos_sys_ro_vars_get_fw_id(),
                         mgos_sys_ro_vars_get_fw_timestamp(),
                         mgos_sys_ro_vars_get_mac_address(),
-                        mgos_uptime(),
+                        (int) mgos_uptime(),
                         mgos_sys_config_get_wifi_sta_ssid(),
                         mgos_sys_config_get_ocpp_transaction_consumption(),
                         mgos_hlw8012_readActivePower(hlw8012),
