@@ -48,6 +48,10 @@ config_schema:
   - ["file_logger.enable", true]
   - ["file_logger.max_file_size", 8000]
   - ["file_logger.level", 0]
+  - ["mqtt.enable", false]
+  - ["mqtt.server", ""]
+  - ["mqtt.user", ""]
+  - ["mqtt.pass", ""]
   - ["dns_sd.enable", true]
   - ["dns_sd.host_name", "wallbox-??????"]
 
@@ -68,9 +72,9 @@ libs:
   - origin: https://github.com/mongoose-os-libs/wifi
   - origin: https://github.com/mongoose-os-libs/sntp
   - origin: https://github.com/mongoose-os-libs/file-logger
+  - origin: https://github.com/mongoose-os-libs/mqtt
   - origin: https://github.com/ellavas/provision
   - origin: https://github.com/ellavas/mongoose-lib-hlw8012
-  # - origin: ../mongoose-lib-hlw8012
     name: hlw8012
   - origin: https://github.com/mongoose-os-libs/dns-sd
 

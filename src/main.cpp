@@ -18,6 +18,7 @@
 #include "mgos.h"
 #include "mgos_app.h"
 #include "mgos_hlw8012.h"
+#include "mgos_mqtt.h"
 #include "mgos_ota_http_client.h"
 #include "mgos_provision.h"
 #include "mgos_rpc.h"
@@ -96,6 +97,25 @@ const char *OCPP_CONFIGURATION =
     "{\"key\":\"UnlockConnectorOnEVSideDisconnect\",\"readonly\":true,\"value\":true}"
     "]}";
 
+const char *MQTT_ANNOUNCE =
+    "{"
+    "id: %Q,"
+    "app: %Q,"
+    "version: %Q,"
+    "sn: %Q,"
+    "fw: %Q,"
+    "mac: %Q,"
+    "ip: %Q"
+    "}";
+const char *MQTT_STATE =
+    "{"
+    "uptime: %d,"
+    "power: %d,"
+    "connected: %B,"
+    "charging: %B,"
+    "energy: %d"
+    "}";
+
 #ifndef MGOS_HAVE_WIFI
 const char *mgos_sys_config_get_wifi_sta_ssid(void) {
   return "";
@@ -116,6 +136,9 @@ static char stop_transaction_uuid[50];
 static char default_uuid[50];
 static struct mg_connection *ws_connection;
 static time_t last_ocpp_interaction;
+static bool mqtt_announced = false;
+static char mqtt_announce_topic[50];
+static char mqtt_state_topic[50];
 
 static void generate_uuid(char *uuid) {
   int random = mgos_rand_range(0.0, 999.0);
@@ -128,8 +151,30 @@ static void generate_uuid(char *uuid) {
           mgos_sys_ro_vars_get_mac_address());
 }
 
+static void get_current_date(char *buffer) {
+  time_t rawtime;
+  struct tm *timeinfo;
+
+  time(&rawtime);
+  timeinfo = localtime(&rawtime);
+
+  // 2020-04-13T11:39:35.116Z
+  strftime(buffer, 21, "%FT%TZ", timeinfo);
+}
+
 static void generate_chargepoint_serial_number(char *sn) {
   sprintf(sn, "534C46434652%s", mgos_sys_ro_vars_get_mac_address());
+}
+
+static void get_chargepoint_ip_address(char *ip) {
+  struct mgos_net_ip_info ip_info;
+  memset(&ip_info, 0, sizeof(ip_info));
+  if (mgos_net_get_ip_info(MGOS_NET_IF_TYPE_WIFI, MGOS_NET_IF_WIFI_STA, &ip_info)) {
+    mgos_net_ip_to_str(&ip_info.ip, ip);
+  } else if (mgos_net_get_ip_info(MGOS_NET_IF_TYPE_WIFI, MGOS_NET_IF_WIFI_AP, &ip_info)) {
+    mgos_net_ip_to_str(&ip_info.ip, ip);
+  }
+  (void) ip_info;
 }
 
 static int compute_energy() {
@@ -166,7 +211,10 @@ static void wallbox_get_info_handler(struct mg_rpc_request_info *ri,
                         "state: %B, "
                         "ocpp_url: %Q, "
                         "ocpp_name: %Q, "
-                        "ocpp_state: %B}",
+                        "ocpp_state: %B, "
+                        "mqtt_state: %B, "
+                        "mqtt_server: %Q, "
+                        "mqtt_user: %Q}",
                         mgos_sys_config_get_device_id(),
                         sn,
                         MGOS_APP,
@@ -181,10 +229,43 @@ static void wallbox_get_info_handler(struct mg_rpc_request_info *ri,
                         mgos_gpio_read(mgos_sys_config_get_gpio_relay()),
                         mgos_sys_config_get_ocpp_url(),
                         mgos_sys_config_get_ocpp_name(),
-                        ws_connected);
+                        ws_connected,
+                        mgos_sys_config_get_mqtt_enable(),
+                        mgos_sys_config_get_mqtt_server(),
+                        mgos_sys_config_get_mqtt_user());
   (void) cb_arg;
   (void) fi;
   (void) args;
+}
+
+static void send_mqtt_announce() {
+  char sn[25], ip[25];
+  generate_chargepoint_serial_number(sn);
+  get_chargepoint_ip_address(ip);
+
+  mgos_mqtt_pubf(mqtt_announce_topic,
+                 0,
+                 true,
+                 MQTT_ANNOUNCE,
+                 mgos_sys_config_get_device_id(),
+                 MGOS_APP,
+                 mgos_sys_ro_vars_get_fw_version(),
+                 sn,
+                 mgos_sys_ro_vars_get_fw_id(),
+                 mgos_sys_ro_vars_get_mac_address(),
+                 ip);
+  mqtt_announced = true;
+}
+
+static void send_mqtt_state() {
+  if (!mqtt_announced) {
+    send_mqtt_announce();
+  }
+
+  int power = mgos_hlw8012_readActivePower(hlw8012);
+  int energy = mgos_sys_config_get_ocpp_transaction_consumption();
+  bool charging = mgos_gpio_read(mgos_sys_config_get_gpio_relay());
+  mgos_mqtt_pubf(mqtt_state_topic, 0, false, MQTT_STATE, (int) mgos_uptime(), power, ws_connected, charging, energy);
 }
 
 static void send_ocpp_response(struct mg_connection *nc, const char *id, const char *data) {
@@ -203,17 +284,6 @@ static void send_ocpp_request(struct mg_connection *nc, const char *cmd, const c
   LOG(LL_DEBUG, ("Sending request %.*s", length, buf));
   mg_send_websocket_frame(nc, WEBSOCKET_OP_TEXT, buf, length);
   time(&last_ocpp_interaction);
-}
-
-static void get_current_date(char *buffer) {
-  time_t rawtime;
-  struct tm *timeinfo;
-
-  time(&rawtime);
-  timeinfo = localtime(&rawtime);
-
-  // 2020-04-13T11:39:35.116Z
-  strftime(buffer, 21, "%FT%TZ", timeinfo);
 }
 
 static void send_ocpp_heartbeat() {
@@ -294,6 +364,11 @@ static mg_str stopTransaction(const char *reason) {
   struct mg_str content = mg_mk_str_n(buf, length);
   LOG(LL_DEBUG, ("Sending stop transaction %.*s", length, buf));
   send_ocpp_request(ws_connection, OCPP_REQUEST_STOP_TRANSACTION, stop_transaction_uuid, content);
+
+  if (mgos_mqtt_global_is_connected()) {
+    send_mqtt_state();
+  }
+
   return mg_mk_str(OCPP_RESPONSE_ACCEPTED);
 }
 
@@ -331,6 +406,11 @@ static mg_str startTransaction(const char *payload) {
     struct mg_str content = mg_mk_str_n(buf, length);
     LOG(LL_DEBUG, ("Sending start transaction %.*s", length, buf));
     send_ocpp_request(ws_connection, OCPP_REQUEST_START_TRANSACTION, start_transaction_uuid, content);
+
+    if (mgos_mqtt_global_is_connected()) {
+      send_mqtt_state();
+    }
+
     return mg_mk_str(OCPP_RESPONSE_ACCEPTED);
   } else {
     LOG(LL_WARN, ("Unable to find tag id in payload %s", payload));
@@ -350,6 +430,8 @@ static mg_str reset_soft() {
   if (mgos_sys_config_get_ocpp_transaction_id() > 0) {
     stopTransaction(OCPP_STOP_TRANSACTION_REASON_SOFTRESET);
   }
+
+  mqtt_announced = false;
 
   return mg_mk_str(OCPP_RESPONSE_ACCEPTED);
 }
@@ -464,9 +546,10 @@ static void handle_ocpp_response(struct mg_connection *nc, const char *id, const
     }
   } else if (strcmp(id, stop_transaction_uuid) == 0) {
     send_ocpp_status_notification(OCPP_STATUS_AVAILABLE);
+    mgos_hlw8012_resetEnergy(hlw8012);
+    mgos_sys_config_set_ocpp_transaction_consumption(0);
     mgos_sys_config_set_ocpp_transaction_id(-1);
     mgos_sys_config_save(&mgos_sys_config, false, NULL);
-    mgos_hlw8012_resetEnergy(hlw8012);
   } else if (strcmp(id, OCPP_BOOTNOTIFICATION_TID) == 0) {
     int value;
     if (json_scanf(payload, strlen(payload), "{ interval:%d }", &value) > 0) {
@@ -671,6 +754,11 @@ static void timer_cb(void *arg) {
     LOG(LL_INFO, ("Reconnecting to OCPP Backend"));
     connect_ocpp_backend();
   }
+
+  if (mgos_mqtt_global_is_connected()) {
+    send_mqtt_state();
+  }
+
   (void) arg;
 }
 
@@ -716,6 +804,13 @@ enum mgos_app_init_result mgos_app_init(void) {
   mg_rpc_add_handler(mgos_rpc_get_global(), "Wallbox.GetInfo", "", wallbox_get_info_handler, NULL);
   mg_rpc_add_handler(mgos_rpc_get_global(), "Wallbox.Reboot", "", wallbox_reboot_handler, NULL);
   mg_rpc_add_handler(mgos_rpc_get_global(), "Wallbox.Reset", "", wallbox_reset_handler, NULL);
+
+  // MQTT setup and announce
+  sprintf(mqtt_announce_topic, "wallbox/%s/announce", mgos_sys_config_get_device_id());
+  sprintf(mqtt_state_topic, "wallbox/%s/state", mgos_sys_config_get_device_id());
+  if (mgos_mqtt_global_is_connected()) {
+    send_mqtt_state();
+  }
 
   connect_ocpp_backend();
   time(&last_ocpp_interaction);

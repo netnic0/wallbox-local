@@ -7,10 +7,16 @@ const toast = document.getElementById("toast");
 
 const wifiSSID = document.getElementById("wifi_ssid");
 const wifiPass = document.getElementById("wifi_pass");
+const showWifiPass = document.getElementById("wifi_pass_show");
 const ocppUrl = document.getElementById("ocpp_url");
 const ocppName = document.getElementById("ocpp_name");
 const deviceState = document.getElementById("state");
 const ocppState = document.getElementById("ocpp_state");
+const mqttEnable = document.getElementById("mqtt_enable");
+const mqttServer = document.getElementById("mqtt_server");
+const mqttUser = document.getElementById("mqtt_user");
+const mqttPass = document.getElementById("mqtt_pass");
+const showMqttPass = document.getElementById("mqtt_pass_show");
 
 const infoContainer = document.getElementById("info_container");
 
@@ -18,6 +24,7 @@ const infoSpinner = document.getElementById("info_spinner");
 const refreshSpinner = document.getElementById("refresh_spinner");
 const wifiSpinner = document.getElementById("wifi_spinner");
 const ocppSpinner = document.getElementById("ocpp_spinner");
+const mqttSpinner = document.getElementById("mqtt_spinner");
 const rebootSpinner = document.getElementById("reboot_spinner");
 const resetSpinner = document.getElementById("reset_spinner");
 const firmwareSpinner = document.getElementById("fw_spinner");
@@ -100,6 +107,31 @@ document.getElementById("ocpp_save_btn").onclick = function () {
         handleAxiosError(err);
     }).then(function () {
         ocppSpinner.className = "";
+    });
+};
+
+document.getElementById("mqtt_save_btn").onclick = function () {
+    mqttSpinner.className = "spin";
+    const data = {
+        config: {
+            mqtt: {
+                enable: mqttEnable.checked,
+                server: mqttServer.value,
+                user: mqttUser.value,
+                pass: mqttPass.value
+            },
+        },
+        save: true,
+        reboot: true,
+    };
+    axios.post(host + "/rpc/Config.Set", data).then(function () {
+        showInfoDialog(
+            "Device is rebooting.",
+            "Configuration", true, true);
+    }).catch(function (err) {
+        handleAxiosError(err);
+    }).then(function () {
+        mqttSpinner.className = "";
     });
 };
 
@@ -215,6 +247,9 @@ const getInfo = () => {
         state = res.data.ocpp_state;
         ocppState.innerText = state ? "Connected" : "Disconnected";
         ocppState.className = state ? "connected" : "disconnected";
+        mqttEnable.checked = (res.data.mqtt_state === true);
+        mqttServer.value = res.data.mqtt_server;
+        mqttUser.value = res.data.mqtt_user;
     }).catch(function (err) {
         handleAxiosError(err);
     }).then(function () {
@@ -284,9 +319,7 @@ const updateFirmware = evt => {
 
 document.getElementById("fw_upload_btn").onclick = updateFirmware;
 
-const showPassword = () => {
-    const input = document.getElementById("wifi_pass");
-    const cb = document.getElementById("wifi_pass_show");
+const showPassword = (input, cb) => {
     if (input.type === "text") {
         input.type = "password";
         cb.checked = false;
@@ -295,8 +328,8 @@ const showPassword = () => {
         cb.checked = true;
     }
 };
-document.getElementById("wifi_pass_show").onclick = showPassword;
-document.getElementById("wifi_pass_show_label").onclick = showPassword;
+showWifiPass.onclick = () => { showPassword(wifiPass, showWifiPass); };
+showMqttPass.onclick = () => { showPassword(mqttPass, showMqttPass); };
 
 (function () {
     getInfo();

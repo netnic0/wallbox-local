@@ -4,12 +4,13 @@ Wallbox firmware for Shelly 1PM relay.
 
 ## Features
 
-See [OCPP Features](./doc/ocpp-features.md) :books: to check the supported OCPP
-features.
+- :books: [OCPP Features](./doc/ocpp-features.md): check the supported OCPP
+features
+- :books: [MQTT](./doc/mqtt.md): MQTT and Home Assistant integration
 
 ## Usage
 
-See [Quick Start Guide](./doc/quick-start.md) :books: to understand how to set
+- :books: [Quick Start Guide](./doc/quick-start.md): understand how to set
 up and use the Wallbox.
 
 ## Development
@@ -18,9 +19,9 @@ up and use the Wallbox.
 
 ### Requirements
 
-* [Mongoose OS](https://mongoose-os.com/docs/mongoose-os/quickstart/setup.md)
-* [Node.js](https://nodejs.org/en/download/) (npm)
-* curl
+- [Mongoose OS](https://mongoose-os.com/docs/mongoose-os/quickstart/setup.md)
+- [Node.js](https://nodejs.org/en/download/) (npm)
+- curl
 
 ### Quick setup
 

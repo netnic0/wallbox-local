@@ -67,7 +67,7 @@
           <div class="form-control">
             <label> </label>
             <input type="checkbox" id="wifi_pass_show">
-            <label for="wifi_pass_show" id="wifi_pass_show_label">Show password</label>
+            <label for="wifi_pass_show" id="wifi_pass_show_label" class="passhint">Show password</label>
           </div>
           <div class="form-actions">
             <button id="wifi_save_btn">
@@ -99,6 +99,44 @@
             <span id="ocpp_spinner"></span>
           </button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container" id="mqtt_container">
+    <h1 class="">MQTT</h1>
+    <h2>Configuration of the connection to the MQTT server</h2>
+    <div class="form">
+      <div class="">
+        <form id="mqtt_form">
+          <div class="form-control">
+            <label>Enable MQTT:</label>
+            <input type="checkbox" id="mqtt_enable">
+          </div>
+          <div class="form-control">
+            <label>Server:</label>
+            <input type="text" id="mqtt_server" autocomplete="mqtt server">
+          </div>
+          <div class="form-control">
+            <label>User name:</label>
+            <input type="text" id="mqtt_user" autocomplete="mqtt user">
+          </div>
+          <div class="form-control">
+            <label>Password:</label>
+            <input type="password" id="mqtt_pass" autocomplete="mqtt current-password">
+          </div>
+          <div class="form-control">
+            <label> </label>
+            <input type="checkbox" id="mqtt_pass_show">
+            <label for="mqtt_pass_show" id="mqtt_pass_show_label" class="passhint">Show password</label>
+          </div>
+          <div class="form-actions">
+            <button id="mqtt_save_btn">
+              Save
+              <span id="mqtt_spinner"></span>
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   </div>
