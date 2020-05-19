@@ -60,6 +60,29 @@
 
 #define OCPP_BOOTNOTIFICATION_TID "1212121"
 
+const char *RPC_GETINFO =
+    "{"
+    "id: %Q,"
+    "sn: %Q,"
+    "app: %Q,"
+    "version: %Q,"
+    "fw_build: %Q,"
+    "fw_ts: %Q,"
+    "mac: %Q,"
+    "ip: %Q,"
+    "uptime: %d,"
+    "wifi_ssid: %Q,"
+    "energy: %d,"
+    "power: %d,"
+    "state: %B,"
+    "ocpp_url: %Q,"
+    "ocpp_name: %Q,"
+    "ocpp_state: %B,"
+    "mqtt_state: %B,"
+    "mqtt_server: %Q,"
+    "mqtt_user: %Q"
+    "}";
+
 const char *OCPP_BOOTNOTIFICATION =
     "{"
     "\"chargePointModel\": \"%s\","
@@ -162,7 +185,7 @@ static void get_current_date(char *buffer) {
   strftime(buffer, 21, "%FT%TZ", timeinfo);
 }
 
-static void generate_chargepoint_serial_number(char *sn) {
+static void get_chargepoint_serial_number(char *sn) {
   sprintf(sn, "534C46434652%s", mgos_sys_ro_vars_get_mac_address());
 }
 
@@ -193,28 +216,12 @@ static void wallbox_get_info_handler(struct mg_rpc_request_info *ri,
                                      void *cb_arg,
                                      struct mg_rpc_frame_info *fi,
                                      struct mg_str args) {
-  char sn[25];
-  generate_chargepoint_serial_number(sn);
+  char sn[25], ip[25];
+  get_chargepoint_serial_number(sn);
+  get_chargepoint_ip_address(ip);
 
   mg_rpc_send_responsef(ri,
-                        "{id: %Q, "
-                        "sn: %Q, "
-                        "app: %Q, "
-                        "version: %Q, "
-                        "fw_build: %Q, "
-                        "fw_ts: %Q, "
-                        "mac: %Q, "
-                        "uptime: %d, "
-                        "wifi_ssid: %Q, "
-                        "energy: %d, "
-                        "power: %d, "
-                        "state: %B, "
-                        "ocpp_url: %Q, "
-                        "ocpp_name: %Q, "
-                        "ocpp_state: %B, "
-                        "mqtt_state: %B, "
-                        "mqtt_server: %Q, "
-                        "mqtt_user: %Q}",
+                        RPC_GETINFO,
                         mgos_sys_config_get_device_id(),
                         sn,
                         MGOS_APP,
@@ -222,6 +229,7 @@ static void wallbox_get_info_handler(struct mg_rpc_request_info *ri,
                         mgos_sys_ro_vars_get_fw_id(),
                         mgos_sys_ro_vars_get_fw_timestamp(),
                         mgos_sys_ro_vars_get_mac_address(),
+                        ip,
                         (int) mgos_uptime(),
                         mgos_sys_config_get_wifi_sta_ssid(),
                         mgos_sys_config_get_ocpp_transaction_consumption(),
@@ -240,7 +248,7 @@ static void wallbox_get_info_handler(struct mg_rpc_request_info *ri,
 
 static void send_mqtt_announce() {
   char sn[25], ip[25];
-  generate_chargepoint_serial_number(sn);
+  get_chargepoint_serial_number(sn);
   get_chargepoint_ip_address(ip);
 
   mgos_mqtt_pubf(mqtt_announce_topic,
@@ -617,7 +625,7 @@ static void ev_handler(struct mg_connection *nc, int ev, void *ev_data, void *us
         ws_connected = true;
 
         char sn[25];
-        generate_chargepoint_serial_number(sn);
+        get_chargepoint_serial_number(sn);
         char buf[1024];
         int length = sprintf(buf, OCPP_BOOTNOTIFICATION, MGOS_APP, sn, mgos_sys_ro_vars_get_fw_version());
         struct mg_str content = mg_mk_str_n(buf, length);
