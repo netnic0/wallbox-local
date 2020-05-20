@@ -55,7 +55,7 @@ const showInfoDialog = (message, title, spin, reboot) => {
         setTimeout(function () { document.location.reload() }, 6000);
     }
 
-    infoSpinner.style.display = spin ? "block" : "none";
+    infoSpinner.className = spin ? "spin reboot" : "";
     infoContainer.style.display = "block";
     infoTitle.innerHTML = title;
     infoMessage.innerHTML = message;
