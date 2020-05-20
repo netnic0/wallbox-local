@@ -168,21 +168,19 @@ h2 {
 
 .spin {
   border-radius: 50%;
-  border: 0.2em solid #3399dd44;
+  border: 0.15em solid #3399dd44;
   border-top-color: #3399ddaa;
   display: inline-block;
-  height: 0.9em;
+  height: 0.8em;
   margin-bottom: -0.2em;
-  width: 0.9em;
+  width: 0.8em;
   animation: spin 1s linear infinite;
   -webkit-animation: spin 1s linear infinite;
 }
 
 .spin.reboot {
-  border: 0.2em solid #55555555;
+  border-color: #55555555;
   border-top-color: #555555dd;
-  height: 1.1em;
-  width: 1.1em;
 }
 
 @keyframes spin {
