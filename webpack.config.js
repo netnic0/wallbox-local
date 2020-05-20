@@ -53,8 +53,7 @@ module.exports = {
         new CopyPlugin({
             patterns: [
                 { from: 'www/lib', to: 'gzip' },
-                { from: 'www/lib', to: '' },
-                { from: 'dist/*.html.gz', to: 'gzip', flatten: true },
+                { from: 'www/lib', to: '' }
             ],
         })
     ],

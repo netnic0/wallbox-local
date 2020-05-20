@@ -14,6 +14,7 @@ sources:
 
 # List of dirs. Files from these dirs will be copied to the device filesystem
 filesystem:
+  - fs
   - dist/gzip
 
 # Custom configuration entries, settable via "device configuration"
