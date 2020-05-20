@@ -1,5 +1,7 @@
 /*eslint no-alert: "off"*/
 /*eslint no-console: "off"*/
+require('../assets/main.css');
+
 const host = "";
 let refreshTimer;
 

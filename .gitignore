@@ -15,5 +15,6 @@ node_modules/
 build/
 deps/
 dest/
+dist/
 
 .DS_Store
