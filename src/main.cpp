@@ -317,8 +317,9 @@ static void send_mqtt_state() {
 
 static void send_ocpp_response(struct mg_connection *nc, const char *id, const char *data) {
   int length;
-  char buf[2048];
-  length = sprintf(buf, "[3, \"%s\", %s]", id, data);
+  char buf[2048], copy[2048];
+  strcpy(copy, data);
+  length = sprintf(buf, "[3, \"%s\", %s]", id, copy);
   LOG(LL_INFO, ("Sending response %.*s", length, buf));
   mg_send_websocket_frame(nc, WEBSOCKET_OP_TEXT, buf, length);
   time(&last_ocpp_interaction);
