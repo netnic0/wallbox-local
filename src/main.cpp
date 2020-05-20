@@ -60,12 +60,73 @@
 
 #define OCPP_BOOTNOTIFICATION_TID "1212121"
 
+const char *RPC_GETINFO =
+    "{"
+    "id: %Q,"
+    "sn: %Q,"
+    "app: %Q,"
+    "version: %Q,"
+    "fw_build: %Q,"
+    "fw_ts: %Q,"
+    "mac: %Q,"
+    "ip: %Q,"
+    "uptime: %d,"
+    "wifi_ssid: %Q,"
+    "energy: %d,"
+    "power: %d,"
+    "state: %B,"
+    "ocpp_url: %Q,"
+    "ocpp_name: %Q,"
+    "ocpp_state: %B,"
+    "mqtt_state: %B,"
+    "mqtt_server: %Q,"
+    "mqtt_user: %Q"
+    "}";
+
 const char *OCPP_BOOTNOTIFICATION =
     "{"
-    "\"chargePointModel\": \"%s\","
-    "\"chargePointSerialNumber\": \"%s\","
-    "\"chargePointVendor\": \"SAP Labs France Caen\","
-    "\"firmwareVersion\": \"%s\""
+    "\"chargePointModel\":\"%s\","
+    "\"chargePointSerialNumber\":\"%s\","
+    "\"chargePointVendor\":\"SAP Labs France Caen\","
+    "\"firmwareVersion\":\"%s\""
+    "}";
+
+const char *OCPP_STATUSNOTIFICATION =
+    "{"
+    "\"connectorId\":1,"
+    "\"errorCode\":\"NoError\","
+    "\"status\":\"%s\","
+    "\"timestamp\":\"%s\""
+    "}";
+
+const char *OCPP_METERVALUES =
+    "{"
+    "\"connectorId\":1,"
+    "\"transactionId\":%d,"
+    "\"meterValue\":[{"
+    "\"sampledValue\":[{"
+    "\"unit\":\"Wh\","
+    "\"context\":\"Sample.Periodic\","
+    "\"value\":\"%d\""
+    "}],"
+    "\"timestamp\":\"%s\""
+    "}]}";
+
+const char *OCPP_STARTTRANSACTION =
+    "{"
+    "\"connectorId\":1,"
+    "\"meterStart\":0,"
+    "\"idTag\":\"%s\","
+    "\"timestamp\":\"%s\""
+    "}";
+
+const char *OCPP_STOPTRANSACTION =
+    "{"
+    "\"meterStop\":%d,"
+    "\"transactionId\":\"%d\","
+    "\"idTag\":\"%s\","
+    "\"timestamp\":\"%s\","
+    "\"reason\":\"%s\""
     "}";
 
 const char *OCPP_CONFIGURATION =
@@ -107,6 +168,7 @@ const char *MQTT_ANNOUNCE =
     "mac: %Q,"
     "ip: %Q"
     "}";
+
 const char *MQTT_STATE =
     "{"
     "uptime: %d,"
@@ -162,7 +224,7 @@ static void get_current_date(char *buffer) {
   strftime(buffer, 21, "%FT%TZ", timeinfo);
 }
 
-static void generate_chargepoint_serial_number(char *sn) {
+static void get_chargepoint_serial_number(char *sn) {
   sprintf(sn, "534C46434652%s", mgos_sys_ro_vars_get_mac_address());
 }
 
@@ -193,28 +255,12 @@ static void wallbox_get_info_handler(struct mg_rpc_request_info *ri,
                                      void *cb_arg,
                                      struct mg_rpc_frame_info *fi,
                                      struct mg_str args) {
-  char sn[25];
-  generate_chargepoint_serial_number(sn);
+  char sn[25], ip[25];
+  get_chargepoint_serial_number(sn);
+  get_chargepoint_ip_address(ip);
 
   mg_rpc_send_responsef(ri,
-                        "{id: %Q, "
-                        "sn: %Q, "
-                        "app: %Q, "
-                        "version: %Q, "
-                        "fw_build: %Q, "
-                        "fw_ts: %Q, "
-                        "mac: %Q, "
-                        "uptime: %f, "
-                        "wifi_ssid: %Q, "
-                        "energy: %d, "
-                        "power: %d, "
-                        "state: %B, "
-                        "ocpp_url: %Q, "
-                        "ocpp_name: %Q, "
-                        "ocpp_state: %B, "
-                        "mqtt_state: %B, "
-                        "mqtt_server: %Q, "
-                        "mqtt_user: %Q}",
+                        RPC_GETINFO,
                         mgos_sys_config_get_device_id(),
                         sn,
                         MGOS_APP,
@@ -222,7 +268,8 @@ static void wallbox_get_info_handler(struct mg_rpc_request_info *ri,
                         mgos_sys_ro_vars_get_fw_id(),
                         mgos_sys_ro_vars_get_fw_timestamp(),
                         mgos_sys_ro_vars_get_mac_address(),
-                        mgos_uptime(),
+                        ip,
+                        (int) mgos_uptime(),
                         mgos_sys_config_get_wifi_sta_ssid(),
                         mgos_sys_config_get_ocpp_transaction_consumption(),
                         mgos_hlw8012_readActivePower(hlw8012),
@@ -240,7 +287,7 @@ static void wallbox_get_info_handler(struct mg_rpc_request_info *ri,
 
 static void send_mqtt_announce() {
   char sn[25], ip[25];
-  generate_chargepoint_serial_number(sn);
+  get_chargepoint_serial_number(sn);
   get_chargepoint_ip_address(ip);
 
   mgos_mqtt_pubf(mqtt_announce_topic,
@@ -305,10 +352,7 @@ static void send_ocpp_status_notification(const char *status) {
   get_current_date(date_buffer);
   generate_uuid(default_uuid);
 
-  length = sprintf(buf,
-                   "{\"connectorId\": 1,\"errorCode\": \"NoError\",\"status\": \"%s\",\"timestamp\": \"%s\"}",
-                   status,
-                   date_buffer);
+  length = sprintf(buf, OCPP_STATUSNOTIFICATION, status, date_buffer);
   struct mg_str content = mg_mk_str_n(buf, length);
   LOG(LL_DEBUG, ("Sending status notification %.*s", length, buf));
   send_ocpp_request(ws_connection, OCPP_REQUEST_STATUS_NOTIFICATION, default_uuid, content);
@@ -323,18 +367,13 @@ static void send_ocpp_meter_values() {
   generate_uuid(default_uuid);
   int energy = compute_energy();
 
-  length = sprintf(
-      buf,
-      "{\"connectorId\":1,\"transactionId\":%d,\"meterValue\":[{\"sampledValue\":[{\"unit\":\"Wh\",\"context\":\"Sample.Periodic\",\"value\":\"%d\"}],\"timestamp\":\"%s\"}]}",
-      mgos_sys_config_get_ocpp_transaction_id(),
-      energy,
-      date_buffer);
+  length = sprintf(buf, OCPP_METERVALUES, mgos_sys_config_get_ocpp_transaction_id(), energy, date_buffer);
   struct mg_str content = mg_mk_str_n(buf, length);
   LOG(LL_DEBUG, ("Sending meter values %.*s", length, buf));
   send_ocpp_request(ws_connection, OCPP_REQUEST_METER_VALUES, default_uuid, content);
 }
 
-static mg_str stopTransaction(const char *reason) {
+static mg_str ocpp_stop_transaction(const char *reason) {
   LOG(LL_DEBUG,
       ("Stop transaction %d for tag %s, reason %s",
        mgos_sys_config_get_ocpp_transaction_id(),
@@ -353,14 +392,13 @@ static mg_str stopTransaction(const char *reason) {
 
   int energy = compute_energy();
 
-  length = sprintf(
-      buf,
-      "{\"meterStop\": %d,\"transactionId\": \"%d\",\"idTag\": \"%s\",\"timestamp\": \"%s\",\"reason\": \"%s\"}",
-      energy,
-      mgos_sys_config_get_ocpp_transaction_id(),
-      mgos_sys_config_get_ocpp_transaction_tag_id(),
-      date_buffer,
-      reason);
+  length = sprintf(buf,
+                   OCPP_STOPTRANSACTION,
+                   energy,
+                   mgos_sys_config_get_ocpp_transaction_id(),
+                   mgos_sys_config_get_ocpp_transaction_tag_id(),
+                   date_buffer,
+                   reason);
   struct mg_str content = mg_mk_str_n(buf, length);
   LOG(LL_DEBUG, ("Sending stop transaction %.*s", length, buf));
   send_ocpp_request(ws_connection, OCPP_REQUEST_STOP_TRANSACTION, stop_transaction_uuid, content);
@@ -372,11 +410,11 @@ static mg_str stopTransaction(const char *reason) {
   return mg_mk_str(OCPP_RESPONSE_ACCEPTED);
 }
 
-static mg_str stopTransaction(const char *payload, const char *reason) {
+static mg_str ocpp_stop_transaction(const char *payload, const char *reason) {
   int id = 0;
   if (json_scanf(payload, strlen(payload), "{ transactionId:%d }", &id) > 0) {
     if (id == mgos_sys_config_get_ocpp_transaction_id()) {
-      return stopTransaction(reason);
+      return ocpp_stop_transaction(reason);
     } else {
       LOG(LL_ERROR,
           ("Payload %s not matching current transaction id %d", payload, mgos_sys_config_get_ocpp_transaction_id()));
@@ -388,7 +426,7 @@ static mg_str stopTransaction(const char *payload, const char *reason) {
   }
 }
 
-static mg_str startTransaction(const char *payload) {
+static mg_str ocpp_start_transaction(const char *payload) {
   if (json_scanf(payload, strlen(payload), "{ idTag:%Q }", &tag_id) > 0) {
     LOG(LL_INFO, ("Starting transaction for tag with id %s", tag_id));
 
@@ -401,8 +439,7 @@ static mg_str startTransaction(const char *payload) {
 
     send_ocpp_status_notification(OCPP_STATUS_PREPARING);
 
-    length = sprintf(
-        buf, "{\"connectorId\": 1, \"meterStart\": 0, \"idTag\": \"%s\",\"timestamp\": \"%s\"}", tag_id, date_buffer);
+    length = sprintf(buf, OCPP_STARTTRANSACTION, tag_id, date_buffer);
     struct mg_str content = mg_mk_str_n(buf, length);
     LOG(LL_DEBUG, ("Sending start transaction %.*s", length, buf));
     send_ocpp_request(ws_connection, OCPP_REQUEST_START_TRANSACTION, start_transaction_uuid, content);
@@ -418,17 +455,11 @@ static mg_str startTransaction(const char *payload) {
   }
 }
 
-/*
- * Soft: Return to initial status, gracefully terminating any transactions in progress.
- * At receipt of a soft reset, the Charge Point SHALL return to a state that behaves as just having been booted.
- * If any transaction is in progress it SHALL be terminated normally, before the reset, as in Stop Transaction.
- * Send StatusNotification/ResetFailure if not able to reset.
- */
-static mg_str reset_soft() {
+static mg_str ocpp_reset_soft() {
   LOG(LL_INFO, ("Performing soft reset"));
 
   if (mgos_sys_config_get_ocpp_transaction_id() > 0) {
-    stopTransaction(OCPP_STOP_TRANSACTION_REASON_SOFTRESET);
+    ocpp_stop_transaction(OCPP_STOP_TRANSACTION_REASON_SOFTRESET);
   }
 
   mqtt_announced = false;
@@ -436,17 +467,11 @@ static mg_str reset_soft() {
   return mg_mk_str(OCPP_RESPONSE_ACCEPTED);
 }
 
-/*
- * Hard: Full reboot of Charge Point software.
- * At receipt of a hard reset the Charge Point SHALL attempt to terminate any transaction in progress normally as
- * in StopTransaction and then perform a reboot.
- * Send StatusNotification/ResetFailure if not able to reset.
- */
-static mg_str reset_hard() {
+static mg_str ocpp_reset_hard() {
   LOG(LL_INFO, ("Performing hard reset"));
 
   if (mgos_sys_config_get_ocpp_transaction_id() > 0) {
-    stopTransaction(OCPP_STOP_TRANSACTION_REASON_HARDRESET);
+    ocpp_stop_transaction(OCPP_STOP_TRANSACTION_REASON_HARDRESET);
   }
 
   mgos_system_restart_after(10000);
@@ -454,16 +479,16 @@ static mg_str reset_hard() {
   return mg_mk_str(OCPP_RESPONSE_ACCEPTED);
 }
 
-static mg_str reset(const char *payload) {
+static mg_str ocpp_reset(const char *payload) {
   char *reset_type = NULL;
 
   if (json_scanf(payload, strlen(payload), "{ type:%Q }", &reset_type) > 0) {
     LOG(LL_INFO, ("Resetting in mode %s", reset_type));
 
     if (strcmp(OCPP_RESET_TYPE_SOFT, reset_type) == 0) {
-      return reset_soft();
+      return ocpp_reset_soft();
     } else if (strcmp(OCPP_RESET_TYPE_HARD, reset_type) == 0) {
-      return reset_hard();
+      return ocpp_reset_hard();
     } else {
       LOG(LL_WARN, ("Reset type %s not supported", reset_type));
       return mg_mk_str(OCPP_RESPONSE_REJECTED);
@@ -474,7 +499,7 @@ static mg_str reset(const char *payload) {
   return mg_mk_str(OCPP_RESPONSE_REJECTED);
 }
 
-static mg_str getConfiguration(const char *payload) {
+static mg_str ocpp_get_configuration(const char *payload) {
   char buf[1800];
   int length;
   LOG(LL_DEBUG, ("OCPP GetConfiguration request: %s", payload));
@@ -482,7 +507,7 @@ static mg_str getConfiguration(const char *payload) {
   return mg_mk_str_n(buf, length);
 }
 
-static mg_str changeConfiguration(const char *payload) {
+static mg_str ocpp_change_configuration(const char *payload) {
   LOG(LL_DEBUG, ("OCPP ChangeConfiguration request: %s", payload));
   char *key = NULL;
 
@@ -511,7 +536,7 @@ static mg_str changeConfiguration(const char *payload) {
   return mg_mk_str(OCPP_RESPONSE_REJECTED);
 }
 
-static mg_str updateFirmware(const char *payload) {
+static mg_str ocpp_update_firmware(const char *payload) {
   char *location = NULL;
 
   if (json_scanf(payload, strlen(payload), "{ location:%Q }", &location) > 0) {
@@ -569,17 +594,17 @@ static void handle_ocpp_cmd(struct mg_connection *nc, const char *cmd, const cha
   LOG(LL_DEBUG, ("Handle ocpp cmd %s with id %s", cmd, id));
   struct mg_str data;
   if (strcmp(cmd, OCPP_REQUEST_GET_CONFIGURATION) == 0) {
-    data = getConfiguration(payload);
+    data = ocpp_get_configuration(payload);
   } else if (strcmp(cmd, OCPP_REQUEST_CHANGE_CONFIGURATION) == 0) {
-    data = changeConfiguration(payload);
+    data = ocpp_change_configuration(payload);
   } else if (strcmp(cmd, OCPP_REQUEST_REMOTE_START_TRANSACTION) == 0) {
-    data = startTransaction(payload);
+    data = ocpp_start_transaction(payload);
   } else if (strcmp(cmd, OCPP_REQUEST_REMOTE_STOP_TRANSACTION) == 0) {
-    data = stopTransaction(payload, OCPP_STOP_TRANSACTION_REASON_REMOTE);
+    data = ocpp_stop_transaction(payload, OCPP_STOP_TRANSACTION_REASON_REMOTE);
   } else if (strcmp(cmd, OCPP_REQUEST_RESET) == 0) {
-    data = reset(payload);
+    data = ocpp_reset(payload);
   } else if (strcmp(cmd, OCPP_REQUEST_UPDATE_FIRMWARE) == 0) {
-    data = updateFirmware(payload);
+    data = ocpp_update_firmware(payload);
   } else if (strcmp(cmd, OCPP_REQUEST_CLEAR_CACHE) == 0) {
     data = mg_mk_str(OCPP_RESPONSE_REJECTED);
   } else if (strcmp(cmd, OCPP_REQUEST_UNLOCK_CONNECTOR) == 0) {
@@ -617,7 +642,7 @@ static void ev_handler(struct mg_connection *nc, int ev, void *ev_data, void *us
         ws_connected = true;
 
         char sn[25];
-        generate_chargepoint_serial_number(sn);
+        get_chargepoint_serial_number(sn);
         char buf[1024];
         int length = sprintf(buf, OCPP_BOOTNOTIFICATION, MGOS_APP, sn, mgos_sys_ro_vars_get_fw_version());
         struct mg_str content = mg_mk_str_n(buf, length);
@@ -714,7 +739,7 @@ static void wallbox_reboot_handler(struct mg_rpc_request_info *ri,
   LOG(LL_INFO, ("RPC request to reboot"));
 
   // OCPP reset and reboot
-  reset_hard();
+  ocpp_reset_hard();
 
   mg_rpc_send_responsef(ri, "{}");
   (void) cb_arg;
@@ -729,7 +754,7 @@ static void wallbox_reset_handler(struct mg_rpc_request_info *ri,
   LOG(LL_INFO, ("RPC request to reset to factory settings"));
 
   // OCPP reset and reboot
-  reset_hard();
+  ocpp_reset_hard();
 
   // Reset config
   mgos_config_reset(MGOS_CONFIG_LEVEL_USER);

@@ -57,7 +57,7 @@ const showInfoDialog = (message, title, spin, reboot) => {
         setTimeout(function () { document.location.reload() }, 6000);
     }
 
-    infoSpinner.style.display = spin ? "block" : "none";
+    infoSpinner.className = spin ? "spin reboot" : "";
     infoContainer.style.display = "block";
     infoTitle.innerHTML = title;
     infoMessage.innerHTML = message;
@@ -236,6 +236,7 @@ const getInfo = () => {
         document.getElementById("device_id").innerText = res.data.id;
         document.getElementById("device_sn").innerText = res.data.sn;
         document.getElementById("device_mac").innerText = res.data.mac;
+        document.getElementById("device_ip").innerText = res.data.ip;
         document.getElementById("app_name").innerText = res.data.app;
         document.getElementById("app_version").innerText = res.data.version;
         document.getElementById("app_build").innerText = res.data.fw_build;

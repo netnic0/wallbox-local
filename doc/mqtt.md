@@ -14,7 +14,7 @@ The message is sent once, but not garanteed (QOS 0). The message is retained.
     "app": "Wallbox-Shelly1PM",
     "version": "0.1.0",
     "sn": "534C464346529AF4ABABCDEF",
-    "fw": "20200518-120000/latest",
+    "fw": "20200518-120000",
     "mac": "9AF4ABABCDEF",
     "ip": "192.168.1.123"
 }
