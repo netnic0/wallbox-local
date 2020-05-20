@@ -49,6 +49,7 @@ module.exports = {
             filename: '[name].css',
             chunkFilename: '[id].css',
         }),
+        new OptimizeCSSAssetsPlugin({}),
         new CompressionPlugin(),
         new CopyPlugin({
             patterns: [
