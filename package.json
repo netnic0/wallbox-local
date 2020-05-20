@@ -14,7 +14,7 @@
     "build:remote": "npm run lint && npm run gulp && npm run mos-build:remote",
     "console": "mos --port udp://:1993/ console",
     "start": "webpack-dev-server",
-    "webpack": "webpack --mode=production && cp dist/index.html.gz dist/gzip"
+    "webpack": "webpack --mode=production && node scripts/copy.js dist/index.html.gz dist/gzip/index.html.gz"
   },
   "repository": {
     "type": "git",
