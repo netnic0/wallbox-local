@@ -179,6 +179,9 @@ const char *MQTT_STATE =
     "energy: %d"
     "}";
 
+const char *WS_HEADER =
+    "x-forwarded-for: %s\r\n";
+
 #ifndef MGOS_HAVE_WIFI
 const char *mgos_sys_config_get_wifi_sta_ssid(void) {
   return "";
@@ -760,7 +763,11 @@ static void connect_ocpp_backend() {
 
     LOG(LL_INFO, ("Connecting to OCPP Backend %.*s", length, buf));
 
-    ws_connection = mg_connect_ws(mgos_get_mgr(), ev_handler, NULL, buf, "ocpp1.6", NULL);
+    char extraHeaders[128];
+    char ip[25];
+    get_chargepoint_ip_address(ip);
+    sprintf(extraHeaders, WS_HEADER, ip);
+    ws_connection = mg_connect_ws(mgos_get_mgr(), ev_handler, NULL, buf, "ocpp1.6", extraHeaders);
   } else {
     LOG(LL_WARN, ("OCPP Config is not defined !"));
   }
