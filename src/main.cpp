@@ -58,8 +58,6 @@
 #define OCPP_REQUEST_UNLOCK_CONNECTOR "UnlockConnector"
 #define OCPP_REQUEST_CHANGE_AVAILABILITY "ChangeAvailability"
 
-#define OCPP_BOOTNOTIFICATION_TID "1212121"
-
 const char *RPC_GETINFO =
     "{"
     "id: %Q,"
@@ -198,6 +196,7 @@ static bool ws_connected = false;
 static char *tag_id = NULL;
 static char start_transaction_uuid[50];
 static char stop_transaction_uuid[50];
+static char boot_notification_uuid[50];
 static char default_uuid[50];
 static struct mg_connection *ws_connection;
 static time_t last_ocpp_interaction;
@@ -609,7 +608,13 @@ static void handle_ocpp_response(struct mg_connection *nc, const char *id, const
     mgos_sys_config_set_ocpp_transaction_consumption(0);
     mgos_sys_config_set_ocpp_transaction_id(-1);
     mgos_sys_config_save(&mgos_sys_config, false, NULL);
-  } else if (strcmp(id, OCPP_BOOTNOTIFICATION_TID) == 0) {
+  } else if (strcmp(id, boot_notification_uuid) == 0) {
+    if (mgos_sys_config_get_ocpp_transaction_id() > 0) {
+      send_ocpp_status_notification(OCPP_STATUS_CHARGING);
+    } else {
+      send_ocpp_status_notification(OCPP_STATUS_AVAILABLE);
+    }
+
     int value;
     if (json_scanf(payload, strlen(payload), "{ interval:%d }", &value) > 0) {
       int interval = mgos_sys_config_get_ocpp_config_heartbeat_interval();
@@ -680,13 +685,8 @@ static void ev_handler(struct mg_connection *nc, int ev, void *ev_data, void *us
         char buf[1024];
         int length = sprintf(buf, OCPP_BOOTNOTIFICATION, MGOS_APP, sn, mgos_sys_ro_vars_get_fw_version());
         struct mg_str content = mg_mk_str_n(buf, length);
-        send_ocpp_request(nc, OCPP_REQUEST_BOOT_NOTIFICATION, OCPP_BOOTNOTIFICATION_TID, content);
-
-        if (mgos_sys_config_get_ocpp_transaction_id() > 0) {
-          send_ocpp_status_notification(OCPP_STATUS_CHARGING);
-        } else {
-          send_ocpp_status_notification(OCPP_STATUS_AVAILABLE);
-        }
+        generate_uuid(boot_notification_uuid);
+        send_ocpp_request(nc, OCPP_REQUEST_BOOT_NOTIFICATION, boot_notification_uuid, content);
       } else {
         LOG(LL_ERROR, ("-- Connection failed! HTTP code %d", hm->resp_code));
         /* Connection will be closed after this. */
