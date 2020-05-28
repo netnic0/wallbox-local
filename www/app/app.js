@@ -150,11 +150,9 @@ document.getElementById("wifi_save_btn").onclick = function () {
         reboot: true,
     };
     axios.post(host + "/rpc/Config.Set", data).then(function () {
-        const deviceIdStr = document.getElementById("device_id").innerText;
         showInfoDialog(
             "Device is rebooting and connecting to " + wifiSSID.value + ".<br/>" +
-            "Connect to the same network and visit <a href='http://" + deviceIdStr + ".local/'>" +
-            deviceIdStr + ".local.</a>.",
+            "Connect to the same network and visit <a href='http://wallbox.local/'>wallbox.local</a>.",
             "Configuration", false, false);
     }).catch(function (err) {
         handleAxiosError(err);
@@ -174,7 +172,7 @@ document.getElementById("reset_btn").onclick = function () {
     axios.post(host + "/rpc/Wallbox.Reset", data).then(function () {
         showInfoDialog(
             "Device configuration is reset.<br>" +
-            "Reconnect to Wallbox Hotspot to configure the WiFi.",
+            "Reconnect to the Wallbox access point to configure the WiFi.",
             "Reset",
             false,
             false);
