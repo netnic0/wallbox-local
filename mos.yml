@@ -89,17 +89,7 @@ build_vars:
   # We don't need the cryptochip support. Saves approx 12K flash.
   MGOS_MBEDTLS_ENABLE_ATCA: 0
 cdefs:
-  PRODUCT_VENDOR: '"Allterco"'
-  SERVICE_NAME: '"Switch"'
-  LED_GPIO: -1
-  BTN_GPIO: -1
-  PRODUCT_MODEL: '"Shelly1PM"'
-  PRODUCT_HW_REV: '"1.0"'
-  NUM_SWITCHES: 1
-  # We don't use SSL, HomeKit uses its own crypto. This saves ~120K.
   MG_ENABLE_SSL: 1
-  # This saves quite a bit of space but disables all HAP debug output.
-  # HAP_LOG_LEVEL: 0
 
 # Used by the mos tool to catch mos binaries incompatible with this file format
 manifest_version: 2020-01-29
