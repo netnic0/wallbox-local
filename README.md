@@ -6,6 +6,7 @@ Wallbox firmware for Shelly 1PM relay.
 
 - :books: [OCPP Features](./doc/ocpp-features.md): check the supported OCPP
 features
+- :books: [RPC APIs](./doc/rpc.md): administration APIs
 - :books: [MQTT](./doc/mqtt.md): MQTT and Home Assistant integration
 
 ## Usage
