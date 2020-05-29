@@ -6,7 +6,7 @@
 ### Announcement
 
 Upon startup, the wallbox sends a message on the announcement topic.
-The message is sent once, but not garanteed (QOS 0). The message is retained.
+The message is sent once, but not guaranteed (QOS 0). The message is retained.
 
 ```json
 {
@@ -33,7 +33,7 @@ Attributes:
 ### State
 
 Every 60 seconds, the wallbox sends a message on the state topic.
-The message is sent once, but not garanteed (QOS 0). The message is not retained.
+The message is sent once, but not guaranteed (QOS 0). The message is not retained.
 
 ```json
 {
@@ -52,6 +52,29 @@ Attributes:
 - connected: `true` if the wallbox is connected to e-Mobility, else `false`
 - charging: `true` if a charging session is on-going, else `false`
 - energy: the amount of energy for the current charging session, in Wh
+
+### System
+
+Every 60 seconds, the wallbox sends a message on the system topic.
+The message is sent once, but not guaranteed (QOS 0). The message is not retained.
+
+```json
+{
+    "heapSize": 51880,
+    "freeHeapSize": 38192,
+    "minFreeHeapSize": 23384,
+    "fsSize": 233681,
+    "fsFreeSpace": 137046
+}
+```
+
+Attributes:
+
+- heapSize: the system memory size, in bytes
+- freeHeapSize: the system free memory, in bytes
+- minFreeHeapSize: the minimal watermark of the system free memory, in bytes
+- fsSize: the size of the file system, in bytes
+- fsFreeSpace: the free space of the file system, in bytes
 
 ## Home Assistant
 
@@ -72,6 +95,16 @@ homeassistant:
       friendly_name: Énergie délivrée
     sensor.wallbox_uptime:
       friendly_name: Up time
+    sensor.wallbox_heap_size:
+      friendly_name: Mémoire totale
+    sensor.wallbox_free_heap_size:
+      friendly_name: Mémoire libre
+    sensor.wallbox_min_free_heap_size:
+      friendly_name: Mémoire libre minimale
+    sensor.wallbox_fs_size:
+      friendly_name: Système de fichier
+    sensor.wallbox_fs_free_space:
+      friendly_name: Espace libre
 
 binary_sensor:
   - platform: mqtt
@@ -109,6 +142,36 @@ sensor:
     icon: mdi:flash
     state_topic: "wallbox/wallbox-ABCDEF/state"
     value_template: "{{ value_json.energy | int }}"
+  - platform: mqtt
+    name: "Wallbox Heap Size"
+    unit_of_measurement: 'kb'
+    icon: mdi:memory
+    state_topic: "wallbox/wallbox-ABCDEF/system"
+    value_template: "{{ ((value_json.heapSize | int) / 1000) | round(1) }}"
+  - platform: mqtt
+    name: "Wallbox Free Heap Size"
+    unit_of_measurement: 'kb'
+    icon: mdi:memory
+    state_topic: "wallbox/wallbox-ABCDEF/system"
+    value_template: "{{ ((value_json.freeHeapSize | int) / 1000) | round(1) }}"
+  - platform: mqtt
+    name: "Wallbox Min Free Heap Size"
+    unit_of_measurement: 'kb'
+    icon: mdi:memory
+    state_topic: "wallbox/wallbox-ABCDEF/system"
+    value_template: "{{ ((value_json.minFreeHeapSize | int) / 1000) | round(1) }}"
+  - platform: mqtt
+    name: "Wallbox FS Size"
+    unit_of_measurement: 'kb'
+    icon: mdi:harddisk
+    state_topic: "wallbox/wallbox-ABCDEF/system"
+    value_template: "{{ ((value_json.fsSize | int) / 1000) | round(1) }}"
+  - platform: mqtt
+    name: "Wallbox FS Free Space"
+    unit_of_measurement: 'kb'
+    icon: mdi:harddisk
+    state_topic: "wallbox/wallbox-ABCDEF/system"
+    value_template: "{{ ((value_json.fsFreeSpace | int) / 1000) | round(1) }}"
 
   - platform: template
     sensors:

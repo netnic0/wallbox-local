@@ -22,6 +22,8 @@
 #include "mgos_ota_http_client.h"
 #include "mgos_provision.h"
 #include "mgos_rpc.h"
+#include "mgos_system.h"
+#include "mgos_vfs.h"
 #ifdef MGOS_HAVE_OTA_COMMON
 #include "mgos_ota.h"
 #endif
@@ -179,8 +181,16 @@ const char *MQTT_STATE =
     "energy: %d"
     "}";
 
-const char *WS_HEADER =
-    "x-forwarded-for: %s\r\n";
+const char *MQTT_SYSTEM =
+    "{"
+    "heapSize: %d,"
+    "freeHeapSize: %d,"
+    "minFreeHeapSize: %d,"
+    "fsSize: %d,"
+    "fsFreeSpace: %d"
+    "}";
+
+const char *WS_HEADER = "x-forwarded-for: %s\r\n";
 
 #ifndef MGOS_HAVE_WIFI
 const char *mgos_sys_config_get_wifi_sta_ssid(void) {
@@ -206,6 +216,7 @@ static time_t last_ocpp_interaction;
 static bool mqtt_announced = false;
 static char mqtt_announce_topic[50];
 static char mqtt_state_topic[50];
+static char mqtt_system_topic[50];
 
 static void generate_uuid(char *uuid) {
   int random = mgos_rand_range(0.0, 999.0);
@@ -310,14 +321,30 @@ static void send_mqtt_announce() {
 }
 
 static void send_mqtt_state() {
-  if (!mqtt_announced) {
-    send_mqtt_announce();
-  }
-
   int power = mgos_hlw8012_readActivePower(hlw8012);
   int energy = mgos_sys_config_get_ocpp_transaction_consumption();
   bool charging = mgos_gpio_read(mgos_sys_config_get_gpio_relay());
   mgos_mqtt_pubf(mqtt_state_topic, 0, false, MQTT_STATE, (int) mgos_uptime(), power, ws_connected, charging, energy);
+}
+
+static void send_mqtt_system() {
+  mgos_mqtt_pubf(mqtt_system_topic,
+                 0,
+                 false,
+                 MQTT_SYSTEM,
+                 mgos_get_heap_size(),
+                 mgos_get_free_heap_size(),
+                 mgos_get_min_free_heap_size(),
+                 mgos_vfs_get_space_total("/"),
+                 mgos_vfs_get_space_free("/"));
+}
+
+static void send_mqtt_topics() {
+  if (!mqtt_announced) {
+    send_mqtt_announce();
+  }
+  send_mqtt_state();
+  send_mqtt_system();
 }
 
 static void send_ocpp_response(struct mg_connection *nc, const char *id, const char *data) {
@@ -822,7 +849,7 @@ static void timer_cb(void *arg) {
   }
 
   if (mgos_mqtt_global_is_connected()) {
-    send_mqtt_state();
+    send_mqtt_topics();
   }
 
   (void) arg;
@@ -874,8 +901,9 @@ enum mgos_app_init_result mgos_app_init(void) {
   // MQTT setup and announce
   sprintf(mqtt_announce_topic, "wallbox/%s/announce", mgos_sys_config_get_device_id());
   sprintf(mqtt_state_topic, "wallbox/%s/state", mgos_sys_config_get_device_id());
+  sprintf(mqtt_system_topic, "wallbox/%s/system", mgos_sys_config_get_device_id());
   if (mgos_mqtt_global_is_connected()) {
-    send_mqtt_state();
+    send_mqtt_topics();
   }
 
   connect_ocpp_backend();
