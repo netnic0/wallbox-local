@@ -28,6 +28,8 @@
 #include "mgos_ota.h"
 #endif
 
+#define MAX_POWER 3680
+
 #define OCPP_STATUS_AVAILABLE "Available"
 #define OCPP_STATUS_CHARGING "Charging"
 #define OCPP_STATUS_FINISHING "Finishing"
@@ -267,6 +269,11 @@ static int compute_energy() {
   return energy;
 }
 
+static int compute_active_power() {
+  int power = mgos_hlw8012_readActivePower(hlw8012);
+  return power > MAX_POWER ? MAX_POWER : power;
+}
+
 static void wallbox_get_info_handler(struct mg_rpc_request_info *ri,
                                      void *cb_arg,
                                      struct mg_rpc_frame_info *fi,
@@ -288,7 +295,7 @@ static void wallbox_get_info_handler(struct mg_rpc_request_info *ri,
                         (int) mgos_uptime(),
                         mgos_sys_config_get_wifi_sta_ssid(),
                         mgos_sys_config_get_ocpp_transaction_consumption(),
-                        mgos_hlw8012_readActivePower(hlw8012),
+                        compute_active_power(),
                         mgos_gpio_read(mgos_sys_config_get_gpio_relay()),
                         mgos_sys_config_get_ocpp_url(),
                         mgos_sys_config_get_ocpp_name(),
@@ -321,7 +328,7 @@ static void send_mqtt_announce() {
 }
 
 static void send_mqtt_state() {
-  int power = mgos_hlw8012_readActivePower(hlw8012);
+  int power = compute_active_power();
   int energy = mgos_sys_config_get_ocpp_transaction_consumption();
   bool charging = mgos_gpio_read(mgos_sys_config_get_gpio_relay());
   mgos_mqtt_pubf(mqtt_state_topic, 0, false, MQTT_STATE, (int) mgos_uptime(), power, ws_connected, charging, energy);
