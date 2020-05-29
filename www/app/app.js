@@ -81,10 +81,10 @@ const intervalToLevels = (interval, levels) => {
         return [d[0] + aa, bb];
     };
 
-    let rslt = levels.scale.map((d, i, a) => a.slice(i).reduce((d, c) => d * c))
+    let result = levels.scale.map((d, i, a) => a.slice(i).reduce((d, c) => d * c))
         .map((d, i) => ([d, levels.units[i]]))
         .reduce(cbFun, ['', interval]);
-    return rslt[0];
+    return result[0];
 };
 
 const secondsToString = interval => intervalToLevels(interval, TimeLevels);
@@ -239,8 +239,8 @@ const getInfo = () => {
         document.getElementById("app_version").innerText = res.data.version;
         document.getElementById("app_build").innerText = res.data.fw_build;
         document.getElementById("app_date").innerText = res.data.fw_ts;
-        document.getElementById("energy").innerText = (res.data.energy ? res.data.energy / 3600 : 0).toFixed(2);
-        document.getElementById("power").innerText = (res.data.power ? res.data.power : 0).toFixed(2);
+        document.getElementById("energy").innerText = `${(res.data.energy ? res.data.energy : 0).toFixed(0)} Wh`;
+        document.getElementById("power").innerText = `${(res.data.power ? res.data.power : 0).toFixed(0)} W`;
         document.getElementById("uptime").innerText = (res.data.uptime ? secondsToString(res.data.uptime) : "-");
         let state = res.data.state;
         deviceState.innerText = state ? "Charging" : "Available";
@@ -261,8 +261,8 @@ const getInfo = () => {
 const refreshInfo = () => {
     refreshSpinner.className = "spin";
     axios.get(host + "/rpc/Wallbox.GetInfo").then(function (res) {
-        document.getElementById("energy").innerText = (res.data.energy ? res.data.energy / 3600 : 0).toFixed(2);
-        document.getElementById("power").innerText = (res.data.power ? res.data.power : 0).toFixed(2);
+        document.getElementById("energy").innerText = `${(res.data.energy ? res.data.energy : 0).toFixed(0)} Wh`;
+        document.getElementById("power").innerText = `${(res.data.power ? res.data.power : 0).toFixed(0)} W`;
         document.getElementById("uptime").innerText = (res.data.uptime ? secondsToString(res.data.uptime) : "-");
         let state = res.data.state;
         deviceState.innerText = state ? "Charging" : "Available";
