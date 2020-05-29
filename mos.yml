@@ -1,7 +1,7 @@
 author: 'SAP Labs France Caen'
 name: Wallbox-Shelly1PM
 description: SAP e-Mobility Wallbox firmware for Shelly 1PM
-version: 0.1.0
+version: 0.1.1
 platform: esp8266
 
 libs_version: ${mos.version}
@@ -88,8 +88,21 @@ build_vars:
   MGOS_ROOT_FS_TYPE: SPIFFS
   # We don't need the cryptochip support. Saves approx 12K flash.
   MGOS_MBEDTLS_ENABLE_ATCA: 0
+  TARGET: production
 cdefs:
   MG_ENABLE_SSL: 1
+
+conds:
+  - when: build_vars.TARGET == "development"
+    apply:
+      version: 0.2.0-dev
+      config_schema:
+        - ["debug.file_level", "main.cpp:=4,=0"]
+        - ["dns_sd.host_name", "wallbox-dev"]
+  - when: build_vars.TARGET == "production"
+    apply:
+      config_schema:
+        - ["debug.level", 0]
 
 # Used by the mos tool to catch mos binaries incompatible with this file format
 manifest_version: 2020-01-29

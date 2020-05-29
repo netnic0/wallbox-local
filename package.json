@@ -6,7 +6,7 @@
   "homepage": "https://github.com/ellavas/mongoose-app-shelly#readme",
   "license": "SEE LICENSE IN LICENSE",
   "scripts": {
-    "mos-build": "mos build --local --platform esp8266",
+    "mos-build": "mos build --local --platform esp8266 --build-var TARGET:development",
     "mos-build:remote": "mos build --platform esp8266",
     "lint": "./node_modules/.bin/eslint www",
     "gulp": "./node_modules/.bin/gulp gzip",
