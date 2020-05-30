@@ -11,7 +11,7 @@
     "lint": "./node_modules/.bin/eslint www",
     "gulp": "./node_modules/.bin/gulp gzip",
     "build": "npm run lint && npm run webpack && npm run mos-build",
-    "build:remote": "npm run lint && npm run gulp && npm run mos-build:remote",
+    "build:remote": "npm run lint && npm run webpack && npm run mos-build:remote",
     "console": "mos --port udp://:1993/ console",
     "start": "webpack-dev-server",
     "webpack": "webpack --mode=production && node scripts/copy.js dist/index.html.gz dist/gzip/index.html.gz"

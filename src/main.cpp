@@ -260,7 +260,7 @@ static void get_chargepoint_ip_address(char *ip) {
 static int compute_energy() {
   int energy = mgos_hlw8012_readEnergy(hlw8012) / 3600;
   int previousEnergy = mgos_sys_config_get_ocpp_transaction_consumption();
-
+  
   if (previousEnergy > energy) {
     energy = previousEnergy + energy;
   }
@@ -885,11 +885,11 @@ enum mgos_app_init_result mgos_app_init(void) {
                      mgos_sys_config_get_gpio_sel(),
                      LOW,
                      true,
-                     2000000);
+                     2000);
   mgos_hlw8012_setResistors(hlw8012, 0.001, 5 * 470000, 1000);
-  mgos_hlw8012_setCurrentMultiplier(hlw8012, 25740.0);
-  mgos_hlw8012_setVoltageMultiplier(hlw8012, 313400.0);
-  mgos_hlw8012_setPowerMultiplier(hlw8012, 3414290.0);
+  mgos_hlw8012_setCurrentMultiplier(hlw8012, 25.7400);
+  mgos_hlw8012_setVoltageMultiplier(hlw8012, 313.4000);
+  mgos_hlw8012_setPowerMultiplier(hlw8012, 3414.2900);
 
   mgos_set_timer(60000 /* ms */, MGOS_TIMER_REPEAT, timer_cb, NULL);
 
