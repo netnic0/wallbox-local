@@ -24,6 +24,7 @@
 #include "mgos_rpc.h"
 #include "mgos_system.h"
 #include "mgos_vfs.h"
+#include <limits.h>
 #ifdef MGOS_HAVE_OTA_COMMON
 #include "mgos_ota.h"
 #endif
@@ -258,9 +259,22 @@ static void get_chargepoint_ip_address(char *ip) {
 }
 
 static int compute_energy() {
-  int energy = mgos_hlw8012_readEnergy(hlw8012) / 3600;
+  int energy = (int) mgos_hlw8012_readEnergy(hlw8012) / 3600;
   int previousEnergy = mgos_sys_config_get_ocpp_transaction_consumption();
-  
+
+  if (energy == previousEnergy) {
+    return previousEnergy;
+  }
+
+  if (energy <= 0) {
+    LOG(LL_ERROR, ("Energy negative %d", energy));
+    return previousEnergy;
+  }
+  if (energy > INT_MAX) {
+    LOG(LL_ERROR, ("Energy %d exceeds INT_MAX %d", energy, INT_MAX));
+    return previousEnergy;
+  }
+
   if (previousEnergy > energy) {
     energy = previousEnergy + energy;
   }
@@ -845,7 +859,7 @@ static void timer_cb(void *arg) {
     send_ocpp_heartbeat();
     int energy = mgos_hlw8012_readEnergy(hlw8012);
     LOG(LL_INFO,
-        ("Energy Ws  %d, Energy Wh %d, ActivePower %d", energy, energy / 3600, mgos_hlw8012_readActivePower(hlw8012)));
+        ("Energy Ws %d, Energy Wh %d, ActivePower %d", energy, energy / 3600, mgos_hlw8012_readActivePower(hlw8012)));
 
     if (mgos_sys_config_get_ocpp_transaction_id() > 0) {
       send_ocpp_meter_values();
