@@ -91,7 +91,7 @@ const char *OCPP_BOOTNOTIFICATION =
     "\"chargePointModel\":\"%s\","
     "\"chargePointSerialNumber\":\"%s\","
     "\"chargePointVendor\":\"SAP Labs France Caen\","
-    "\"firmwareVersion\":\"%s\""
+    "\"firmwareVersion\":\"%s (%s)\""
     "}";
 
 const char *OCPP_STATUSNOTIFICATION =
@@ -261,6 +261,7 @@ static void get_chargepoint_ip_address(char *ip) {
 static int compute_energy() {
   int energy = (int) mgos_hlw8012_readEnergy(hlw8012) / 3600;
   int previousEnergy = mgos_sys_config_get_ocpp_transaction_consumption();
+  int resetEnergy = mgos_sys_config_get_ocpp_transaction_reset_consumption();
 
   if (energy == previousEnergy) {
     return previousEnergy;
@@ -275,9 +276,7 @@ static int compute_energy() {
     return previousEnergy;
   }
 
-  if (previousEnergy > energy) {
-    energy = previousEnergy + energy;
-  }
+  energy = resetEnergy + energy;
   mgos_sys_config_set_ocpp_transaction_consumption(energy);
   mgos_sys_config_save(&mgos_sys_config, false, NULL);
   return energy;
@@ -645,6 +644,7 @@ static void handle_ocpp_response(struct mg_connection *nc, const char *id, const
       mgos_sys_config_set_ocpp_transaction_id(transaction_id);
       mgos_sys_config_set_ocpp_transaction_tag_id(tag_id);
       mgos_sys_config_set_ocpp_transaction_consumption(0);
+      mgos_sys_config_set_ocpp_transaction_reset_consumption(0);
       mgos_sys_config_save(&mgos_sys_config, false, NULL);
       LOG(LL_INFO, ("Transaction started %d", transaction_id));
     } else {
@@ -657,6 +657,7 @@ static void handle_ocpp_response(struct mg_connection *nc, const char *id, const
     send_ocpp_status_notification(OCPP_STATUS_AVAILABLE);
     mgos_hlw8012_resetEnergy(hlw8012);
     mgos_sys_config_set_ocpp_transaction_consumption(0);
+    mgos_sys_config_set_ocpp_transaction_reset_consumption(0);
     mgos_sys_config_set_ocpp_transaction_id(-1);
     mgos_sys_config_save(&mgos_sys_config, false, NULL);
   } else if (strcmp(id, boot_notification_uuid) == 0) {
@@ -734,7 +735,7 @@ static void ev_handler(struct mg_connection *nc, int ev, void *ev_data, void *us
         char sn[25];
         get_chargepoint_serial_number(sn);
         char buf[1024];
-        int length = sprintf(buf, OCPP_BOOTNOTIFICATION, MGOS_APP, sn, mgos_sys_ro_vars_get_fw_version());
+        int length = sprintf(buf, OCPP_BOOTNOTIFICATION, mgos_sys_ro_vars_get_app(), sn, mgos_sys_ro_vars_get_fw_version(), mgos_sys_ro_vars_get_fw_timestamp());
         struct mg_str content = mg_mk_str_n(buf, length);
         generate_uuid(boot_notification_uuid);
         send_ocpp_request(nc, OCPP_REQUEST_BOOT_NOTIFICATION, boot_notification_uuid, content);
@@ -914,6 +915,9 @@ enum mgos_app_init_result mgos_app_init(void) {
   } else {
     mgos_gpio_write(mgos_sys_config_get_gpio_relay(), 0);
   }
+
+  mgos_sys_config_set_ocpp_transaction_reset_consumption(mgos_sys_config_get_ocpp_transaction_consumption());
+  mgos_sys_config_save(&mgos_sys_config, false, NULL);
 
   mg_rpc_add_handler(mgos_rpc_get_global(), "Wallbox.GetInfo", "", wallbox_get_info_handler, NULL);
   mg_rpc_add_handler(mgos_rpc_get_global(), "Wallbox.Reboot", "", wallbox_reboot_handler, NULL);
