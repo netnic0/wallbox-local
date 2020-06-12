@@ -38,7 +38,6 @@ The message is sent once, but not guaranteed (QOS 0). The message is not retaine
 ```json
 {
     "uptime": 4740,
-    "power": 2709,
     "connected": true,
     "charging": true,
     "energy": 1900
@@ -48,7 +47,6 @@ The message is sent once, but not guaranteed (QOS 0). The message is not retaine
 Attributes:
 
 - uptime: the number of seconds since the wallbox started, in seconds
-- power: the current active power, in Watts
 - connected: `true` if the wallbox is connected to e-Mobility, else `false`
 - charging: `true` if a charging session is on-going, else `false`
 - energy: the amount of energy for the current charging session, in Wh
@@ -89,8 +87,6 @@ homeassistant:
       friendly_name: Connexion e-Mobility
     binary_sensor.wallbox_charging:
       friendly_name: En charge
-    sensor.wallbox_power:
-      friendly_name: Puissance
     sensor.wallbox_energy:
       friendly_name: Énergie délivrée
     sensor.wallbox_uptime:
@@ -129,13 +125,6 @@ sensor:
     icon: mdi:clock
     state_topic: "wallbox/wallbox-ABCDEF/state"
     value_template: "{{ value_json.uptime | int }}"
-  - platform: mqtt
-    name: "Wallbox Power"
-    unit_of_measurement: 'W'
-    device_class: power
-    icon: mdi:flash
-    state_topic: "wallbox/wallbox-ABCDEF/state"
-    value_template: "{{ value_json.power | int }}"
   - platform: mqtt
     name: "Wallbox Energy"
     unit_of_measurement: 'Wh'

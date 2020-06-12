@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+#include <limits.h>
 #include "mgos.h"
 #include "mgos_app.h"
 #include "mgos_hlw8012.h"
@@ -24,12 +25,9 @@
 #include "mgos_rpc.h"
 #include "mgos_system.h"
 #include "mgos_vfs.h"
-#include <limits.h>
 #ifdef MGOS_HAVE_OTA_COMMON
 #include "mgos_ota.h"
 #endif
-
-#define MAX_POWER 3680
 
 #define OCPP_STATUS_AVAILABLE "Available"
 #define OCPP_STATUS_CHARGING "Charging"
@@ -76,7 +74,6 @@ const char *RPC_GETINFO =
     "uptime: %d,"
     "wifi_ssid: %Q,"
     "energy: %d,"
-    "power: %d,"
     "state: %B,"
     "ocpp_url: %Q,"
     "ocpp_name: %Q,"
@@ -178,7 +175,6 @@ const char *MQTT_ANNOUNCE =
 const char *MQTT_STATE =
     "{"
     "uptime: %d,"
-    "power: %d,"
     "connected: %B,"
     "charging: %B,"
     "energy: %d"
@@ -282,11 +278,6 @@ static int compute_energy() {
   return energy;
 }
 
-static int compute_active_power() {
-  int power = mgos_hlw8012_readActivePower(hlw8012);
-  return power > MAX_POWER ? MAX_POWER : power;
-}
-
 static void wallbox_get_info_handler(struct mg_rpc_request_info *ri,
                                      void *cb_arg,
                                      struct mg_rpc_frame_info *fi,
@@ -308,7 +299,6 @@ static void wallbox_get_info_handler(struct mg_rpc_request_info *ri,
                         (int) mgos_uptime(),
                         mgos_sys_config_get_wifi_sta_ssid(),
                         mgos_sys_config_get_ocpp_transaction_consumption(),
-                        compute_active_power(),
                         mgos_gpio_read(mgos_sys_config_get_gpio_relay()),
                         mgos_sys_config_get_ocpp_url(),
                         mgos_sys_config_get_ocpp_name(),
@@ -341,10 +331,9 @@ static void send_mqtt_announce() {
 }
 
 static void send_mqtt_state() {
-  int power = compute_active_power();
   int energy = mgos_sys_config_get_ocpp_transaction_consumption();
   bool charging = mgos_gpio_read(mgos_sys_config_get_gpio_relay());
-  mgos_mqtt_pubf(mqtt_state_topic, 0, false, MQTT_STATE, (int) mgos_uptime(), power, ws_connected, charging, energy);
+  mgos_mqtt_pubf(mqtt_state_topic, 0, false, MQTT_STATE, (int) mgos_uptime(), ws_connected, charging, energy);
 }
 
 static void send_mqtt_system() {
@@ -735,7 +724,12 @@ static void ev_handler(struct mg_connection *nc, int ev, void *ev_data, void *us
         char sn[25];
         get_chargepoint_serial_number(sn);
         char buf[1024];
-        int length = sprintf(buf, OCPP_BOOTNOTIFICATION, mgos_sys_ro_vars_get_app(), sn, mgos_sys_ro_vars_get_fw_version(), mgos_sys_ro_vars_get_fw_timestamp());
+        int length = sprintf(buf,
+                             OCPP_BOOTNOTIFICATION,
+                             mgos_sys_ro_vars_get_app(),
+                             sn,
+                             mgos_sys_ro_vars_get_fw_version(),
+                             mgos_sys_ro_vars_get_fw_timestamp());
         struct mg_str content = mg_mk_str_n(buf, length);
         generate_uuid(boot_notification_uuid);
         send_ocpp_request(nc, OCPP_REQUEST_BOOT_NOTIFICATION, boot_notification_uuid, content);

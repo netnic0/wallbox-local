@@ -23,7 +23,6 @@ GET /rpc/Wallbox.GetInfo
     "uptime": 15290,
     "wifi_ssid": "HomeWiFi",
     "energy": 0,
-    "power": 0,
     "state": false,
     "ocpp_url": "wss://ocpp-server.example.com/OCPP/1234567890ABCDEF",
     "ocpp_name": "Station-01",
@@ -47,7 +46,6 @@ Attributes:
 - uptime: the number of seconds since the wallbox started, in seconds
 - wifi_ssid: SSID of the Wi-Fi network
 - energy: the amount of energy for the current charging session, in Wh
-- power: the current active power, in Watts
 - state: `true` if a charging session is on-going, else `false`
 - ocpp_url: URL of the OCPP central system
 - ocpp_name: the name of the charging station
