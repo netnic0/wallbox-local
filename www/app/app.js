@@ -34,6 +34,10 @@ const firmwareSpinner = document.getElementById("fw_spinner");
 const infoTitle = document.getElementById("info_title");
 const infoMessage = document.getElementById("info_message");
 
+const showFormControl = (ctrl, show) => {
+    ctrl.style.display = show ? "flex" : "none";
+}
+
 const showToast = message => {
     toast.innerHTML = message;
     toast.className = "show";
@@ -241,12 +245,16 @@ const getInfo = () => {
         document.getElementById("app_date").innerText = res.data.fw_ts;
         document.getElementById("energy").innerText = `${(res.data.energy ? res.data.energy : 0).toFixed(0)} Wh`;
         document.getElementById("uptime").innerText = (res.data.uptime ? secondsToString(res.data.uptime) : "-");
-        let state = res.data.state;
-        deviceState.innerText = state ? "Charging" : "Available";
-        deviceState.className = state ? "connected" : "";
-        state = res.data.ocpp_state;
-        ocppState.innerText = state ? "Connected" : "Disconnected";
-        ocppState.className = state ? "connected" : "disconnected";
+
+        const dState = res.data.state;
+        deviceState.innerText = dState ? "Charging" : "Available";
+        deviceState.className = dState ? "connected" : "";
+        showFormControl(document.getElementById("energy-control"), dState);
+
+        const oState = res.data.ocpp_state;
+        ocppState.innerText = oState ? "Connected" : "Disconnected";
+        ocppState.className = oState ? "connected" : "disconnected";
+
         mqttEnable.checked = (res.data.mqtt_state === true);
         mqttServer.value = res.data.mqtt_server;
         mqttUser.value = res.data.mqtt_user;
@@ -262,12 +270,15 @@ const refreshInfo = () => {
     axios.get(host + "/rpc/Wallbox.GetInfo").then(function (res) {
         document.getElementById("energy").innerText = `${(res.data.energy ? res.data.energy : 0).toFixed(0)} Wh`;
         document.getElementById("uptime").innerText = (res.data.uptime ? secondsToString(res.data.uptime) : "-");
-        let state = res.data.state;
-        deviceState.innerText = state ? "Charging" : "Available";
-        deviceState.className = state ? "connected" : "";
-        state = res.data.ocpp_state;
-        ocppState.innerText = state ? "Connected" : "Disconnected";
-        ocppState.className = state ? "connected" : "disconnected";
+
+        const dState = res.data.state;
+        deviceState.innerText = dState ? "Charging" : "Available";
+        deviceState.className = dState ? "connected" : "";
+        showFormControl(document.getElementById("energy-control"), dState);
+
+        const oState = res.data.ocpp_state;
+        ocppState.innerText = oState ? "Connected" : "Disconnected";
+        ocppState.className = oState ? "connected" : "disconnected";
     }).catch(function (err) {
         handleAxiosError(err);
     }).then(function () {
