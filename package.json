@@ -1,13 +1,13 @@
 {
   "name": "shelly-wallbox",
-  "version": "0.1.0",
+  "version": "0.4.0",
   "description": "Wallbox firmware for Shelly 1PM relay",
-  "author": "Sébastien Savalle",
+  "author": "SAP Labs France, d-shop Caen",
   "homepage": "https://github.com/ellavas/mongoose-app-shelly#readme",
   "license": "SEE LICENSE IN LICENSE",
   "scripts": {
     "mos-build": "mos build --local --platform esp8266 --build-var TARGET:development",
-    "mos-build:remote": "mos build --platform esp8266",
+    "mos-build:remote": "mos build --platform esp8266 --build-var TARGET:development",
     "lint": "./node_modules/.bin/eslint www",
     "gulp": "./node_modules/.bin/gulp gzip",
     "build": "npm run lint && npm run webpack && npm run mos-build",

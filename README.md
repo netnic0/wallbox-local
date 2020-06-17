@@ -1,6 +1,6 @@
 # Wallbox
 
-Wallbox firmware for Shelly 1PM relay.
+e-Mobility wallbox firmware for Shelly 1PM.
 
 ## Features
 

@@ -1,7 +1,7 @@
-author: 'SAP Labs France Caen'
+author: SAP Labs France, d-shop Caen
 name: Wallbox-Shelly1PM
 description: SAP e-Mobility Wallbox firmware for Shelly 1PM
-version: 0.3.0
+version: 0.4.0
 platform: esp8266
 
 libs_version: ${mos.version}
@@ -11,6 +11,10 @@ mongoose_os_version: ${mos.version}
 # List of files / directories with C sources. No slashes at the end of dir names.
 sources:
   - src
+
+# A list of directories with C/C++ include files. No slashes at the end of dir names.
+includes:
+  - include
 
 # List of dirs. Files from these dirs will be copied to the device filesystem
 filesystem:
@@ -95,7 +99,7 @@ cdefs:
 conds:
   - when: build_vars.TARGET == "development"
     apply:
-      version: 0.3.1-dev
+      version: 0.4.0-dev
       config_schema:
         - ["file_logger.enable", true]
         - ["wifi.ap.trigger_on_gpio", 2]

@@ -1,0 +1,616 @@
+/*
+ * Copyright (c) 2020 SAP Labs France, d-shop Caen
+ * All rights reserved
+ *
+ * Licensed under the Apache License, Version 2.0 (the ""License"");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an ""AS IS"" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include "wb_ocpp.h"
+#include "wb_mqtt.h"
+#include "wb_power.h"
+#include "wb_util.h"
+
+#include "mgos.h"
+#include "mgos_ota_http_client.h"
+#include "mgos_provision.h"
+
+#define OCPP_STATUS_AVAILABLE "Available"
+#define OCPP_STATUS_CHARGING "Charging"
+#define OCPP_STATUS_FINISHING "Finishing"
+#define OCPP_STATUS_PREPARING "Preparing"
+
+#define OCPP_RESET_TYPE_HARD "Hard"
+#define OCPP_RESET_TYPE_SOFT "Soft"
+
+#define OCPP_STOP_TRANSACTION_REASON_REMOTE "Remote"
+#define OCPP_STOP_TRANSACTION_REASON_SOFTRESET "SoftReset"
+#define OCPP_STOP_TRANSACTION_REASON_HARDRESET "HardReset"
+
+#define OCPP_RESPONSE_ACCEPTED "{\"status\":\"Accepted\"}"
+#define OCPP_RESPONSE_REJECTED "{\"status\":\"Rejected\"}"
+#define OCPP_RESPONSE_NOTSUPPORTED "{\"status\":\"NotSupported\"}"
+
+#define OCPP_REQUEST_BOOT_NOTIFICATION "BootNotification"
+#define OCPP_REQUEST_GET_CONFIGURATION "GetConfiguration"
+#define OCPP_REQUEST_CHANGE_CONFIGURATION "ChangeConfiguration"
+#define OCPP_REQUEST_METER_VALUES "MeterValues"
+#define OCPP_REQUEST_REMOTE_START_TRANSACTION "RemoteStartTransaction"
+#define OCPP_REQUEST_REMOTE_STOP_TRANSACTION "RemoteStopTransaction"
+#define OCPP_REQUEST_START_TRANSACTION "StartTransaction"
+#define OCPP_REQUEST_STOP_TRANSACTION "StopTransaction"
+#define OCPP_REQUEST_HEARTBEAT "Heartbeat"
+#define OCPP_REQUEST_STATUS_NOTIFICATION "StatusNotification"
+#define OCPP_REQUEST_RESET "Reset"
+#define OCPP_REQUEST_UPDATE_FIRMWARE "UpdateFirmware"
+#define OCPP_REQUEST_CLEAR_CACHE "ClearCache"
+#define OCPP_REQUEST_UNLOCK_CONNECTOR "UnlockConnector"
+#define OCPP_REQUEST_CHANGE_AVAILABILITY "ChangeAvailability"
+
+const char *OCPP_BOOTNOTIFICATION =
+    "{"
+    "\"chargePointModel\":\"%s\","
+    "\"chargePointSerialNumber\":\"%s\","
+    "\"chargePointVendor\":\"SAP Labs France Caen\","
+    "\"firmwareVersion\":\"%s (%s)\""
+    "}";
+
+const char *OCPP_STATUSNOTIFICATION =
+    "{"
+    "\"connectorId\":1,"
+    "\"errorCode\":\"NoError\","
+    "\"status\":\"%s\","
+    "\"timestamp\":\"%s\""
+    "}";
+
+const char *OCPP_METERVALUES =
+    "{"
+    "\"connectorId\":1,"
+    "\"transactionId\":%d,"
+    "\"meterValue\":[{"
+    "\"sampledValue\":[{"
+    "\"unit\":\"Wh\","
+    "\"context\":\"Sample.Periodic\","
+    "\"value\":\"%d\""
+    "}],"
+    "\"timestamp\":\"%s\""
+    "}]}";
+
+const char *OCPP_STARTTRANSACTION =
+    "{"
+    "\"connectorId\":1,"
+    "\"meterStart\":0,"
+    "\"idTag\":\"%s\","
+    "\"timestamp\":\"%s\""
+    "}";
+
+const char *OCPP_STOPTRANSACTION =
+    "{"
+    "\"meterStop\":%d,"
+    "\"transactionId\":\"%d\","
+    "\"idTag\":\"%s\","
+    "\"timestamp\":\"%s\","
+    "\"reason\":\"%s\""
+    "}";
+
+const char *OCPP_CONFIGURATION =
+    "{\"configurationKey\":["
+    "{\"key\":\"OCPPVersion\",\"readonly\":true,\"value\":\"1.6\"},"
+    "{\"key\":\"OCPPCentralAddress\",\"readonly\":false,\"value\":\"%s\"},"
+    "{\"key\":\"StationName\",\"readonly\":false,\"value\":\"%s\"},"
+    "{\"key\":\"AuthorizationCacheEnabled\",\"readonly\":true,\"value\":false},"
+    "{\"key\":\"AuthorizeRemoteTxRequests\",\"readonly\":true,\"value\":false},"
+    "{\"key\":\"ClockAlignedDataInterval\",\"readonly\":true,\"value\":0},"
+    "{\"key\":\"ConnectionTimeOut\",\"readonly\":true,\"value\":180},"
+    "{\"key\":\"GetConfigurationMaxKeys\",\"readonly\":true,\"value\":32},"
+    "{\"key\":\"HeartbeatInterval\",\"readonly\":false,\"value\":%d},"
+    "{\"key\":\"LocalAuthorizeOffline\",\"readonly\":true,\"value\":false},"
+    "{\"key\":\"LocalPreAuthorize\",\"readonly\":true,\"value\":false},"
+    "{\"key\":\"MeterValuesAlignedData\",\"readonly\":true,\"value\":\"Energy.Active.Import.Register\"},"
+    "{\"key\":\"MeterValuesSampledData\",\"readonly\":true,\"value\":\"Energy.Active.Import.Register\"},"
+    "{\"key\":\"MeterValueSampleInterval\",\"readonly\":true,\"value\":60},"
+    "{\"key\":\"NumberOfConnectors\",\"readonly\":true,\"value\":1},"
+    "{\"key\":\"ResetRetries\",\"readonly\":true,\"value\":0},"
+    "{\"key\":\"ConnectorPhaseRotation\",\"readonly\":true,\"value\":\"1.NotApplicable\"},"
+    "{\"key\":\"ConnectorPhaseRotationMaxLength\",\"readonly\":true,\"value\":1},"
+    "{\"key\":\"StopTransactionOnEVSideDisconnect\",\"readonly\":true,\"value\":true},"
+    "{\"key\":\"StopTransactionOnInvalidId\",\"readonly\":true,\"value\":true},"
+    "{\"key\":\"StopTxnAlignedData\",\"readonly\":true,\"value\":\"\"},"
+    "{\"key\":\"StopTxnAlignedDataMaxLength\",\"readonly\":true,\"value\":0},"
+    "{\"key\":\"StopTxnSampledData\",\"readonly\":true,\"value\":\"\"},"
+    "{\"key\":\"StopTxnSampledDataMaxLength\",\"readonly\":true,\"value\":0},"
+    "{\"key\":\"SupportedFeatureProfiles\",\"readonly\":true,\"value\":\"Core\"},"
+    "{\"key\":\"TransactionMessageAttempts\",\"readonly\":true,\"value\":10},"
+    "{\"key\":\"TransactionMessageRetryInterval\",\"readonly\":true,\"value\":60},"
+    "{\"key\":\"UnlockConnectorOnEVSideDisconnect\",\"readonly\":true,\"value\":true}"
+    "]}";
+
+const char *WS_HEADER = "x-forwarded-for: %s\r\n";
+
+static bool ws_connected = false;
+static char *tag_id = NULL;
+static char start_transaction_uuid[50];
+static char stop_transaction_uuid[50];
+static char boot_notification_uuid[50];
+static char default_uuid[50];
+static struct mg_connection *ws_connection;
+static time_t last_ocpp_interaction;
+
+void ev_handler(struct mg_connection *nc, int ev, void *ev_data, void *user_data) {
+  switch (ev) {
+    case MG_EV_CONNECT: {
+      int status = *((int *) ev_data);
+      LOG(LL_DEBUG, ("-- Connection status: %d", status));
+      if (status != 0) {
+        LOG(LL_ERROR, ("-- Connection error: %d", status));
+      }
+      break;
+    }
+    case MG_EV_WEBSOCKET_HANDSHAKE_REQUEST:
+      LOG(LL_DEBUG, ("-- Handshake request"));
+      break;
+    case MG_EV_WEBSOCKET_HANDSHAKE_DONE: {
+      struct http_message *hm = (struct http_message *) ev_data;
+      if (ws_connected == true) {
+        LOG(LL_INFO, ("-- Already Connected"));
+        break;
+      }
+      if (hm->resp_code == 101) {
+        LOG(LL_INFO, ("-- Connected"));
+        mgos_provision_set_cur_state(MGOS_PROVISION_ST_CLOUD_CONNECTED);
+        ws_connected = true;
+
+        char sn[25];
+        get_chargepoint_serial_number(sn);
+        char buf[1024];
+        int length = sprintf(buf,
+                             OCPP_BOOTNOTIFICATION,
+                             mgos_sys_ro_vars_get_app(),
+                             sn,
+                             mgos_sys_ro_vars_get_fw_version(),
+                             mgos_sys_ro_vars_get_fw_timestamp());
+        struct mg_str content = mg_mk_str_n(buf, length);
+        generate_uuid(boot_notification_uuid);
+        ocpp_send_ocpp_request(nc, OCPP_REQUEST_BOOT_NOTIFICATION, boot_notification_uuid, content);
+      } else {
+        LOG(LL_ERROR, ("-- Connection failed! HTTP code %d", hm->resp_code));
+        /* Connection will be closed after this. */
+      }
+      break;
+    }
+    case MG_EV_WEBSOCKET_FRAME: {
+      struct websocket_message *wm = (struct websocket_message *) ev_data;
+      LOG(LL_DEBUG, ("-- Frame %.*s", (int) wm->size, wm->data));
+      if (wm->size < 2) {
+        break;
+      } else if (wm->data[1] == '2') {
+        const char *msg = reinterpret_cast<const char *>(wm->data);
+        char cmd[50];
+        char uuid[50];
+        char payload[500];
+        struct json_token token;
+        if (json_scanf_array_elem(msg, (int) wm->size, "", 1, &token) > 0) {
+          sprintf(uuid, "%.*s", token.len, token.ptr);
+        } else {
+          break;
+        }
+        if (json_scanf_array_elem(msg, (int) wm->size, "", 2, &token) > 0) {
+          sprintf(cmd, "%.*s", token.len, token.ptr);
+        } else {
+          break;
+        }
+        if (json_scanf_array_elem(msg, (int) wm->size, "", 3, &token) > 0) {
+          sprintf(payload, "%.*s", token.len, token.ptr);
+          ocpp_handle_ocpp_cmd(nc, cmd, uuid, payload);
+        } else {
+          break;
+        }
+      } else if (wm->data[1] == '3') {
+        const char *msg = reinterpret_cast<const char *>(wm->data);
+        char uuid[50];
+        char payload[500];
+        struct json_token token;
+        if (json_scanf_array_elem(msg, (int) wm->size, "", 1, &token) > 0) {
+          sprintf(uuid, "%.*s", token.len, token.ptr);
+        } else {
+          break;
+        }
+        if (json_scanf_array_elem(msg, (int) wm->size, "", 2, &token) > 0) {
+          sprintf(payload, "%.*s", token.len, token.ptr);
+          ocpp_handle_ocpp_response(nc, uuid, payload);
+        } else {
+          break;
+        }
+      }
+
+      break;
+    }
+    case MG_EV_CLOSE: {
+      LOG(LL_INFO, ("-- WS Disconnection"));
+      ws_connected = false;
+      break;
+    }
+  }
+  (void) user_data;
+}
+
+bool ocpp_is_connected() {
+  return ws_connected;
+}
+
+void ocpp_connect_backend() {
+  if (mgos_sys_config_get_ocpp_url() != NULL && mgos_sys_config_get_ocpp_name() != NULL) {
+    int urlLength = strlen(mgos_sys_config_get_ocpp_url());
+    int nameLength = strlen(mgos_sys_config_get_ocpp_name());
+
+    char buf[urlLength + nameLength + 2];
+    int length = sprintf(
+        buf, "%.*s/%.*s", urlLength, mgos_sys_config_get_ocpp_url(), nameLength, mgos_sys_config_get_ocpp_name());
+
+    LOG(LL_INFO, ("Connecting to OCPP Backend %.*s", length, buf));
+
+    char extraHeaders[128];
+    char ip[25];
+    get_chargepoint_ip_address(ip);
+    sprintf(extraHeaders, WS_HEADER, ip);
+    ws_connection = mg_connect_ws(mgos_get_mgr(), ev_handler, NULL, buf, "ocpp1.6", extraHeaders);
+    time(&last_ocpp_interaction);
+  } else {
+    LOG(LL_WARN, ("OCPP Config is not defined !"));
+  }
+}
+
+void ocpp_send_ocpp_response(struct mg_connection *nc, const char *id, const struct mg_str data) {
+  int length;
+  char buf[(int) data.len + 100];
+
+  length = sprintf(buf, "[3, \"%s\", %.*s]", id, (int) data.len, data.p);
+  LOG(LL_DEBUG, ("Sending OCPP response (%d b): %.*s", length, length, buf));
+  mg_send_websocket_frame(nc, WEBSOCKET_OP_TEXT, buf, length);
+
+  time(&last_ocpp_interaction);
+}
+
+void ocpp_send_ocpp_request(struct mg_connection *nc, const char *cmd, const char *id, const struct mg_str data) {
+  int length;
+  char buf[(int) data.len + 100];
+
+  length = sprintf(buf, "[2, \"%s\", \"%s\", %.*s]", id, cmd, (int) data.len, data.p);
+  LOG(LL_DEBUG, ("Sending OCPP request (%d b): %.*s", length, length, buf));
+  mg_send_websocket_frame(nc, WEBSOCKET_OP_TEXT, buf, length);
+
+  time(&last_ocpp_interaction);
+}
+
+void ocpp_send_ocpp_heartbeat() {
+  time_t now;
+  time(&now);
+  int interval = mgos_sys_config_get_ocpp_config_heartbeat_interval();
+  double diff = difftime(now, last_ocpp_interaction);
+  if (diff >= interval) {
+    generate_uuid(default_uuid);
+    ocpp_send_ocpp_request(ws_connection, OCPP_REQUEST_HEARTBEAT, default_uuid, mg_mk_str("{}"));
+  }
+}
+
+void ocpp_send_ocpp_status_notification(const char *status) {
+  char buf[200];
+  int length;
+
+  char date_buffer[30];
+  get_current_date(date_buffer);
+  generate_uuid(default_uuid);
+
+  length = sprintf(buf, OCPP_STATUSNOTIFICATION, status, date_buffer);
+  struct mg_str content = mg_mk_str_n(buf, length);
+  LOG(LL_DEBUG, ("Sending status notification %.*s", length, buf));
+  ocpp_send_ocpp_request(ws_connection, OCPP_REQUEST_STATUS_NOTIFICATION, default_uuid, content);
+}
+
+void ocpp_send_ocpp_meter_values() {
+  char buf[200];
+  int length;
+
+  char date_buffer[30];
+  get_current_date(date_buffer);
+  generate_uuid(default_uuid);
+  int energy = power_compute_energy();
+
+  length = sprintf(buf, OCPP_METERVALUES, mgos_sys_config_get_ocpp_transaction_id(), energy, date_buffer);
+  struct mg_str content = mg_mk_str_n(buf, length);
+  LOG(LL_DEBUG, ("Sending meter values %.*s", length, buf));
+  ocpp_send_ocpp_request(ws_connection, OCPP_REQUEST_METER_VALUES, default_uuid, content);
+}
+
+mg_str ocpp_stop_transaction(const char *reason) {
+  LOG(LL_DEBUG,
+      ("Stop transaction %d for tag %s, reason %s",
+       mgos_sys_config_get_ocpp_transaction_id(),
+       mgos_sys_config_get_ocpp_transaction_tag_id(),
+       reason));
+
+  ocpp_send_ocpp_status_notification(OCPP_STATUS_FINISHING);
+  mgos_gpio_write(mgos_sys_config_get_gpio_relay(), 0);
+
+  char buf[200];
+  int length;
+
+  char date_buffer[30];
+  get_current_date(date_buffer);
+  generate_uuid(stop_transaction_uuid);
+
+  int energy = power_compute_energy();
+
+  length = sprintf(buf,
+                   OCPP_STOPTRANSACTION,
+                   energy,
+                   mgos_sys_config_get_ocpp_transaction_id(),
+                   mgos_sys_config_get_ocpp_transaction_tag_id(),
+                   date_buffer,
+                   reason);
+  struct mg_str content = mg_mk_str_n(buf, length);
+  LOG(LL_DEBUG, ("Sending stop transaction %.*s", length, buf));
+  ocpp_send_ocpp_request(ws_connection, OCPP_REQUEST_STOP_TRANSACTION, stop_transaction_uuid, content);
+
+  if (mqtt_is_connected()) {
+    mqtt_send_state_topic();
+  }
+
+  return mg_mk_str(OCPP_RESPONSE_ACCEPTED);
+}
+
+mg_str ocpp_stop_transaction(const char *payload, const char *reason) {
+  int id = 0;
+  if (json_scanf(payload, strlen(payload), "{ transactionId:%d }", &id) > 0) {
+    if (id == mgos_sys_config_get_ocpp_transaction_id()) {
+      return ocpp_stop_transaction(reason);
+    } else {
+      LOG(LL_ERROR,
+          ("Payload %s not matching current transaction id %d", payload, mgos_sys_config_get_ocpp_transaction_id()));
+      return mg_mk_str(OCPP_RESPONSE_REJECTED);
+    }
+  } else {
+    LOG(LL_ERROR, ("Unable to find transaction id in payload %s", payload));
+    return mg_mk_str(OCPP_RESPONSE_REJECTED);
+  }
+}
+
+mg_str ocpp_start_transaction(const char *payload) {
+  if (json_scanf(payload, strlen(payload), "{ idTag:%Q }", &tag_id) > 0) {
+    LOG(LL_INFO, ("Starting transaction for tag with id %s", tag_id));
+
+    char buf[200];
+    int length;
+
+    char date_buffer[30];
+    get_current_date(date_buffer);
+    generate_uuid(start_transaction_uuid);
+
+    ocpp_send_ocpp_status_notification(OCPP_STATUS_PREPARING);
+
+    length = sprintf(buf, OCPP_STARTTRANSACTION, tag_id, date_buffer);
+    struct mg_str content = mg_mk_str_n(buf, length);
+    LOG(LL_DEBUG, ("Sending start transaction %.*s", length, buf));
+    ocpp_send_ocpp_request(ws_connection, OCPP_REQUEST_START_TRANSACTION, start_transaction_uuid, content);
+
+    if (mqtt_is_connected()) {
+      mqtt_send_state_topic();
+    }
+
+    return mg_mk_str(OCPP_RESPONSE_ACCEPTED);
+  } else {
+    LOG(LL_WARN, ("Unable to find tag id in payload %s", payload));
+    return mg_mk_str(OCPP_RESPONSE_REJECTED);
+  }
+}
+
+mg_str ocpp_reset_soft() {
+  LOG(LL_INFO, ("Performing soft reset"));
+
+  if (mgos_sys_config_get_ocpp_transaction_id() > 0) {
+    ocpp_stop_transaction(OCPP_STOP_TRANSACTION_REASON_SOFTRESET);
+  }
+
+  mqtt_reset();
+
+  return mg_mk_str(OCPP_RESPONSE_ACCEPTED);
+}
+
+mg_str ocpp_reset_hard() {
+  LOG(LL_INFO, ("Performing hard reset"));
+
+  if (mgos_sys_config_get_ocpp_transaction_id() > 0) {
+    ocpp_stop_transaction(OCPP_STOP_TRANSACTION_REASON_HARDRESET);
+  }
+
+  mgos_system_restart_after(10000);
+
+  return mg_mk_str(OCPP_RESPONSE_ACCEPTED);
+}
+
+mg_str ocpp_reset(const char *payload) {
+  char *reset_type = NULL;
+
+  if (json_scanf(payload, strlen(payload), "{ type:%Q }", &reset_type) > 0) {
+    LOG(LL_INFO, ("Resetting in mode %s", reset_type));
+
+    if (strcmp(OCPP_RESET_TYPE_SOFT, reset_type) == 0) {
+      return ocpp_reset_soft();
+    } else if (strcmp(OCPP_RESET_TYPE_HARD, reset_type) == 0) {
+      return ocpp_reset_hard();
+    } else {
+      LOG(LL_WARN, ("Reset type %s not supported", reset_type));
+      return mg_mk_str(OCPP_RESPONSE_REJECTED);
+    }
+  }
+
+  LOG(LL_WARN, ("Unable to find reset type in payload %s", payload));
+  return mg_mk_str(OCPP_RESPONSE_REJECTED);
+}
+
+void ocpp_get_configuration(const char *payload, char *response) {
+  LOG(LL_DEBUG, ("OCPP GetConfiguration request: %.*s", sizeof(payload), payload));
+
+  sprintf(response,
+          OCPP_CONFIGURATION,
+          mgos_sys_config_get_ocpp_url(),
+          mgos_sys_config_get_ocpp_name(),
+          mgos_sys_config_get_ocpp_config_heartbeat_interval());
+}
+
+mg_str ocpp_change_configuration(const char *payload) {
+  LOG(LL_DEBUG, ("OCPP ChangeConfiguration request: %s", payload));
+  char *key = NULL;
+
+  if (json_scanf(payload, strlen(payload), "{ key:%Q }", &key) > 0) {
+    if (strcmp("HeartbeatInterval", key) == 0) {
+      int value;
+      if (json_scanf(payload, strlen(payload), "{ value:%d }", &value) > 0) {
+        LOG(LL_INFO, ("Change configuration key \"%s\", value \"%d\"", key, value));
+        if (value >= 60) {
+          mgos_sys_config_set_ocpp_config_heartbeat_interval(value);
+          mgos_sys_config_save_level(&mgos_sys_config, MGOS_CONFIG_LEVEL_USER, false, NULL);
+          return mg_mk_str(OCPP_RESPONSE_ACCEPTED);
+        }
+        LOG(LL_ERROR, ("ChangeConfiguration request with incorrect value for key: \"%s\", value \"%d\"", key, value));
+        return mg_mk_str(OCPP_RESPONSE_REJECTED);
+      }
+      LOG(LL_ERROR, ("ChangeConfiguration request without number value for key: \"%s\"", key));
+      return mg_mk_str(OCPP_RESPONSE_REJECTED);
+
+    } else if (strcmp("OCPPCentralAddress", key) == 0) {
+      char *value = NULL;
+      if (json_scanf(payload, strlen(payload), "{ value:%Q }", &value) > 0) {
+        LOG(LL_INFO, ("Change configuration key \"%s\", value \"%s\"", key, value));
+        if (value != NULL) {
+          mgos_sys_config_set_ocpp_url(value);
+          mgos_sys_config_save_level(&mgos_sys_config, MGOS_CONFIG_LEVEL_USER, false, NULL);
+          return mg_mk_str(OCPP_RESPONSE_ACCEPTED);
+        }
+      }
+      LOG(LL_WARN, ("ChangeConfiguration request without value for key: \"%s\"", key));
+      return mg_mk_str(OCPP_RESPONSE_REJECTED);
+
+    } else if (strcmp("StationName", key) == 0) {
+      char *value = NULL;
+      if (json_scanf(payload, strlen(payload), "{ value:%Q }", &value) > 0) {
+        LOG(LL_INFO, ("Change configuration key \"%s\", value \"%s\"", key, value));
+        if (value != NULL) {
+          mgos_sys_config_set_ocpp_name(value);
+          mgos_sys_config_save_level(&mgos_sys_config, MGOS_CONFIG_LEVEL_USER, false, NULL);
+          return mg_mk_str(OCPP_RESPONSE_ACCEPTED);
+        }
+      }
+      LOG(LL_WARN, ("ChangeConfiguration request without value for key: \"%s\"", key));
+      return mg_mk_str(OCPP_RESPONSE_REJECTED);
+
+    } else {
+      LOG(LL_ERROR, ("ChangeConfiguration request for unsupported key: \"%s\"", key));
+      return mg_mk_str(OCPP_RESPONSE_NOTSUPPORTED);
+    }
+  }
+  LOG(LL_ERROR, ("No key for ChangeConfiguration request"));
+  return mg_mk_str(OCPP_RESPONSE_REJECTED);
+}
+
+mg_str ocpp_update_firmware(const char *payload) {
+  char *location = NULL;
+
+  if (json_scanf(payload, strlen(payload), "{ location:%Q }", &location) > 0) {
+    LOG(LL_INFO, ("Updating firmware from %s", location));
+
+    mgos_ota_http_start(location, NULL);
+    return mg_mk_str(OCPP_RESPONSE_ACCEPTED);
+  }
+
+  LOG(LL_WARN, ("Unable to find location in payload %s", payload));
+  return mg_mk_str(OCPP_RESPONSE_REJECTED);
+}
+
+void ocpp_handle_ocpp_response(struct mg_connection *nc, const char *id, const char *payload) {
+  LOG(LL_DEBUG, ("Handle OCPP response with id %s", id));
+  if (strcmp(id, start_transaction_uuid) == 0) {
+    int transaction_id;
+    if (json_scanf(payload, strlen(payload), "{ transactionId:%d }", &transaction_id) > 0) {
+      ocpp_send_ocpp_status_notification(OCPP_STATUS_CHARGING);
+      power_reset_energy();
+      mgos_gpio_write(mgos_sys_config_get_gpio_relay(), 1);
+      mgos_sys_config_set_ocpp_transaction_id(transaction_id);
+      mgos_sys_config_set_ocpp_transaction_tag_id(tag_id);
+      mgos_sys_config_set_ocpp_transaction_consumption(0);
+      mgos_sys_config_set_ocpp_transaction_reset_consumption(0);
+      mgos_sys_config_save(&mgos_sys_config, false, NULL);
+      LOG(LL_INFO, ("Transaction started %d", transaction_id));
+    } else {
+      ocpp_send_ocpp_status_notification(OCPP_STATUS_AVAILABLE);
+      mgos_sys_config_set_ocpp_transaction_id(-1);
+      mgos_sys_config_save(&mgos_sys_config, false, NULL);
+      LOG(LL_ERROR, ("Failed to start transaction"));
+    }
+  } else if (strcmp(id, stop_transaction_uuid) == 0) {
+    ocpp_send_ocpp_status_notification(OCPP_STATUS_AVAILABLE);
+    power_reset_energy();
+    mgos_sys_config_set_ocpp_transaction_consumption(0);
+    mgos_sys_config_set_ocpp_transaction_reset_consumption(0);
+    mgos_sys_config_set_ocpp_transaction_id(-1);
+    mgos_sys_config_save(&mgos_sys_config, false, NULL);
+  } else if (strcmp(id, boot_notification_uuid) == 0) {
+    if (mgos_sys_config_get_ocpp_transaction_id() > 0) {
+      ocpp_send_ocpp_status_notification(OCPP_STATUS_CHARGING);
+    } else {
+      ocpp_send_ocpp_status_notification(OCPP_STATUS_AVAILABLE);
+    }
+
+    int value;
+    if (json_scanf(payload, strlen(payload), "{ interval:%d }", &value) > 0) {
+      int interval = mgos_sys_config_get_ocpp_config_heartbeat_interval();
+      if (value > 0 && value != interval) {
+        mgos_sys_config_set_ocpp_config_heartbeat_interval(value);
+        mgos_sys_config_save_level(&mgos_sys_config, MGOS_CONFIG_LEVEL_USER, false, NULL);
+        LOG(LL_INFO, ("Heartbeat interval set to %d as per server request", value));
+      }
+    }
+  }
+
+  (void) nc;
+}
+
+void ocpp_handle_ocpp_cmd(struct mg_connection *nc, const char *cmd, const char *id, const char *payload) {
+  LOG(LL_DEBUG, ("Handle OCPP cmd %s with id %s", cmd, id));
+  struct mg_str data;
+
+  if (strcmp(cmd, OCPP_REQUEST_GET_CONFIGURATION) == 0) {
+    char resp[3000];
+    ocpp_get_configuration(payload, resp);
+    data = mg_mk_str(resp);
+  } else if (strcmp(cmd, OCPP_REQUEST_CHANGE_CONFIGURATION) == 0) {
+    data = ocpp_change_configuration(payload);
+  } else if (strcmp(cmd, OCPP_REQUEST_REMOTE_START_TRANSACTION) == 0) {
+    data = ocpp_start_transaction(payload);
+  } else if (strcmp(cmd, OCPP_REQUEST_REMOTE_STOP_TRANSACTION) == 0) {
+    data = ocpp_stop_transaction(payload, OCPP_STOP_TRANSACTION_REASON_REMOTE);
+  } else if (strcmp(cmd, OCPP_REQUEST_RESET) == 0) {
+    data = ocpp_reset(payload);
+  } else if (strcmp(cmd, OCPP_REQUEST_UPDATE_FIRMWARE) == 0) {
+    data = ocpp_update_firmware(payload);
+  } else if (strcmp(cmd, OCPP_REQUEST_CLEAR_CACHE) == 0) {
+    data = mg_mk_str(OCPP_RESPONSE_REJECTED);
+  } else if (strcmp(cmd, OCPP_REQUEST_UNLOCK_CONNECTOR) == 0) {
+    data = mg_mk_str(OCPP_RESPONSE_NOTSUPPORTED);
+  } else if (strcmp(cmd, OCPP_REQUEST_CHANGE_AVAILABILITY) == 0) {
+    data = mg_mk_str(OCPP_RESPONSE_REJECTED);
+  } else {
+    data = mg_mk_str("{}");
+  }
+
+  ocpp_send_ocpp_response(nc, id, data);
+}
