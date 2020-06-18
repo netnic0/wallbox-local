@@ -99,9 +99,10 @@ cdefs:
 conds:
   - when: build_vars.TARGET == "development"
     apply:
-      version: 0.4.0-dev
+      version: 0.4.1-dev
       config_schema:
         - ["file_logger.enable", true]
+        - ["file_logger.level", 1]
         - ["wifi.ap.trigger_on_gpio", 2]
         - ["debug.file_level", "main.cpp:=4,=0"]
         - ["dns_sd.host_name", "wallbox-dev"]
