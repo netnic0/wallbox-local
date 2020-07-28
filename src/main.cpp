@@ -39,10 +39,39 @@ bool mgos_sys_config_get_wifi_sta_enable(void) {
 }
 #endif
 
+#define MIN_HEAP_THRESHOLD 16 * 1024        // 16 kb
+#define UPTIME_THRESHOLD 20 * 24 * 60 * 60  // 20 days in seconds
+
+/*
+ * Health check, return true if OK.
+ */
+bool healthcheck() {
+  // Check for 16k limit
+  if (mgos_get_free_heap_size() < MIN_HEAP_THRESHOLD) {
+    LOG(LL_WARN, ("Health check: memory running low"));
+    return false;
+  }
+
+  // Check for 20 days uptime
+  if (mgos_uptime() > UPTIME_THRESHOLD) {
+    LOG(LL_WARN, ("Health check: max uptime reached"));
+    return false;
+  }
+
+  return true;
+}
+
 /*
  * Main loop.
  */
 void process_loop(void *arg) {
+  if (!healthcheck()) {
+    // Reboot to avoid issues
+    LOG(LL_INFO, ("Reboot caused by health check"));
+    mgos_system_restart();
+    return;
+  }
+
   int energy = power_read_energy();
   LOG(LL_INFO, ("Energy: %d Ws, %d Wh - Active power %d W", energy, energy / 3600, power_read_active_power()));
 
