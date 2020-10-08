@@ -29,6 +29,7 @@ const ocppSpinner = document.getElementById("ocpp_spinner");
 const mqttSpinner = document.getElementById("mqtt_spinner");
 const rebootSpinner = document.getElementById("reboot_spinner");
 const resetSpinner = document.getElementById("reset_spinner");
+const resetWifiSpinner = document.getElementById("reset_wifi_spinner");
 const firmwareSpinner = document.getElementById("fw_spinner");
 
 const infoTitle = document.getElementById("info_title");
@@ -165,6 +166,28 @@ document.getElementById("wifi_save_btn").onclick = function () {
     });
 };
 
+document.getElementById("reset_wifi_btn").onclick = function () {
+    const ok = confirm("This action will delete current Wi-Fi configuration \n" +
+        "and restart the device in AP mode.\nDo you want to proceed?");
+    if (!ok) {
+        return;
+    }
+    resetWifiSpinner.className = "spin";
+    const data = {};
+    axios.post(host + "/rpc/Wallbox.ResetWifi", data).then(function () {
+        showInfoDialog(
+            "Wi-Fi configuration is reset.<br>" +
+            "Reconnect to the Wallbox access point to configure the Wi-Fi.",
+            "Reset",
+            false,
+            false);
+    }).catch(function (err) {
+        handleAxiosError(err);
+    }).then(function () {
+        resetWifiSpinner.className = "";
+    });
+};
+
 document.getElementById("reset_btn").onclick = function () {
     const ok = confirm("This action will wipe all user configuration\n" +
         "and reset the device to factory settings.\nDo you want to proceed?");
@@ -176,7 +199,7 @@ document.getElementById("reset_btn").onclick = function () {
     axios.post(host + "/rpc/Wallbox.Reset", data).then(function () {
         showInfoDialog(
             "Device configuration is reset.<br>" +
-            "Reconnect to the Wallbox access point to configure the WiFi.",
+            "Reconnect to the Wallbox access point to configure the Wi-Fi.",
             "Reset",
             false,
             false);
