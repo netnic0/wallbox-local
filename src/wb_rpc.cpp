@@ -48,6 +48,7 @@ void rpc_init() {
   mg_rpc_add_handler(mgos_rpc_get_global(), "Wallbox.GetInfo", "", rpc_wallbox_get_info_handler, NULL);
   mg_rpc_add_handler(mgos_rpc_get_global(), "Wallbox.Reboot", "", rpc_wallbox_reboot_handler, NULL);
   mg_rpc_add_handler(mgos_rpc_get_global(), "Wallbox.Reset", "", rpc_wallbox_reset_handler, NULL);
+  mg_rpc_add_handler(mgos_rpc_get_global(), "Wallbox.ResetWifi", "", rpc_wallbox_reset_wifi_handler, NULL);
 }
 
 void rpc_wallbox_get_info_handler(struct mg_rpc_request_info *ri,
@@ -109,6 +110,39 @@ void rpc_wallbox_reset_handler(struct mg_rpc_request_info *ri,
 
   // Reset config
   mgos_config_reset(MGOS_CONFIG_LEVEL_USER);
+
+  mg_rpc_send_responsef(ri, "{}");
+  (void) cb_arg;
+  (void) fi;
+  (void) args;
+}
+
+void rpc_wallbox_reset_wifi_handler(struct mg_rpc_request_info *ri,
+                                    void *cb_arg,
+                                    struct mg_rpc_frame_info *fi,
+                                    struct mg_str args) {
+  LOG(LL_INFO, ("RPC request to reset to Wi-Fi configuration"));
+
+  // Reset WiFi config
+  /*
+  "wifi": {
+    "ap": {
+      "enable": true
+    },
+    "sta": {
+      "enable": false,
+      "ssid": "",
+      "pass": ""
+    }
+  }
+  */
+  mgos_sys_config_set_wifi_ap_enable(true);
+  mgos_sys_config_set_wifi_sta_enable(false);
+  mgos_sys_config_set_wifi_sta_ssid("");
+  mgos_sys_config_set_wifi_sta_pass("");
+  mgos_sys_config_save(&mgos_sys_config, false, NULL);
+
+  mgos_system_restart_after(5000);
 
   mg_rpc_send_responsef(ri, "{}");
   (void) cb_arg;

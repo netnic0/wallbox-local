@@ -30,4 +30,6 @@ void rpc_wallbox_reboot_handler(struct mg_rpc_request_info *, void *, struct mg_
 
 void rpc_wallbox_reset_handler(struct mg_rpc_request_info *, void *, struct mg_rpc_frame_info *, struct mg_str);
 
+void rpc_wallbox_reset_wifi_handler(struct mg_rpc_request_info *, void *, struct mg_rpc_frame_info *, struct mg_str);
+
 #endif /* wb_rpc_h */
