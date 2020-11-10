@@ -7,9 +7,12 @@ let refreshTimer;
 
 const toast = document.getElementById("toast");
 
-const wifiSSID = document.getElementById("wifi_ssid");
-const wifiPass = document.getElementById("wifi_pass");
-const showWifiPass = document.getElementById("wifi_pass_show");
+const wifiSSID0 = document.getElementById("wifi_ssid_0");
+const wifiPass0 = document.getElementById("wifi_pass_0");
+const wifiSSID1 = document.getElementById("wifi_ssid_1");
+const wifiPass1 = document.getElementById("wifi_pass_1");
+const showWifiPass0 = document.getElementById("wifi_pass_show_0");
+const showWifiPass1 = document.getElementById("wifi_pass_show_1");
 const ocppUrl = document.getElementById("ocpp_url");
 const ocppName = document.getElementById("ocpp_name");
 const deviceState = document.getElementById("state");
@@ -144,26 +147,55 @@ document.getElementById("mqtt_save_btn").onclick = function () {
 
 document.getElementById("wifi_save_btn").onclick = function () {
     wifiSpinner.className = "spin";
+    let valid = false;
     const data = {
         config: {
             wifi: {
-                sta: { enable: true, ssid: wifiSSID.value, pass: wifiPass.value },
+                sta2: { enable: true },
                 ap: { enable: false },
             },
+            provision: {
+                max_state: 0
+            }
         },
         save: true,
         reboot: true,
     };
-    axios.post(host + "/rpc/Config.Set", data).then(function () {
-        showInfoDialog(
-            "Device is rebooting and connecting to " + wifiSSID.value + ".<br/>" +
-            "Connect to the same network and visit <a href='http://wallbox.local/'>wallbox.local</a>.",
-            "Configuration", false, false);
-    }).catch(function (err) {
-        handleAxiosError(err);
-    }).then(function () {
-        wifiSpinner.className = "";
-    });
+    if (wifiSSID0.value && wifiSSID0.value.length > 0) {
+        data.config.wifi.sta = {
+            enable: true,
+            ssid: wifiSSID0.value
+        }
+        valid = true;
+        if (wifiPass0.value && wifiPass0.value.length > 0) {
+            data.config.wifi.sta.pass = wifiPass0.value;
+        }
+    }
+    if (wifiSSID1.value && wifiSSID1.value.length > 0) {
+        data.config.wifi.sta1 = {
+            enable: true,
+            ssid: wifiSSID1.value
+        }
+        valid = true;
+        if (wifiPass1.value && wifiPass1.value.length > 0) {
+            data.config.wifi.sta1.pass = wifiPass1.value;
+        }
+    }
+
+    if (valid) {
+        axios.post(host + "/rpc/Config.Set", data).then(function () {
+            showInfoDialog(
+                "Device is rebooting and connecting to " + wifiSSID0.value + ".<br/>" +
+                "Connect to the same network and visit <a href='http://wallbox.local/'>wallbox.local</a>.",
+                "Configuration", false, false);
+        }).catch(function (err) {
+            handleAxiosError(err);
+        }).then(function () {
+            wifiSpinner.className = "";
+        });
+    } else {
+        showToast("Wifi Update failed. Check your data.");
+    }
 };
 
 document.getElementById("reset_wifi_btn").onclick = function () {
@@ -255,7 +287,8 @@ const getLogs = () => {
 const getInfo = () => {
     refreshSpinner.className = "spin";
     axios.get(host + "/rpc/Wallbox.GetInfo").then(function (res) {
-        wifiSSID.value = res.data.wifi_ssid;
+        wifiSSID0.value = res.data.wifi_ssid;
+        wifiSSID1.value = res.data.wifi_ssid1;
         ocppUrl.value = res.data.ocpp_url;
         ocppName.value = res.data.ocpp_name;
         document.getElementById("device_id").innerText = res.data.id;
@@ -361,7 +394,8 @@ const showPassword = (input, cb) => {
         cb.checked = true;
     }
 };
-showWifiPass.onclick = () => { showPassword(wifiPass, showWifiPass); };
+showWifiPass0.onclick = () => { showPassword(wifiPass0, showWifiPass0); };
+showWifiPass1.onclick = () => { showPassword(wifiPass1, showWifiPass1); };
 showMqttPass.onclick = () => { showPassword(mqttPass, showMqttPass); };
 
 (function () {

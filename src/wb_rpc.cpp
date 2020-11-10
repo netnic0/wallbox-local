@@ -34,6 +34,7 @@ const char *RPC_GETINFO =
     "ip: %Q,"
     "uptime: %d,"
     "wifi_ssid: %Q,"
+    "wifi_ssid1: %Q,"
     "energy: %d,"
     "state: %B,"
     "ocpp_url: %Q,"
@@ -71,6 +72,7 @@ void rpc_wallbox_get_info_handler(struct mg_rpc_request_info *ri,
                         ip,
                         (int) mgos_uptime(),
                         mgos_sys_config_get_wifi_sta_ssid(),
+                        mgos_sys_config_get_wifi_sta1_ssid(),
                         mgos_sys_config_get_ocpp_transaction_consumption(),
                         mgos_gpio_read(mgos_sys_config_get_gpio_relay()),
                         mgos_sys_config_get_ocpp_url(),
@@ -133,6 +135,11 @@ void rpc_wallbox_reset_wifi_handler(struct mg_rpc_request_info *ri,
       "enable": false,
       "ssid": "",
       "pass": ""
+    },
+    "sta1": {
+      "enable": false,
+      "ssid": "",
+      "pass": ""
     }
   }
   */
@@ -140,6 +147,10 @@ void rpc_wallbox_reset_wifi_handler(struct mg_rpc_request_info *ri,
   mgos_sys_config_set_wifi_sta_enable(false);
   mgos_sys_config_set_wifi_sta_ssid("");
   mgos_sys_config_set_wifi_sta_pass("");
+  mgos_sys_config_set_wifi_sta1_enable(false);
+  mgos_sys_config_set_wifi_sta1_ssid("");
+  mgos_sys_config_set_wifi_sta1_pass("");
+  mgos_sys_config_set_provision_max_state(0);
   mgos_sys_config_save(&mgos_sys_config, false, NULL);
 
   mgos_system_restart_after(5000);
