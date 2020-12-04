@@ -39,7 +39,8 @@ const char *MQTT_STATE =
     "uptime: %d,"
     "connected: %B,"
     "charging: %B,"
-    "energy: %d"
+    "energy: %d,"
+    "tid: %d"
     "}";
 
 const char *MQTT_SYSTEM =
@@ -107,7 +108,12 @@ void mqtt_send_state_topic() {
   if (mgos_mqtt_global_is_connected()) {
     int energy = mgos_sys_config_get_ocpp_transaction_consumption();
     bool charging = mgos_gpio_read(mgos_sys_config_get_gpio_relay());
-    mgos_mqtt_pubf(mqtt_state_topic, 0, false, MQTT_STATE, (int) mgos_uptime(), ocpp_is_connected(), charging, energy);
+    int tid = mgos_sys_config_get_ocpp_transaction_id();
+    if (tid < 0) {
+      tid = 0;
+    }
+    mgos_mqtt_pubf(
+        mqtt_state_topic, 0, false, MQTT_STATE, (int) mgos_uptime(), ocpp_is_connected(), charging, energy, tid);
   }
 }
 

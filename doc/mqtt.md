@@ -1,4 +1,5 @@
 <!-- markdownlint-disable MD013 -->
+
 # MQTT
 
 ## Messages published
@@ -10,13 +11,13 @@ The message is sent once, but not guaranteed (QOS 0). The message is retained.
 
 ```json
 {
-    "id": "wallbox-ABCDEF",
-    "app": "Wallbox-Shelly1PM",
-    "version": "0.1.0",
-    "sn": "534C464346529AF4ABABCDEF",
-    "fw": "20200518-120000",
-    "mac": "9AF4ABABCDEF",
-    "ip": "192.168.1.123"
+  "id": "wallbox-ABCDEF",
+  "app": "Wallbox-Shelly1PM",
+  "version": "0.1.0",
+  "sn": "534C464346529AF4ABABCDEF",
+  "fw": "20200518-120000",
+  "mac": "9AF4ABABCDEF",
+  "ip": "192.168.1.123"
 }
 ```
 
@@ -37,10 +38,11 @@ The message is sent once, but not guaranteed (QOS 0). The message is not retaine
 
 ```json
 {
-    "uptime": 4740,
-    "connected": true,
-    "charging": true,
-    "energy": 1900
+  "uptime": 4740,
+  "connected": true,
+  "charging": true,
+  "energy": 1900,
+  "tid": 123456789
 }
 ```
 
@@ -50,6 +52,7 @@ Attributes:
 - connected: `true` if the wallbox is connected to e-Mobility, else `false`
 - charging: `true` if a charging session is on-going, else `false`
 - energy: the amount of energy for the current charging session, in Wh
+- tid: the transaction ID of the current charging session, or `0` if not charging
 
 ### System
 
@@ -58,11 +61,11 @@ The message is sent once, but not guaranteed (QOS 0). The message is not retaine
 
 ```json
 {
-    "heapSize": 51880,
-    "freeHeapSize": 38192,
-    "minFreeHeapSize": 23384,
-    "fsSize": 233681,
-    "fsFreeSpace": 137046
+  "heapSize": 51880,
+  "freeHeapSize": 38192,
+  "minFreeHeapSize": 23384,
+  "fsSize": 233681,
+  "fsFreeSpace": 137046
 }
 ```
 
@@ -89,6 +92,8 @@ homeassistant:
       friendly_name: En charge
     sensor.wallbox_energy:
       friendly_name: Énergie délivrée
+    sensor.wallbox_session_id:
+      friendly_name: Identifiant session
     sensor.wallbox_uptime:
       friendly_name: Up time
     sensor.wallbox_heap_size:
@@ -121,43 +126,48 @@ binary_sensor:
 sensor:
   - platform: mqtt
     name: "Wallbox Uptime"
-    unit_of_measurement: 's'
+    unit_of_measurement: "s"
     icon: mdi:clock
     state_topic: "wallbox/wallbox-ABCDEF/state"
     value_template: "{{ value_json.uptime | int }}"
   - platform: mqtt
+    name: "Wallbox Session ID"
+    icon: mdi:tag
+    state_topic: "wallbox/wallbox-ABCDEF/state"
+    value_template: "{{ value_json.tid | int }}"
+  - platform: mqtt
     name: "Wallbox Energy"
-    unit_of_measurement: 'Wh'
+    unit_of_measurement: "Wh"
     icon: mdi:flash
     state_topic: "wallbox/wallbox-ABCDEF/state"
     value_template: "{{ value_json.energy | int }}"
   - platform: mqtt
     name: "Wallbox Heap Size"
-    unit_of_measurement: 'kb'
+    unit_of_measurement: "kb"
     icon: mdi:memory
     state_topic: "wallbox/wallbox-ABCDEF/system"
     value_template: "{{ ((value_json.heapSize | int) / 1000) | round(1) }}"
   - platform: mqtt
     name: "Wallbox Free Heap Size"
-    unit_of_measurement: 'kb'
+    unit_of_measurement: "kb"
     icon: mdi:memory
     state_topic: "wallbox/wallbox-ABCDEF/system"
     value_template: "{{ ((value_json.freeHeapSize | int) / 1000) | round(1) }}"
   - platform: mqtt
     name: "Wallbox Min Free Heap Size"
-    unit_of_measurement: 'kb'
+    unit_of_measurement: "kb"
     icon: mdi:memory
     state_topic: "wallbox/wallbox-ABCDEF/system"
     value_template: "{{ ((value_json.minFreeHeapSize | int) / 1000) | round(1) }}"
   - platform: mqtt
     name: "Wallbox FS Size"
-    unit_of_measurement: 'kb'
+    unit_of_measurement: "kb"
     icon: mdi:harddisk
     state_topic: "wallbox/wallbox-ABCDEF/system"
     value_template: "{{ ((value_json.fsSize | int) / 1000) | round(1) }}"
   - platform: mqtt
     name: "Wallbox FS Free Space"
-    unit_of_measurement: 'kb'
+    unit_of_measurement: "kb"
     icon: mdi:harddisk
     state_topic: "wallbox/wallbox-ABCDEF/system"
     value_template: "{{ ((value_json.fsFreeSpace | int) / 1000) | round(1) }}"
