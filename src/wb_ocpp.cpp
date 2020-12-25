@@ -472,13 +472,16 @@ mg_str ocpp_change_configuration(const char *payload) {
   char *key = NULL;
 
   if (json_scanf(payload, strlen(payload), "{ key:%Q }", &key) > 0) {
-    if (strcmp("HeartbeatInterval", key) == 0) {
+    if (strcasecmp("HeartbeatInterval", key) == 0) {
       int value;
       if (json_scanf(payload, strlen(payload), "{ value:%d }", &value) > 0) {
         LOG(LL_INFO, ("Change configuration key \"%s\", value \"%d\"", key, value));
         if (value >= 60) {
-          mgos_sys_config_set_ocpp_config_heartbeat_interval(value);
-          mgos_sys_config_save_level(&mgos_sys_config, MGOS_CONFIG_LEVEL_USER, false, NULL);
+          const int currentValue = mgos_sys_config_get_ocpp_config_heartbeat_interval();
+          if (value != currentValue) {
+            mgos_sys_config_set_ocpp_config_heartbeat_interval(value);
+            mgos_sys_config_save_level(&mgos_sys_config, MGOS_CONFIG_LEVEL_USER, false, NULL);
+          }
           return mg_mk_str(OCPP_RESPONSE_ACCEPTED);
         }
         LOG(LL_ERROR, ("ChangeConfiguration request with incorrect value for key: \"%s\", value \"%d\"", key, value));
@@ -487,26 +490,32 @@ mg_str ocpp_change_configuration(const char *payload) {
       LOG(LL_ERROR, ("ChangeConfiguration request without number value for key: \"%s\"", key));
       return mg_mk_str(OCPP_RESPONSE_REJECTED);
 
-    } else if (strcmp("OCPPCentralAddress", key) == 0) {
+    } else if (strcasecmp("OCPPCentralAddress", key) == 0) {
       char *value = NULL;
       if (json_scanf(payload, strlen(payload), "{ value:%Q }", &value) > 0) {
         LOG(LL_INFO, ("Change configuration key \"%s\", value \"%s\"", key, value));
-        if (value != NULL) {
-          mgos_sys_config_set_ocpp_url(value);
-          mgos_sys_config_save_level(&mgos_sys_config, MGOS_CONFIG_LEVEL_USER, false, NULL);
+        if (value != NULL && strlen(value) <= 500) {
+          const char *currentValue = mgos_sys_config_get_ocpp_url();
+          if (strcmp(value, currentValue) != 0) {
+            mgos_sys_config_set_ocpp_url(value);
+            mgos_sys_config_save_level(&mgos_sys_config, MGOS_CONFIG_LEVEL_USER, false, NULL);
+          }
           return mg_mk_str(OCPP_RESPONSE_ACCEPTED);
         }
       }
       LOG(LL_WARN, ("ChangeConfiguration request without value for key: \"%s\"", key));
       return mg_mk_str(OCPP_RESPONSE_REJECTED);
 
-    } else if (strcmp("StationName", key) == 0) {
+    } else if (strcasecmp("StationName", key) == 0) {
       char *value = NULL;
       if (json_scanf(payload, strlen(payload), "{ value:%Q }", &value) > 0) {
         LOG(LL_INFO, ("Change configuration key \"%s\", value \"%s\"", key, value));
-        if (value != NULL) {
-          mgos_sys_config_set_ocpp_name(value);
-          mgos_sys_config_save_level(&mgos_sys_config, MGOS_CONFIG_LEVEL_USER, false, NULL);
+        if (value != NULL && strlen(value) <= 500) {
+          const char *currentValue = mgos_sys_config_get_ocpp_name();
+          if (strcmp(value, currentValue) != 0) {
+            mgos_sys_config_set_ocpp_name(value);
+            mgos_sys_config_save_level(&mgos_sys_config, MGOS_CONFIG_LEVEL_USER, false, NULL);
+          }
           return mg_mk_str(OCPP_RESPONSE_ACCEPTED);
         }
       }
