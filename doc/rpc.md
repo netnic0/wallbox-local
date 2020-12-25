@@ -21,6 +21,7 @@ GET /rpc/Wallbox.GetInfo
     "mac": "9AF4ABABCDEF",
     "ip": "192.168.1.123",
     "uptime": 15290,
+    "temperature": 45.6,
     "wifi_ssid": "HomeWiFi",
     "energy": 0,
     "state": false,
@@ -44,6 +45,7 @@ Attributes:
 - mac: wallbox Wi-Fi MAC address
 - ip: wallbox IP address on the local area network
 - uptime: the number of seconds since the wallbox started, in seconds
+- temperature: the internal temperature of the wallbox, in celsius
 - wifi_ssid: SSID of the Wi-Fi network
 - energy: the amount of energy for the current charging session, in Wh
 - state: `true` if a charging session is on-going, else `false`

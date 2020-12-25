@@ -19,6 +19,7 @@
 #include "wb_ocpp.h"
 #include "wb_power.h"
 #include "wb_rpc.h"
+#include "wb_thermistor.h"
 
 #include "mgos.h"
 #include "mgos_app.h"
@@ -73,7 +74,9 @@ void process_loop(void *arg) {
   }
 
   int energy = power_read_energy();
-  LOG(LL_INFO, ("Energy: %d Ws, %d Wh - Active power %d W", energy, energy / 3600, power_read_active_power()));
+  LOG(LL_INFO, ("Energy: %d Ws, %d Wh", energy, energy / 3600));
+  LOG(LL_INFO, ("Heap: %d / %d b", mgos_get_free_heap_size(), mgos_get_heap_size()));
+  LOG(LL_INFO, ("Temp: %.1f C", thermistor_read_celsius()));
 
   // OCPP
   if (ocpp_is_connected()) {
@@ -113,6 +116,7 @@ enum mgos_app_init_result mgos_app_init(void) {
   LOG(LL_INFO, ("Starting Wallbox"));
 
   power_init();
+  thermistor_init();
 
   mgos_set_timer(60000 /* ms */, MGOS_TIMER_REPEAT, process_loop, NULL);
 

@@ -301,6 +301,7 @@ const getInfo = () => {
         document.getElementById("app_date").innerText = res.data.fw_ts;
         document.getElementById("energy").innerText = `${(res.data.energy ? res.data.energy : 0).toFixed(0)} Wh`;
         document.getElementById("uptime").innerText = (res.data.uptime ? secondsToString(res.data.uptime) : "-");
+        document.getElementById("temperature").innerText = `${res.data.temperature ? res.data.temperature.toFixed(1) : "-"} °C`;
 
         const dState = res.data.state;
         deviceState.innerText = dState ? "Charging" : "Available";
@@ -326,6 +327,7 @@ const refreshInfo = () => {
     axios.get(host + "/rpc/Wallbox.GetInfo").then(function (res) {
         document.getElementById("energy").innerText = `${(res.data.energy ? res.data.energy : 0).toFixed(0)} Wh`;
         document.getElementById("uptime").innerText = (res.data.uptime ? secondsToString(res.data.uptime) : "-");
+        document.getElementById("temperature").innerText = `${res.data.temperature ? res.data.temperature.toFixed(1) : "-"} °C`;
 
         const dState = res.data.state;
         deviceState.innerText = dState ? "Charging" : "Available";

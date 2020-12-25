@@ -17,6 +17,7 @@
 
 #include "wb_rpc.h"
 #include "wb_ocpp.h"
+#include "wb_thermistor.h"
 #include "wb_util.h"
 
 #include "mgos.h"
@@ -33,6 +34,7 @@ const char *RPC_GETINFO =
     "mac: %Q,"
     "ip: %Q,"
     "uptime: %d,"
+    "temperature: %.1f,"
     "wifi_ssid: %Q,"
     "wifi_ssid1: %Q,"
     "energy: %d,"
@@ -71,6 +73,7 @@ void rpc_wallbox_get_info_handler(struct mg_rpc_request_info *ri,
                         mgos_sys_ro_vars_get_mac_address(),
                         ip,
                         (int) mgos_uptime(),
+                        thermistor_read_celsius(),
                         mgos_sys_config_get_wifi_sta_ssid(),
                         mgos_sys_config_get_wifi_sta1_ssid(),
                         mgos_sys_config_get_ocpp_transaction_consumption(),
@@ -81,6 +84,7 @@ void rpc_wallbox_get_info_handler(struct mg_rpc_request_info *ri,
                         mgos_sys_config_get_mqtt_enable(),
                         mgos_sys_config_get_mqtt_server(),
                         mgos_sys_config_get_mqtt_user());
+
   (void) cb_arg;
   (void) fi;
   (void) args;

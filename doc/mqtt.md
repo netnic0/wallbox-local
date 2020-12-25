@@ -42,7 +42,8 @@ The message is sent once, but not guaranteed (QOS 0). The message is not retaine
   "connected": true,
   "charging": true,
   "energy": 1900,
-  "tid": 123456789
+  "tid": 123456789,
+  "temperature": 45.6
 }
 ```
 
@@ -53,6 +54,7 @@ Attributes:
 - charging: `true` if a charging session is on-going, else `false`
 - energy: the amount of energy for the current charging session, in Wh
 - tid: the transaction ID of the current charging session, or `0` if not charging
+- temperature: the internal temperature of the wallbox, in celsius
 
 ### System
 
@@ -94,6 +96,8 @@ homeassistant:
       friendly_name: Énergie délivrée
     sensor.wallbox_session_id:
       friendly_name: Identifiant session
+    sensor.wallbox_temperature:
+      friendly_name: Température interne
     sensor.wallbox_uptime:
       friendly_name: Up time
     sensor.wallbox_heap_size:
@@ -115,6 +119,7 @@ binary_sensor:
     payload_off: false
     payload_on: true
     value_template: "{{ value_json.connected }}"
+    expire_after: 180
   - platform: mqtt
     name: "Wallbox Charging"
     device_class: battery_charging
@@ -122,6 +127,7 @@ binary_sensor:
     payload_off: false
     payload_on: true
     value_template: "{{ value_json.charging }}"
+    expire_after: 180
 
 sensor:
   - platform: mqtt
@@ -130,6 +136,7 @@ sensor:
     icon: mdi:clock
     state_topic: "wallbox/wallbox-ABCDEF/state"
     value_template: "{{ value_json.uptime | int }}"
+    expire_after: 180
   - platform: mqtt
     name: "Wallbox Session ID"
     icon: mdi:tag
@@ -141,36 +148,49 @@ sensor:
     icon: mdi:flash
     state_topic: "wallbox/wallbox-ABCDEF/state"
     value_template: "{{ value_json.energy | int }}"
+    expire_after: 180
+  - platform: mqtt
+    name: "Wallbox Temperature"
+    unit_of_measurement: '°C'
+    icon: mdi:thermometer
+    state_topic: "wallbox/wallbox-ABCDEF/state"
+    value_template: "{{ (value_json.temperature | float) }}"
+    expire_after: 180
   - platform: mqtt
     name: "Wallbox Heap Size"
     unit_of_measurement: "kb"
     icon: mdi:memory
     state_topic: "wallbox/wallbox-ABCDEF/system"
     value_template: "{{ ((value_json.heapSize | int) / 1000) | round(1) }}"
+    expire_after: 180
   - platform: mqtt
     name: "Wallbox Free Heap Size"
     unit_of_measurement: "kb"
     icon: mdi:memory
     state_topic: "wallbox/wallbox-ABCDEF/system"
     value_template: "{{ ((value_json.freeHeapSize | int) / 1000) | round(1) }}"
+    expire_after: 180
   - platform: mqtt
     name: "Wallbox Min Free Heap Size"
     unit_of_measurement: "kb"
     icon: mdi:memory
     state_topic: "wallbox/wallbox-ABCDEF/system"
     value_template: "{{ ((value_json.minFreeHeapSize | int) / 1000) | round(1) }}"
+    expire_after: 180
   - platform: mqtt
     name: "Wallbox FS Size"
     unit_of_measurement: "kb"
     icon: mdi:harddisk
     state_topic: "wallbox/wallbox-ABCDEF/system"
     value_template: "{{ ((value_json.fsSize | int) / 1000) | round(1) }}"
+    expire_after: 180
   - platform: mqtt
     name: "Wallbox FS Free Space"
     unit_of_measurement: "kb"
     icon: mdi:harddisk
     state_topic: "wallbox/wallbox-ABCDEF/system"
     value_template: "{{ ((value_json.fsFreeSpace | int) / 1000) | round(1) }}"
+    expire_after: 180
 
   - platform: template
     sensors:

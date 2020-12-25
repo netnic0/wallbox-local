@@ -17,6 +17,7 @@
 
 #include "wb_mqtt.h"
 #include "wb_ocpp.h"
+#include "wb_thermistor.h"
 #include "wb_util.h"
 
 #include "mgos.h"
@@ -40,7 +41,8 @@ const char *MQTT_STATE =
     "connected: %B,"
     "charging: %B,"
     "energy: %d,"
-    "tid: %d"
+    "tid: %d,"
+    "temperature: %.1f"
     "}";
 
 const char *MQTT_SYSTEM =
@@ -112,8 +114,18 @@ void mqtt_send_state_topic() {
     if (tid < 0) {
       tid = 0;
     }
-    mgos_mqtt_pubf(
-        mqtt_state_topic, 0, false, MQTT_STATE, (int) mgos_uptime(), ocpp_is_connected(), charging, energy, tid);
+    double temperature = thermistor_read_celsius();
+
+    mgos_mqtt_pubf(mqtt_state_topic,
+                   0,
+                   false,
+                   MQTT_STATE,
+                   (int) mgos_uptime(),
+                   ocpp_is_connected(),
+                   charging,
+                   energy,
+                   tid,
+                   temperature);
   }
 }
 

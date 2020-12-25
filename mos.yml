@@ -79,6 +79,7 @@ libs:
   - origin: https://github.com/mongoose-os-libs/rpc-service-ota
   - origin: https://github.com/mongoose-os-libs/wifi
   - origin: https://github.com/mongoose-os-libs/sntp
+  - origin: https://github.com/mongoose-os-libs/adc
   - origin: https://github.com/mongoose-os-libs/file-logger
   - origin: https://github.com/mongoose-os-libs/mqtt
   - origin: https://github.com/ellavas/provision
@@ -96,6 +97,7 @@ build_vars:
   # We don't need the cryptochip support. Saves approx 12K flash.
   MGOS_MBEDTLS_ENABLE_ATCA: 0
   TARGET: production
+
 cdefs:
   MG_ENABLE_SSL: 1
 
@@ -105,9 +107,9 @@ conds:
       version: 0.5.1-dev
       config_schema:
         - ["file_logger.enable", true]
-        - ["file_logger.level", 1]
+        - ["file_logger.level", 3]
         - ["wifi.ap.trigger_on_gpio", 2]
-        - ["debug.file_level", "main.cpp:=4,=0"]
+        - ["debug.file_level", "main.cpp=3,wb_ocpp.cpp=3,wb_thermistor.cpp=3,=0"]
         - ["dns_sd.host_name", "wallbox-dev"]
   - when: build_vars.TARGET == "production"
     apply:
