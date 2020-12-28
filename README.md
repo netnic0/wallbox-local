@@ -30,13 +30,13 @@ Set MOS_PORT environment variable, eg. COM8, /dev/ttyS2 or <http://192.168.1.123
 
 ```sh
 npm install
-npm build
+npm run build
 ```
 
 ### Build
 
 ```sh
-mos build --local --platform esp8266"
+mos build --local --platform esp8266
 ```
 
 ### Flash/Update
