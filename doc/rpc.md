@@ -15,7 +15,7 @@ GET /rpc/Wallbox.GetInfo
     "id": "wallbox-ABCDEF",
     "sn": "534C464346529AF4ABABCDEF",
     "app": "Wallbox-Shelly1PM",
-    "version": "0.1.0",
+    "version": "0.5.0",
     "fw_build": "20200601-000000",
     "fw_ts": "2020-06-01T00:00:00Z",
     "mac": "9AF4ABABCDEF",
@@ -24,6 +24,7 @@ GET /rpc/Wallbox.GetInfo
     "temperature": 45.6,
     "wifi_ssid": "HomeWiFi",
     "energy": 0,
+    "intensity": 8,
     "state": false,
     "ocpp_url": "wss://ocpp-server.example.com/OCPP/1234567890ABCDEF",
     "ocpp_name": "Station-01",
@@ -48,6 +49,7 @@ Attributes:
 - temperature: the internal temperature of the wallbox, in celsius
 - wifi_ssid: SSID of the Wi-Fi network
 - energy: the amount of energy for the current charging session, in Wh
+- intensity: the current intensity for the charging session, in A
 - state: `true` if a charging session is on-going, else `false`
 - ocpp_url: URL of the OCPP central system
 - ocpp_name: the name of the charging station

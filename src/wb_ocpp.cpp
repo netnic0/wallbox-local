@@ -35,6 +35,7 @@
 #define OCPP_STOP_TRANSACTION_REASON_REMOTE "Remote"
 #define OCPP_STOP_TRANSACTION_REASON_SOFTRESET "SoftReset"
 #define OCPP_STOP_TRANSACTION_REASON_HARDRESET "HardReset"
+#define OCPP_STOP_TRANSACTION_REASON_OTHER "Other"
 
 #define OCPP_RESPONSE_ACCEPTED "{\"status\":\"Accepted\"}"
 #define OCPP_RESPONSE_REJECTED "{\"status\":\"Rejected\"}"
@@ -107,6 +108,7 @@ const char *OCPP_CONFIGURATION =
     "{\"key\":\"OCPPVersion\",\"readonly\":true,\"value\":\"1.6\"},"
     "{\"key\":\"OCPPCentralAddress\",\"readonly\":false,\"value\":\"%s\"},"
     "{\"key\":\"StationName\",\"readonly\":false,\"value\":\"%s\"},"
+    "{\"key\":\"IntensityLimit\",\"readonly\":false,\"value\":\"%d\"},"
     "{\"key\":\"AuthorizationCacheEnabled\",\"readonly\":true,\"value\":false},"
     "{\"key\":\"AuthorizeRemoteTxRequests\",\"readonly\":true,\"value\":false},"
     "{\"key\":\"ClockAlignedDataInterval\",\"readonly\":true,\"value\":0},"
@@ -316,6 +318,16 @@ void ocpp_send_ocpp_status_notification(const char *status) {
   ocpp_send_ocpp_request(ws_connection, OCPP_REQUEST_STATUS_NOTIFICATION, default_uuid, content);
 }
 
+void ocpp_update_transaction() {
+  power_update();
+  if (mgos_sys_config_get_ocpp_transaction_intensity() > mgos_sys_config_get_ocpp_config_intensity_limit()) {
+    LOG(LL_ERROR, ("Intensity %d higher than limit %d", mgos_sys_config_get_ocpp_transaction_intensity(), mgos_sys_config_get_ocpp_config_intensity_limit()));
+    ocpp_stop_transaction(OCPP_STOP_TRANSACTION_REASON_OTHER);
+  } else {
+    ocpp_send_ocpp_meter_values();
+  }
+}
+
 void ocpp_send_ocpp_meter_values() {
   char buf[200];
   int length;
@@ -323,9 +335,9 @@ void ocpp_send_ocpp_meter_values() {
   char date_buffer[30];
   get_current_date(date_buffer);
   generate_uuid(default_uuid);
-  int energy = power_compute_energy();
 
-  length = sprintf(buf, OCPP_METERVALUES, mgos_sys_config_get_ocpp_transaction_id(), energy, date_buffer);
+  length = sprintf(buf, OCPP_METERVALUES, mgos_sys_config_get_ocpp_transaction_id(), 
+                   mgos_sys_config_get_ocpp_transaction_consumption(), date_buffer);
   struct mg_str content = mg_mk_str_n(buf, length);
   LOG(LL_DEBUG, ("Sending meter values %.*s", length, buf));
   ocpp_send_ocpp_request(ws_connection, OCPP_REQUEST_METER_VALUES, default_uuid, content);
@@ -341,6 +353,8 @@ mg_str ocpp_stop_transaction(const char *reason) {
   ocpp_send_ocpp_status_notification(OCPP_STATUS_FINISHING);
   mgos_gpio_write(mgos_sys_config_get_gpio_relay(), 0);
 
+  power_update();
+
   char buf[200];
   int length;
 
@@ -348,11 +362,9 @@ mg_str ocpp_stop_transaction(const char *reason) {
   get_current_date(date_buffer);
   generate_uuid(stop_transaction_uuid);
 
-  int energy = power_compute_energy();
-
   length = sprintf(buf,
                    OCPP_STOPTRANSACTION,
-                   energy,
+                   mgos_sys_config_get_ocpp_transaction_consumption(),
                    mgos_sys_config_get_ocpp_transaction_id(),
                    mgos_sys_config_get_ocpp_transaction_tag_id(),
                    date_buffer,
@@ -464,6 +476,7 @@ void ocpp_get_configuration(const char *payload, char *response) {
           OCPP_CONFIGURATION,
           mgos_sys_config_get_ocpp_url(),
           mgos_sys_config_get_ocpp_name(),
+          mgos_sys_config_get_ocpp_config_intensity_limit(),
           mgos_sys_config_get_ocpp_config_heartbeat_interval());
 }
 
@@ -522,6 +535,22 @@ mg_str ocpp_change_configuration(const char *payload) {
       LOG(LL_WARN, ("ChangeConfiguration request without value for key: \"%s\"", key));
       return mg_mk_str(OCPP_RESPONSE_REJECTED);
 
+    } else if (strcasecmp("IntensityLimit", key) == 0) {
+      int value;
+      if (json_scanf(payload, strlen(payload), "{ value:%d }", &value) > 0) {
+        LOG(LL_INFO, ("Change configuration key \"%s\", value \"%d\"", key, value));
+        const int currentValue = mgos_sys_config_get_ocpp_config_intensity_limit();
+        if (value != currentValue && value > 0 && value <= 16) {
+          mgos_sys_config_set_ocpp_config_intensity_limit(value);
+          mgos_sys_config_save_level(&mgos_sys_config, MGOS_CONFIG_LEVEL_USER, false, NULL);
+          return mg_mk_str(OCPP_RESPONSE_ACCEPTED);
+        }
+        LOG(LL_ERROR, ("ChangeConfiguration request with incorrect value for key: \"%s\", value \"%d\"", key, value));
+        return mg_mk_str(OCPP_RESPONSE_REJECTED);
+      }
+      LOG(LL_ERROR, ("ChangeConfiguration request without number value for key: \"%s\"", key));
+      return mg_mk_str(OCPP_RESPONSE_REJECTED);
+
     } else {
       LOG(LL_ERROR, ("ChangeConfiguration request for unsupported key: \"%s\"", key));
       return mg_mk_str(OCPP_RESPONSE_NOTSUPPORTED);
@@ -555,7 +584,9 @@ void ocpp_handle_ocpp_response(struct mg_connection *nc, const char *id, const c
       mgos_gpio_write(mgos_sys_config_get_gpio_relay(), 1);
       mgos_sys_config_set_ocpp_transaction_id(transaction_id);
       mgos_sys_config_set_ocpp_transaction_tag_id(tag_id);
+      mgos_sys_config_set_ocpp_transaction_uptime(mgos_uptime());
       mgos_sys_config_set_ocpp_transaction_consumption(0);
+      mgos_sys_config_set_ocpp_transaction_intensity(0);
       mgos_sys_config_set_ocpp_transaction_reset_consumption(0);
       mgos_sys_config_save(&mgos_sys_config, false, NULL);
       LOG(LL_INFO, ("Transaction started %d", transaction_id));
@@ -569,6 +600,7 @@ void ocpp_handle_ocpp_response(struct mg_connection *nc, const char *id, const c
     ocpp_send_ocpp_status_notification(OCPP_STATUS_AVAILABLE);
     power_reset_energy();
     mgos_sys_config_set_ocpp_transaction_consumption(0);
+    mgos_sys_config_set_ocpp_transaction_intensity(0);
     mgos_sys_config_set_ocpp_transaction_reset_consumption(0);
     mgos_sys_config_set_ocpp_transaction_id(-1);
     mgos_sys_config_save(&mgos_sys_config, false, NULL);

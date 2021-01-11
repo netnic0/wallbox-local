@@ -55,26 +55,37 @@ int power_read_active_power() {
   return mgos_hlw8012_readActivePower(hlw8012);
 }
 
-int power_compute_energy() {
+void power_update() {
   int energy = (int) power_read_energy() / 3600;
   int previousEnergy = mgos_sys_config_get_ocpp_transaction_consumption();
   int resetEnergy = mgos_sys_config_get_ocpp_transaction_reset_consumption();
+  int previousUptime = mgos_sys_config_get_ocpp_transaction_uptime();
+  int uptime = mgos_uptime();
+  int intensity = 0;
 
   if (energy == previousEnergy) {
-    return previousEnergy;
+    return;
   }
 
   if (energy <= 0) {
     LOG(LL_ERROR, ("Energy negative %d", energy));
-    return previousEnergy;
+    return;
   }
   if (energy > INT_MAX) {
     LOG(LL_ERROR, ("Energy %d exceeds INT_MAX %d", energy, INT_MAX));
-    return previousEnergy;
+    return;
   }
 
-  energy = resetEnergy + energy;
-  mgos_sys_config_set_ocpp_transaction_consumption(energy);
+  if (uptime <= previousUptime) {
+    LOG(LL_ERROR, ("Invalid uptime %d under previous value %d", uptime, previousUptime));
+  } else {
+    double coeff = 3600 / (uptime - previousUptime);
+    intensity = (energy - previousEnergy) * coeff / 240;
+    mgos_sys_config_set_ocpp_transaction_intensity(intensity);
+    LOG(LL_INFO, ("Intensity %dA in %d sec", intensity, uptime - previousUptime));
+  }
+
+  mgos_sys_config_set_ocpp_transaction_uptime(uptime);
+  mgos_sys_config_set_ocpp_transaction_consumption(resetEnergy + energy);
   mgos_sys_config_save(&mgos_sys_config, false, NULL);
-  return energy;
 }

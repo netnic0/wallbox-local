@@ -42,9 +42,12 @@ config_schema:
   - ["ocpp.transaction.id", "i", -1, {"Id of the current transaction"}]
   - ["ocpp.transaction.tag_id", "s", "", {"Tag used for the current transaction"}]
   - ["ocpp.transaction.consumption", "i", 0, {"Consumption of the current transaction"}]
+  - ["ocpp.transaction.uptime", "i", 0, {"Uptime of the current transaction"}]
   - ["ocpp.transaction.reset_consumption", "i", 0, {"Consumption saved when the consumption is reset"}]
+  - ["ocpp.transaction.intensity", "i", 0, {"Intensity of the current transaction"}]
   - ["ocpp.config", "o", {"OCPP configuration"}]
-  - ["ocpp.config.heartbeat_interval", "i", 180, {"Interval of inactivity with CS after which CP should send HB."}]
+  - ["ocpp.config.heartbeat_interval", "i", 180, {"Interval of inactivity with CS after which CP should send HB"}]
+  - ["ocpp.config.intensity_limit", "i", 8, {"Maximum current intensity in A, that the CP should allow"}]
   - ["provision.stable_state", 2]
   # - ["provision.btn.pin", 2]
   - ["provision.timeout", 120]
@@ -109,7 +112,7 @@ conds:
         - ["file_logger.enable", true]
         - ["file_logger.level", 3]
         - ["wifi.ap.trigger_on_gpio", 2]
-        - ["debug.file_level", "main.cpp=3,wb_ocpp.cpp=3,wb_thermistor.cpp=3,=0"]
+        - ["debug.file_level", "main.cpp=2,wb_ocpp.cpp=2,wb_thermistor.cpp=2,wb_power.cpp=3,=0"]
         - ["dns_sd.host_name", "wallbox-dev"]
   - when: build_vars.TARGET == "production"
     apply:

@@ -73,17 +73,15 @@ void process_loop(void *arg) {
     return;
   }
 
-  int energy = power_read_energy();
-  LOG(LL_INFO, ("Energy: %d Ws, %d Wh", energy, energy / 3600));
-  LOG(LL_INFO, ("Heap: %d / %d b", mgos_get_free_heap_size(), mgos_get_heap_size()));
-  LOG(LL_INFO, ("Temp: %.1f C", thermistor_read_celsius()));
+
 
   // OCPP
   if (ocpp_is_connected()) {
     ocpp_send_ocpp_heartbeat();
 
     if (mgos_sys_config_get_ocpp_transaction_id() > 0) {
-      ocpp_send_ocpp_meter_values();
+      LOG(LL_INFO, ("Energy: %d Wh, Heap: %d / %d b, Temp: %.1f C", power_read_energy() / 3600, mgos_get_free_heap_size(), mgos_get_heap_size(), thermistor_read_celsius()));
+      ocpp_update_transaction();
     }
   } else {
     LOG(LL_INFO, ("Reconnecting to OCPP Backend"));

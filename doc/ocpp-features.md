@@ -104,6 +104,10 @@
 
 | Key | Value | Read-only |
 |---|---|---|
+| OCPPVersion | 1.6 | true |
+| OCPPCentralAddress | <_Central System URL_> | false |
+| StationName | <_Station Name_> | false |
+| IntensityLimit | 8 | false |
 | AuthorizationCacheEnabled | false | true |
 | AuthorizeRemoteTxRequests | false | true |
 | ClockAlignedDataInterval | 0 | true |

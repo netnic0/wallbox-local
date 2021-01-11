@@ -41,6 +41,7 @@ mg_str ocpp_start_transaction(const char *);
 mg_str ocpp_stop_transaction(const char *, const char *);
 mg_str ocpp_stop_transaction(const char *);
 mg_str ocpp_update_firmware(const char *);
+void ocpp_update_transaction();
 
 void ocpp_handle_ocpp_response(struct mg_connection *, const char *, const char *);
 void ocpp_handle_ocpp_cmd(struct mg_connection *, const char *, const char *, const char *);

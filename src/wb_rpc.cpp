@@ -38,6 +38,7 @@ const char *RPC_GETINFO =
     "wifi_ssid: %Q,"
     "wifi_ssid1: %Q,"
     "energy: %d,"
+    "intensity: %d,"
     "state: %B,"
     "ocpp_url: %Q,"
     "ocpp_name: %Q,"
@@ -77,6 +78,7 @@ void rpc_wallbox_get_info_handler(struct mg_rpc_request_info *ri,
                         mgos_sys_config_get_wifi_sta_ssid(),
                         mgos_sys_config_get_wifi_sta1_ssid(),
                         mgos_sys_config_get_ocpp_transaction_consumption(),
+                        mgos_sys_config_get_ocpp_transaction_intensity(),
                         mgos_gpio_read(mgos_sys_config_get_gpio_relay()),
                         mgos_sys_config_get_ocpp_url(),
                         mgos_sys_config_get_ocpp_name(),

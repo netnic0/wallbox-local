@@ -26,10 +26,10 @@ void power_init();
 
 void power_reset_energy();
 
+void power_update();
+
 int power_read_energy();
 
 int power_read_active_power();
-
-int power_compute_energy();
 
 #endif /* wb_power_h */

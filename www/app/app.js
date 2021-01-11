@@ -300,6 +300,7 @@ const getInfo = () => {
         document.getElementById("app_build").innerText = res.data.fw_build;
         document.getElementById("app_date").innerText = res.data.fw_ts;
         document.getElementById("energy").innerText = `${(res.data.energy ? res.data.energy : 0).toFixed(0)} Wh`;
+        document.getElementById("intensity").innerText = `${(res.data.intensity ? res.data.intensity : 0).toFixed(0)} A`;
         document.getElementById("uptime").innerText = (res.data.uptime ? secondsToString(res.data.uptime) : "-");
         document.getElementById("temperature").innerText = `${res.data.temperature ? res.data.temperature.toFixed(1) : "-"} °C`;
 
@@ -307,6 +308,7 @@ const getInfo = () => {
         deviceState.innerText = dState ? "Charging" : "Available";
         deviceState.className = dState ? "connected" : "";
         showFormControl(document.getElementById("energy-control"), dState);
+        showFormControl(document.getElementById("intensity-control"), dState);
 
         const oState = res.data.ocpp_state;
         ocppState.innerText = oState ? "Connected" : "Disconnected";
@@ -326,6 +328,7 @@ const refreshInfo = () => {
     refreshSpinner.className = "spin";
     axios.get(host + "/rpc/Wallbox.GetInfo").then(function (res) {
         document.getElementById("energy").innerText = `${(res.data.energy ? res.data.energy : 0).toFixed(0)} Wh`;
+        document.getElementById("intensity").innerText = `${(res.data.intensity ? res.data.intensity : 0).toFixed(0)} A`;
         document.getElementById("uptime").innerText = (res.data.uptime ? secondsToString(res.data.uptime) : "-");
         document.getElementById("temperature").innerText = `${res.data.temperature ? res.data.temperature.toFixed(1) : "-"} °C`;
 
@@ -333,6 +336,7 @@ const refreshInfo = () => {
         deviceState.innerText = dState ? "Charging" : "Available";
         deviceState.className = dState ? "connected" : "";
         showFormControl(document.getElementById("energy-control"), dState);
+        showFormControl(document.getElementById("intensity-control"), dState);
 
         const oState = res.data.ocpp_state;
         ocppState.innerText = oState ? "Connected" : "Disconnected";

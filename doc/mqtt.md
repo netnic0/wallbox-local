@@ -42,6 +42,7 @@ The message is sent once, but not guaranteed (QOS 0). The message is not retaine
   "connected": true,
   "charging": true,
   "energy": 1900,
+  "intensity": 8,
   "tid": 123456789,
   "temperature": 45.6
 }
@@ -53,6 +54,7 @@ Attributes:
 - connected: `true` if the wallbox is connected to e-Mobility, else `false`
 - charging: `true` if a charging session is on-going, else `false`
 - energy: the amount of energy for the current charging session, in Wh
+- intensity: the current intensity for the charging session, in A
 - tid: the transaction ID of the current charging session, or `0` if not charging
 - temperature: the internal temperature of the wallbox, in celsius
 
@@ -94,6 +96,8 @@ homeassistant:
       friendly_name: En charge
     sensor.wallbox_energy:
       friendly_name: Énergie délivrée
+    sensor.wallbox_intensity:
+      friendly_name: Intensité
     sensor.wallbox_session_id:
       friendly_name: Identifiant session
     sensor.wallbox_temperature:
@@ -156,6 +160,12 @@ sensor:
     state_topic: "wallbox/wallbox-ABCDEF/state"
     value_template: "{{ (value_json.temperature | float) }}"
     expire_after: 180
+  - platform: mqtt
+    name: "Wallbox Intensity"
+    unit_of_measurement: "A"
+    icon: mdi:current-ac
+    state_topic: "wallbox/wallbox-ABCDEF/state"
+    value_template: "{{ value_json.intensity | int }}"
   - platform: mqtt
     name: "Wallbox Heap Size"
     unit_of_measurement: "kb"
