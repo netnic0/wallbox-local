@@ -456,11 +456,23 @@ mg_str ocpp_reset(const char *payload) {
     LOG(LL_INFO, ("Resetting in mode %s", reset_type));
 
     if (strcmp(OCPP_RESET_TYPE_SOFT, reset_type) == 0) {
+      if (reset_type != NULL) {
+        free(reset_type);
+        reset_type = NULL;
+      }
       return ocpp_reset_soft();
     } else if (strcmp(OCPP_RESET_TYPE_HARD, reset_type) == 0) {
+      if (reset_type != NULL) {
+        free(reset_type);
+        reset_type = NULL;
+      }
       return ocpp_reset_hard();
     } else {
       LOG(LL_WARN, ("Reset type %s not supported", reset_type));
+      if (reset_type != NULL) {
+        free(reset_type);
+        reset_type = NULL;
+      }
       return mg_mk_str(OCPP_RESPONSE_REJECTED);
     }
   }
@@ -495,12 +507,24 @@ mg_str ocpp_change_configuration(const char *payload) {
             mgos_sys_config_set_ocpp_config_heartbeat_interval(value);
             mgos_sys_config_save_level(&mgos_sys_config, MGOS_CONFIG_LEVEL_USER, false, NULL);
           }
+          if (key != NULL) {
+            free(key);
+            key = NULL;
+          }
           return mg_mk_str(OCPP_RESPONSE_ACCEPTED);
         }
         LOG(LL_ERROR, ("ChangeConfiguration request with incorrect value for key: \"%s\", value \"%d\"", key, value));
+        if (key != NULL) {
+          free(key);
+          key = NULL;
+        }
         return mg_mk_str(OCPP_RESPONSE_REJECTED);
       }
       LOG(LL_ERROR, ("ChangeConfiguration request without number value for key: \"%s\"", key));
+      if (key != NULL) {
+        free(key);
+        key = NULL;
+      }
       return mg_mk_str(OCPP_RESPONSE_REJECTED);
 
     } else if (strcasecmp("OCPPCentralAddress", key) == 0) {
@@ -513,10 +537,22 @@ mg_str ocpp_change_configuration(const char *payload) {
             mgos_sys_config_set_ocpp_url(value);
             mgos_sys_config_save_level(&mgos_sys_config, MGOS_CONFIG_LEVEL_USER, false, NULL);
           }
+          if (key != NULL) {
+            free(key);
+            key = NULL;
+          }
+          if (value != NULL) {
+            free(value);
+            value = NULL;
+          }
           return mg_mk_str(OCPP_RESPONSE_ACCEPTED);
         }
       }
       LOG(LL_WARN, ("ChangeConfiguration request without value for key: \"%s\"", key));
+      if (key != NULL) {
+        free(key);
+        key = NULL;
+      }
       return mg_mk_str(OCPP_RESPONSE_REJECTED);
 
     } else if (strcasecmp("StationName", key) == 0) {
@@ -529,10 +565,22 @@ mg_str ocpp_change_configuration(const char *payload) {
             mgos_sys_config_set_ocpp_name(value);
             mgos_sys_config_save_level(&mgos_sys_config, MGOS_CONFIG_LEVEL_USER, false, NULL);
           }
+          if (key != NULL) {
+            free(key);
+            key = NULL;
+          }
+          if (value != NULL) {
+            free(value);
+            value = NULL;
+          }
           return mg_mk_str(OCPP_RESPONSE_ACCEPTED);
         }
       }
       LOG(LL_WARN, ("ChangeConfiguration request without value for key: \"%s\"", key));
+      if (key != NULL) {
+        free(key);
+        key = NULL;
+      }
       return mg_mk_str(OCPP_RESPONSE_REJECTED);
 
     } else if (strcasecmp("IntensityLimit", key) == 0) {
@@ -553,6 +601,10 @@ mg_str ocpp_change_configuration(const char *payload) {
 
     } else {
       LOG(LL_ERROR, ("ChangeConfiguration request for unsupported key: \"%s\"", key));
+      if (key != NULL) {
+        free(key);
+        key = NULL;
+      }
       return mg_mk_str(OCPP_RESPONSE_NOTSUPPORTED);
     }
   }
@@ -565,8 +617,12 @@ mg_str ocpp_update_firmware(const char *payload) {
 
   if (json_scanf(payload, strlen(payload), "{ location:%Q }", &location) > 0) {
     LOG(LL_INFO, ("Updating firmware from %s", location));
-
     mgos_ota_http_start(location, NULL);
+
+    if (location != NULL) {
+      free(location);
+      location = NULL;
+    }
     return mg_mk_str(OCPP_RESPONSE_ACCEPTED);
   }
 
