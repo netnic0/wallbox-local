@@ -73,20 +73,7 @@ void process_loop(void *arg) {
     return;
   }
 
-
-
-  // OCPP
-  if (ocpp_is_connected()) {
-    ocpp_send_ocpp_heartbeat();
-
-    if (mgos_sys_config_get_ocpp_transaction_id() > 0) {
-      LOG(LL_INFO, ("Energy: %d Wh, Heap: %d / %d b, Temp: %.1f C", power_read_energy() / 3600, mgos_get_free_heap_size(), mgos_get_heap_size(), thermistor_read_celsius()));
-      ocpp_update_transaction();
-    }
-  } else {
-    LOG(LL_INFO, ("Reconnecting to OCPP Backend"));
-    ocpp_connect_backend();
-  }
+  ocpp_synchronize();
 
   // MQTT
   if (mqtt_is_connected()) {

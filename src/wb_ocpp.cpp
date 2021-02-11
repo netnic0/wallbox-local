@@ -29,6 +29,8 @@
 #define OCPP_STATUS_FINISHING "Finishing"
 #define OCPP_STATUS_PREPARING "Preparing"
 
+#define OCPP_STATUS_ACCEPTED "Accepted"
+
 #define OCPP_RESET_TYPE_HARD "Hard"
 #define OCPP_RESET_TYPE_SOFT "Soft"
 
@@ -139,6 +141,7 @@ const char *OCPP_CONFIGURATION =
 const char *WS_HEADER = "x-forwarded-for: %s\r\n";
 
 static bool ws_connected = false;
+static bool registered = false;
 static char *tag_id = NULL;
 static char start_transaction_uuid[50];
 static char stop_transaction_uuid[50];
@@ -171,18 +174,7 @@ void ev_handler(struct mg_connection *nc, int ev, void *ev_data, void *user_data
         mgos_provision_set_cur_state(MGOS_PROVISION_ST_CLOUD_CONNECTED);
         ws_connected = true;
 
-        char sn[25];
-        get_chargepoint_serial_number(sn);
-        char buf[1024];
-        int length = sprintf(buf,
-                             OCPP_BOOTNOTIFICATION,
-                             mgos_sys_ro_vars_get_app(),
-                             sn,
-                             mgos_sys_ro_vars_get_fw_version(),
-                             mgos_sys_ro_vars_get_fw_timestamp());
-        struct mg_str content = mg_mk_str_n(buf, length);
-        generate_uuid(boot_notification_uuid);
-        ocpp_send_ocpp_request(nc, OCPP_REQUEST_BOOT_NOTIFICATION, boot_notification_uuid, content);
+        ocpp_send_boot_notification();
       } else {
         LOG(LL_ERROR, ("-- Connection failed! HTTP code %d", hm->resp_code));
         /* Connection will be closed after this. */
@@ -246,7 +238,20 @@ void ev_handler(struct mg_connection *nc, int ev, void *ev_data, void *user_data
 }
 
 bool ocpp_is_connected() {
-  return ws_connected;
+  return ws_connected && registered;
+}
+
+void ocpp_synchronize() {
+  if (!ws_connected) {
+    LOG(LL_INFO, ("Reconnecting to OCPP Backend"));
+    ocpp_connect_backend();
+  } else if (registered) {
+    if (mgos_sys_config_get_ocpp_transaction_id() > 0) {
+      ocpp_update_transaction();
+    } else {
+      ocpp_send_ocpp_heartbeat();
+    }
+  } 
 }
 
 void ocpp_connect_backend() {
@@ -268,6 +273,23 @@ void ocpp_connect_backend() {
     time(&last_ocpp_interaction);
   } else {
     LOG(LL_WARN, ("OCPP Config is not defined !"));
+  }
+}
+
+void ocpp_send_boot_notification() {
+  if (!registered) {
+    char sn[25];
+    get_chargepoint_serial_number(sn);
+    char buf[1024];
+    int length = sprintf(buf,
+                         OCPP_BOOTNOTIFICATION,
+                         mgos_sys_ro_vars_get_app(),
+                         sn,
+                         mgos_sys_ro_vars_get_fw_version(),
+                         mgos_sys_ro_vars_get_fw_timestamp());
+    struct mg_str content = mg_mk_str_n(buf, length);
+    generate_uuid(boot_notification_uuid);
+    ocpp_send_ocpp_request(ws_connection, OCPP_REQUEST_BOOT_NOTIFICATION, boot_notification_uuid, content);
   }
 }
 
@@ -294,13 +316,15 @@ void ocpp_send_ocpp_request(struct mg_connection *nc, const char *cmd, const cha
 }
 
 void ocpp_send_ocpp_heartbeat() {
-  time_t now;
-  time(&now);
-  int interval = mgos_sys_config_get_ocpp_config_heartbeat_interval();
-  double diff = difftime(now, last_ocpp_interaction);
-  if (diff >= interval) {
-    generate_uuid(default_uuid);
-    ocpp_send_ocpp_request(ws_connection, OCPP_REQUEST_HEARTBEAT, default_uuid, mg_mk_str("{}"));
+  if (registered) {
+    time_t now;
+    time(&now);
+    int interval = mgos_sys_config_get_ocpp_config_heartbeat_interval();
+    double diff = difftime(now, last_ocpp_interaction);
+    if (diff >= interval) {
+      generate_uuid(default_uuid);
+      ocpp_send_ocpp_request(ws_connection, OCPP_REQUEST_HEARTBEAT, default_uuid, mg_mk_str("{}"));
+    }
   }
 }
 
@@ -321,7 +345,10 @@ void ocpp_send_ocpp_status_notification(const char *status) {
 void ocpp_update_transaction() {
   power_update();
   if (mgos_sys_config_get_ocpp_transaction_intensity() > mgos_sys_config_get_ocpp_config_intensity_limit()) {
-    LOG(LL_ERROR, ("Intensity %d higher than limit %d", mgos_sys_config_get_ocpp_transaction_intensity(), mgos_sys_config_get_ocpp_config_intensity_limit()));
+    LOG(LL_ERROR,
+        ("Intensity %d higher than limit %d",
+         mgos_sys_config_get_ocpp_transaction_intensity(),
+         mgos_sys_config_get_ocpp_config_intensity_limit()));
     ocpp_stop_transaction(OCPP_STOP_TRANSACTION_REASON_OTHER);
   } else {
     ocpp_send_ocpp_meter_values();
@@ -336,8 +363,11 @@ void ocpp_send_ocpp_meter_values() {
   get_current_date(date_buffer);
   generate_uuid(default_uuid);
 
-  length = sprintf(buf, OCPP_METERVALUES, mgos_sys_config_get_ocpp_transaction_id(), 
-                   mgos_sys_config_get_ocpp_transaction_consumption(), date_buffer);
+  length = sprintf(buf,
+                   OCPP_METERVALUES,
+                   mgos_sys_config_get_ocpp_transaction_id(),
+                   mgos_sys_config_get_ocpp_transaction_consumption(),
+                   date_buffer);
   struct mg_str content = mg_mk_str_n(buf, length);
   LOG(LL_DEBUG, ("Sending meter values %.*s", length, buf));
   ocpp_send_ocpp_request(ws_connection, OCPP_REQUEST_METER_VALUES, default_uuid, content);
@@ -661,19 +691,25 @@ void ocpp_handle_ocpp_response(struct mg_connection *nc, const char *id, const c
     mgos_sys_config_set_ocpp_transaction_id(-1);
     mgos_sys_config_save(&mgos_sys_config, false, NULL);
   } else if (strcmp(id, boot_notification_uuid) == 0) {
-    if (mgos_sys_config_get_ocpp_transaction_id() > 0) {
-      ocpp_send_ocpp_status_notification(OCPP_STATUS_CHARGING);
-    } else {
-      ocpp_send_ocpp_status_notification(OCPP_STATUS_AVAILABLE);
-    }
+    char *status = NULL;
+    if (json_scanf(payload, strlen(payload), "{ status:%Q }", &status) > 0) {
+      if (strcmp(OCPP_STATUS_ACCEPTED, status) == 0) {
+        registered = true;
+        if (mgos_sys_config_get_ocpp_transaction_id() > 0) {
+          ocpp_send_ocpp_status_notification(OCPP_STATUS_CHARGING);
+        } else {
+          ocpp_send_ocpp_status_notification(OCPP_STATUS_AVAILABLE);
+        }
 
-    int value;
-    if (json_scanf(payload, strlen(payload), "{ interval:%d }", &value) > 0) {
-      int interval = mgos_sys_config_get_ocpp_config_heartbeat_interval();
-      if (value > 0 && value != interval) {
-        mgos_sys_config_set_ocpp_config_heartbeat_interval(value);
-        mgos_sys_config_save_level(&mgos_sys_config, MGOS_CONFIG_LEVEL_USER, false, NULL);
-        LOG(LL_INFO, ("Heartbeat interval set to %d as per server request", value));
+        int value;
+        if (json_scanf(payload, strlen(payload), "{ interval:%d }", &value) > 0) {
+          int interval = mgos_sys_config_get_ocpp_config_heartbeat_interval();
+          if (value > 0 && value != interval) {
+            mgos_sys_config_set_ocpp_config_heartbeat_interval(value);
+            mgos_sys_config_save_level(&mgos_sys_config, MGOS_CONFIG_LEVEL_USER, false, NULL);
+            LOG(LL_INFO, ("Heartbeat interval set to %d as per server request", value));
+          }
+        }
       }
     }
   }
