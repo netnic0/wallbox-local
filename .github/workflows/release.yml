@@ -62,7 +62,7 @@ jobs:
       uses: neverendingqs/gh-action-tag-on-npm-version@master
       
     - name: Create Release
-      if: steps.check-version.outputs.changed == 'true'
+      if: steps.check.outputs.changed == 'true'
       uses: "marvinpinto/action-automatic-releases@latest"
       with:
         repo_token: "${{ secrets.GITHUB_TOKEN }}"
