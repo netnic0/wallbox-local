@@ -1,6 +1,6 @@
 {
   "name": "shelly-wallbox",
-  "version": "0.6.2",
+  "version": "0.6.1",
   "description": "Wallbox firmware for Shelly 1PM relay",
   "author": "SAP Labs France, d-shop Caen",
   "homepage": "https://github.com/ellavas/mongoose-app-shelly#readme",
