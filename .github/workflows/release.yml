@@ -34,8 +34,14 @@ jobs:
 
     - name: Build Firmware
       run: mos build
+      
+    - id: check-version # This will be the reference for getting the outputs.
+      uses: EndBug/version-check@v1 # You can choose the version/branch you prefer.
+      with: 
+        diff-search: true
 
     - name: Git Release
+      if: steps.check-version.outputs.changed == 'false'
       uses: "marvinpinto/action-automatic-releases@latest"
       with:
         repo_token: "${{ secrets.GITHUB_TOKEN }}"
@@ -47,4 +53,16 @@ jobs:
           build/*.zip
           
     - name: Tag
+      if: steps.check-version.outputs.changed == 'true'
       uses: neverendingqs/gh-action-tag-on-npm-version@master
+      
+    - name: Git Release
+      if: steps.check-version.outputs.changed == 'true'
+      uses: "marvinpinto/action-automatic-releases@latest"
+      with:
+        repo_token: "${{ secrets.GITHUB_TOKEN }}"
+        prerelease: false
+        draft: false
+        files: |
+          LICENSE
+          build/*.zip
