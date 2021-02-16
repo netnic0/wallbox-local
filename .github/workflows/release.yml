@@ -39,8 +39,9 @@ jobs:
       uses: EndBug/version-check@v1 # You can choose the version/branch you prefer.
       with: 
         diff-search: true
+        token: "${{ secrets.GITHUB_TOKEN }}"
 
-    - name: Git Release
+    - name: Create Pre Release
       if: steps.check-version.outputs.changed == 'false'
       uses: "marvinpinto/action-automatic-releases@latest"
       with:
@@ -52,11 +53,11 @@ jobs:
           LICENSE
           build/*.zip
           
-    - name: Tag
+    - name: Create Tag
       if: steps.check-version.outputs.changed == 'true'
       uses: neverendingqs/gh-action-tag-on-npm-version@master
       
-    - name: Git Release
+    - name: Create Release
       if: steps.check-version.outputs.changed == 'true'
       uses: "marvinpinto/action-automatic-releases@latest"
       with:
