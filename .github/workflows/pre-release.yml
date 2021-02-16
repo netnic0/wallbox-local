@@ -45,3 +45,6 @@ jobs:
         files: |
           LICENSE
           build/*.zip
+          
+    - name: Tag
+      uses: neverendingqs/gh-action-tag-on-npm-version@master
