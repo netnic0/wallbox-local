@@ -68,6 +68,7 @@ jobs:
         repo_token: "${{ secrets.GITHUB_TOKEN }}"
         prerelease: false
         draft: false
+        automatic_release_tag: "v${{ steps.check.outputs.version }}"
         files: |
           LICENSE
           build/*.zip
