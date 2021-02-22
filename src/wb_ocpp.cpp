@@ -251,7 +251,7 @@ void ocpp_synchronize() {
     } else {
       ocpp_send_ocpp_heartbeat();
     }
-  } 
+  }
 }
 
 void ocpp_connect_backend() {
@@ -711,6 +711,10 @@ void ocpp_handle_ocpp_response(struct mg_connection *nc, const char *id, const c
           }
         }
       }
+    }
+    if (status != NULL) {
+      free(status);
+      status = NULL;
     }
   }
 
