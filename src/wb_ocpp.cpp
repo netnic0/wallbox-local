@@ -249,7 +249,7 @@ void ocpp_synchronize() {
     if (mgos_sys_config_get_ocpp_transaction_id() > 0) {
       ocpp_update_transaction();
     } else {
-      ocpp_send_ocpp_heartbeat();
+      ocpp_send_heartbeat(true);
     }
   }
 }
@@ -315,16 +315,23 @@ void ocpp_send_ocpp_request(struct mg_connection *nc, const char *cmd, const cha
   time(&last_ocpp_interaction);
 }
 
-void ocpp_send_ocpp_heartbeat() {
-  if (registered) {
-    time_t now;
-    time(&now);
-    int interval = mgos_sys_config_get_ocpp_config_heartbeat_interval();
-    double diff = difftime(now, last_ocpp_interaction);
-    if (diff >= interval) {
-      generate_uuid(default_uuid);
-      ocpp_send_ocpp_request(ws_connection, OCPP_REQUEST_HEARTBEAT, default_uuid, mg_mk_str("{}"));
-    }
+void send_heartbeat() {
+  generate_uuid(default_uuid);
+  ocpp_send_ocpp_request(ws_connection, OCPP_REQUEST_HEARTBEAT, default_uuid, mg_mk_str("{}"));
+}
+
+void ocpp_send_heartbeat(bool may_skip /* = true */) {
+  if (!may_skip) {
+    send_heartbeat();
+    return;
+  }
+
+  time_t now;
+  time(&now);
+  int interval = mgos_sys_config_get_ocpp_config_heartbeat_interval();
+  double diff = difftime(now, last_ocpp_interaction);
+  if (diff >= interval) {
+    send_heartbeat();
   }
 }
 

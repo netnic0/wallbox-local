@@ -27,7 +27,7 @@ void ocpp_connect_backend();
 
 void ocpp_synchronize();
 
-void ocpp_send_ocpp_heartbeat();
+void ocpp_send_heartbeat(bool = true);
 void ocpp_send_boot_notification();
 void ocpp_send_ocpp_status_notification(const char *);
 void ocpp_send_ocpp_meter_values();
