@@ -149,6 +149,7 @@ document.getElementById("wifi_save_btn").onclick = function () {
     wifiSpinner.className = "spin";
     let valid = false;
     const data = {
+        /* eslint-disable */
         config: {
             wifi: {
                 sta2: { enable: true },
@@ -160,6 +161,7 @@ document.getElementById("wifi_save_btn").onclick = function () {
         },
         save: true,
         reboot: true,
+        /* eslint-enable */
     };
     if (wifiSSID0.value && wifiSSID0.value.length > 0) {
         data.config.wifi.sta = {

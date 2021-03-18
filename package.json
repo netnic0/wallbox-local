@@ -9,7 +9,6 @@
     "mos-build": "mos build --local --platform esp8266 --build-var TARGET:development",
     "mos-build:remote": "mos build --platform esp8266 --build-var TARGET:development",
     "lint": "./node_modules/.bin/eslint www",
-    "gulp": "./node_modules/.bin/gulp gzip",
     "build": "npm run lint && npm run webpack && npm run mos-build",
     "build:remote": "npm run lint && npm run webpack && npm run mos-build:remote",
     "console": "mos --port udp://:1993/ console",
@@ -31,29 +30,24 @@
     "emobility"
   ],
   "devDependencies": {
-    "@babel/core": "^7.9.6",
-    "@babel/preset-env": "^7.9.6",
+    "@babel/core": "^7.13.10",
+    "@babel/preset-env": "^7.13.10",
     "babel-loader": "^8.1.0",
     "clean-webpack-plugin": "^3.0.0",
     "compression-webpack-plugin": "^4.0.0",
     "copy-webpack-plugin": "^6.0.1",
     "css-loader": "^3.5.3",
     "eslint": "^6.8.0",
-    "gulp": "^4.0.2",
-    "gulp-clean-css": "^4.3.0",
-    "gulp-gzip": "^1.4.2",
-    "gulp-htmlmin": "^5.0.1",
-    "gulp-terser": "^1.2.0",
-    "html-inline-css-webpack-plugin": "^1.8.0",
+    "html-inline-css-webpack-plugin": "^1.10.1",
     "html-webpack-inline-source-plugin": "1.0.0-beta.2",
-    "html-webpack-plugin": "^4.3.0",
+    "html-webpack-plugin": "^4.5.2",
     "mini-css-extract-plugin": "^0.9.0",
     "optimize-css-assets-webpack-plugin": "^5.0.3",
     "pump": "^3.0.0",
     "style-loader": "^1.2.1",
     "terser-webpack-plugin": "^3.0.1",
-    "webpack": "^4.43.0",
+    "webpack": "^4.46.0",
     "webpack-cli": "^3.3.11",
-    "webpack-dev-server": "^3.11.0"
+    "webpack-dev-server": "^3.11.2"
   }
 }

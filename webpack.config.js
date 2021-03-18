@@ -17,14 +17,14 @@ module.exports = {
     module: {
         rules: [
             {
-                test: /\.js$/,
-                exclude: /node_modules/,
+                test: /\.js$/u,
+                exclude: /node_modules/u,
                 use: {
                     loader: "babel-loader"
                 }
             },
             {
-                test: /\.css$/,
+                test: /\.css$/u,
                 loaders: [MiniCssExtractPlugin.loader, 'css-loader']
             }
         ]
@@ -34,7 +34,7 @@ module.exports = {
         minimizer: [
             new TerserPlugin({
                 parallel: true,
-                test: /\.js(\?.*)?$/i,
+                test: /\.js(?<x>\?.*)?$/iu,
             }, new OptimizeCSSAssetsPlugin({})),
         ],
     },
