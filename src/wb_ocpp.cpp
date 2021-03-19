@@ -30,6 +30,7 @@
 #define OCPP_STATUS_PREPARING "Preparing"
 
 #define OCPP_STATUS_ACCEPTED "Accepted"
+#define OCPP_STATUS_PENDING "Pending"
 
 #define OCPP_RESET_TYPE_HARD "Hard"
 #define OCPP_RESET_TYPE_SOFT "Soft"
@@ -165,7 +166,7 @@ void ev_handler(struct mg_connection *nc, int ev, void *ev_data, void *user_data
       break;
     case MG_EV_WEBSOCKET_HANDSHAKE_DONE: {
       struct http_message *hm = (struct http_message *) ev_data;
-      if (ws_connected == true) {
+      if (ws_connected) {
         LOG(LL_INFO, ("-- Already Connected"));
         break;
       }
@@ -173,8 +174,9 @@ void ev_handler(struct mg_connection *nc, int ev, void *ev_data, void *user_data
         LOG(LL_INFO, ("-- Connected"));
         mgos_provision_set_cur_state(MGOS_PROVISION_ST_CLOUD_CONNECTED);
         ws_connected = true;
-
-        ocpp_send_boot_notification();
+        if (!registered) {
+          ocpp_send_boot_notification();
+        }
       } else {
         LOG(LL_ERROR, ("-- Connection failed! HTTP code %d", hm->resp_code));
         /* Connection will be closed after this. */
@@ -225,7 +227,6 @@ void ev_handler(struct mg_connection *nc, int ev, void *ev_data, void *user_data
           break;
         }
       }
-
       break;
     }
     case MG_EV_CLOSE: {
@@ -246,11 +247,12 @@ void ocpp_synchronize() {
     LOG(LL_INFO, ("Reconnecting to OCPP Backend"));
     ocpp_connect_backend();
   } else if (registered) {
+    ocpp_send_heartbeat();
     if (mgos_sys_config_get_ocpp_transaction_id() > 0) {
       ocpp_update_transaction();
-    } else {
-      ocpp_send_heartbeat(true);
     }
+  } else {
+    ocpp_send_boot_notification();
   }
 }
 
@@ -276,23 +278,6 @@ void ocpp_connect_backend() {
   }
 }
 
-void ocpp_send_boot_notification() {
-  if (!registered) {
-    char sn[25];
-    get_chargepoint_serial_number(sn);
-    char buf[1024];
-    int length = sprintf(buf,
-                         OCPP_BOOTNOTIFICATION,
-                         mgos_sys_ro_vars_get_app(),
-                         sn,
-                         mgos_sys_ro_vars_get_fw_version(),
-                         mgos_sys_ro_vars_get_fw_timestamp());
-    struct mg_str content = mg_mk_str_n(buf, length);
-    generate_uuid(boot_notification_uuid);
-    ocpp_send_ocpp_request(ws_connection, OCPP_REQUEST_BOOT_NOTIFICATION, boot_notification_uuid, content);
-  }
-}
-
 void ocpp_send_ocpp_response(struct mg_connection *nc, const char *id, const struct mg_str data) {
   int length;
   char buf[(int) data.len + 100];
@@ -305,6 +290,10 @@ void ocpp_send_ocpp_response(struct mg_connection *nc, const char *id, const str
 }
 
 void ocpp_send_ocpp_request(struct mg_connection *nc, const char *cmd, const char *id, const struct mg_str data) {
+  if (!registered && strcmp(cmd, OCPP_REQUEST_BOOT_NOTIFICATION) != 0) {
+    LOG(LL_WARN, ("Trying to send an OCPP resquest %s while unregistered, canceling", cmd));
+    return;
+  }
   int length;
   char buf[(int) data.len + 100];
 
@@ -313,6 +302,22 @@ void ocpp_send_ocpp_request(struct mg_connection *nc, const char *cmd, const cha
   mg_send_websocket_frame(nc, WEBSOCKET_OP_TEXT, buf, length);
 
   time(&last_ocpp_interaction);
+}
+
+void ocpp_send_boot_notification() {
+  char sn[25];
+  get_chargepoint_serial_number(sn);
+  char buf[1024];
+  int length = sprintf(buf,
+                       OCPP_BOOTNOTIFICATION,
+                       mgos_sys_ro_vars_get_app(),
+                       sn,
+                       mgos_sys_ro_vars_get_fw_version(),
+                       mgos_sys_ro_vars_get_fw_timestamp());
+  struct mg_str content = mg_mk_str_n(buf, length);
+  generate_uuid(boot_notification_uuid);
+  LOG(LL_DEBUG, ("Sending boot notification %.*s", length, buf));
+  ocpp_send_ocpp_request(ws_connection, OCPP_REQUEST_BOOT_NOTIFICATION, boot_notification_uuid, content);
 }
 
 void send_heartbeat() {
@@ -335,7 +340,7 @@ void ocpp_send_heartbeat(bool may_skip /* = true */) {
   }
 }
 
-void ocpp_send_ocpp_status_notification(const char *status) {
+void ocpp_send_status_notification(const char *status) {
   char buf[200];
   int length;
 
@@ -358,11 +363,11 @@ void ocpp_update_transaction() {
          mgos_sys_config_get_ocpp_config_intensity_limit()));
     ocpp_stop_transaction(OCPP_STOP_TRANSACTION_REASON_OTHER);
   } else {
-    ocpp_send_ocpp_meter_values();
+    ocpp_send_meter_values();
   }
 }
 
-void ocpp_send_ocpp_meter_values() {
+void ocpp_send_meter_values() {
   char buf[200];
   int length;
 
@@ -380,18 +385,7 @@ void ocpp_send_ocpp_meter_values() {
   ocpp_send_ocpp_request(ws_connection, OCPP_REQUEST_METER_VALUES, default_uuid, content);
 }
 
-mg_str ocpp_stop_transaction(const char *reason) {
-  LOG(LL_DEBUG,
-      ("Stop transaction %d for tag %s, reason %s",
-       mgos_sys_config_get_ocpp_transaction_id(),
-       mgos_sys_config_get_ocpp_transaction_tag_id(),
-       reason));
-
-  ocpp_send_ocpp_status_notification(OCPP_STATUS_FINISHING);
-  mgos_gpio_write(mgos_sys_config_get_gpio_relay(), 0);
-
-  power_update();
-
+void ocpp_send_stop_transaction(const char *reason) {
   char buf[200];
   int length;
 
@@ -409,6 +403,35 @@ mg_str ocpp_stop_transaction(const char *reason) {
   struct mg_str content = mg_mk_str_n(buf, length);
   LOG(LL_DEBUG, ("Sending stop transaction %.*s", length, buf));
   ocpp_send_ocpp_request(ws_connection, OCPP_REQUEST_STOP_TRANSACTION, stop_transaction_uuid, content);
+}
+
+void ocpp_send_start_transaction() {
+  char buf[200];
+  int length;
+
+  char date_buffer[30];
+  get_current_date(date_buffer);
+  generate_uuid(start_transaction_uuid);
+
+  length = sprintf(buf, OCPP_STARTTRANSACTION, tag_id, date_buffer);
+  struct mg_str content = mg_mk_str_n(buf, length);
+  LOG(LL_DEBUG, ("Sending start transaction %.*s", length, buf));
+  ocpp_send_ocpp_request(ws_connection, OCPP_REQUEST_START_TRANSACTION, start_transaction_uuid, content);
+}
+
+mg_str ocpp_stop_transaction(const char *reason) {
+  LOG(LL_DEBUG,
+      ("Stop transaction %d for tag %s, reason %s",
+       mgos_sys_config_get_ocpp_transaction_id(),
+       mgos_sys_config_get_ocpp_transaction_tag_id(),
+       reason));
+
+  ocpp_send_status_notification(OCPP_STATUS_FINISHING);
+  mgos_gpio_write(mgos_sys_config_get_gpio_relay(), 0);
+
+  power_update();
+
+  ocpp_send_stop_transaction(reason);
 
   if (mqtt_is_connected()) {
     mqtt_send_state_topic();
@@ -419,6 +442,7 @@ mg_str ocpp_stop_transaction(const char *reason) {
 
 mg_str ocpp_stop_transaction(const char *payload, const char *reason) {
   int id = 0;
+
   if (json_scanf(payload, strlen(payload), "{ transactionId:%d }", &id) > 0) {
     if (id == mgos_sys_config_get_ocpp_transaction_id()) {
       return ocpp_stop_transaction(reason);
@@ -437,19 +461,8 @@ mg_str ocpp_start_transaction(const char *payload) {
   if (json_scanf(payload, strlen(payload), "{ idTag:%Q }", &tag_id) > 0) {
     LOG(LL_INFO, ("Starting transaction for tag with id %s", tag_id));
 
-    char buf[200];
-    int length;
-
-    char date_buffer[30];
-    get_current_date(date_buffer);
-    generate_uuid(start_transaction_uuid);
-
-    ocpp_send_ocpp_status_notification(OCPP_STATUS_PREPARING);
-
-    length = sprintf(buf, OCPP_STARTTRANSACTION, tag_id, date_buffer);
-    struct mg_str content = mg_mk_str_n(buf, length);
-    LOG(LL_DEBUG, ("Sending start transaction %.*s", length, buf));
-    ocpp_send_ocpp_request(ws_connection, OCPP_REQUEST_START_TRANSACTION, start_transaction_uuid, content);
+    ocpp_send_status_notification(OCPP_STATUS_PREPARING);
+    ocpp_send_start_transaction();
 
     if (mqtt_is_connected()) {
       mqtt_send_state_topic();
@@ -667,68 +680,100 @@ mg_str ocpp_update_firmware(const char *payload) {
   return mg_mk_str(OCPP_RESPONSE_REJECTED);
 }
 
-void ocpp_handle_ocpp_response(struct mg_connection *nc, const char *id, const char *payload) {
-  LOG(LL_DEBUG, ("Handle OCPP response with id %s", id));
-  if (strcmp(id, start_transaction_uuid) == 0) {
-    int transaction_id;
-    if (json_scanf(payload, strlen(payload), "{ transactionId:%d }", &transaction_id) > 0) {
-      ocpp_send_ocpp_status_notification(OCPP_STATUS_CHARGING);
-      power_reset_energy();
-      mgos_gpio_write(mgos_sys_config_get_gpio_relay(), 1);
-      mgos_sys_config_set_ocpp_transaction_id(transaction_id);
-      mgos_sys_config_set_ocpp_transaction_tag_id(tag_id);
-      mgos_sys_config_set_ocpp_transaction_uptime(mgos_uptime());
-      mgos_sys_config_set_ocpp_transaction_consumption(0);
-      mgos_sys_config_set_ocpp_transaction_intensity(0);
-      mgos_sys_config_set_ocpp_transaction_reset_consumption(0);
-      mgos_sys_config_save(&mgos_sys_config, false, NULL);
-      LOG(LL_INFO, ("Transaction started %d", transaction_id));
-    } else {
-      ocpp_send_ocpp_status_notification(OCPP_STATUS_AVAILABLE);
-      mgos_sys_config_set_ocpp_transaction_id(-1);
-      mgos_sys_config_save(&mgos_sys_config, false, NULL);
-      LOG(LL_ERROR, ("Failed to start transaction"));
-    }
-  } else if (strcmp(id, stop_transaction_uuid) == 0) {
-    ocpp_send_ocpp_status_notification(OCPP_STATUS_AVAILABLE);
+void ocpp_handle_response(const char *id, const char *payload) {
+  LOG(LL_DEBUG, ("Unhandled OCPP response with id %s, payload %s", id, payload));
+}
+
+void ocpp_handle_response_start_transaction(const char *id, const char *payload) {
+  int transaction_id;
+
+  LOG(LL_DEBUG, ("Handle OCPP start transaction response with id %s, payload %s", id, payload));
+  if (json_scanf(payload, strlen(payload), "{ transactionId:%d }", &transaction_id) > 0) {
+    ocpp_send_status_notification(OCPP_STATUS_CHARGING);
     power_reset_energy();
+    mgos_gpio_write(mgos_sys_config_get_gpio_relay(), 1);
+    mgos_sys_config_set_ocpp_transaction_id(transaction_id);
+    mgos_sys_config_set_ocpp_transaction_tag_id(tag_id);
+    mgos_sys_config_set_ocpp_transaction_uptime(mgos_uptime());
     mgos_sys_config_set_ocpp_transaction_consumption(0);
     mgos_sys_config_set_ocpp_transaction_intensity(0);
     mgos_sys_config_set_ocpp_transaction_reset_consumption(0);
+    mgos_sys_config_save(&mgos_sys_config, false, NULL);
+    LOG(LL_INFO, ("Transaction started %d", transaction_id));
+  } else {
+    ocpp_send_status_notification(OCPP_STATUS_AVAILABLE);
     mgos_sys_config_set_ocpp_transaction_id(-1);
     mgos_sys_config_save(&mgos_sys_config, false, NULL);
-  } else if (strcmp(id, boot_notification_uuid) == 0) {
-    char *status = NULL;
-    if (json_scanf(payload, strlen(payload), "{ status:%Q }", &status) > 0) {
-      if (strcmp(OCPP_STATUS_ACCEPTED, status) == 0) {
-        registered = true;
-        if (mgos_sys_config_get_ocpp_transaction_id() > 0) {
-          ocpp_send_ocpp_status_notification(OCPP_STATUS_CHARGING);
-        } else {
-          ocpp_send_ocpp_status_notification(OCPP_STATUS_AVAILABLE);
-        }
+    LOG(LL_ERROR, ("Failed to start transaction"));
+  }
+}
 
-        int value;
-        if (json_scanf(payload, strlen(payload), "{ interval:%d }", &value) > 0) {
-          int interval = mgos_sys_config_get_ocpp_config_heartbeat_interval();
-          if (value > 0 && value != interval) {
-            mgos_sys_config_set_ocpp_config_heartbeat_interval(value);
-            mgos_sys_config_save_level(&mgos_sys_config, MGOS_CONFIG_LEVEL_USER, false, NULL);
-            LOG(LL_INFO, ("Heartbeat interval set to %d as per server request", value));
-          }
-        }
+void ocpp_handle_response_stop_transaction(const char *id) {
+  LOG(LL_DEBUG, ("Handle OCPP stop transaction response with id %s", id));
+  ocpp_send_status_notification(OCPP_STATUS_AVAILABLE);
+  power_reset_energy();
+  mgos_sys_config_set_ocpp_transaction_consumption(0);
+  mgos_sys_config_set_ocpp_transaction_intensity(0);
+  mgos_sys_config_set_ocpp_transaction_reset_consumption(0);
+  mgos_sys_config_set_ocpp_transaction_id(-1);
+  mgos_sys_config_save(&mgos_sys_config, false, NULL);
+}
+
+void ocpp_handle_response_boot_notification(const char *id, const char *payload) {
+  char *registration_status;
+  int heartbeat_interval;
+
+  if (json_scanf(payload, strlen(payload), "{ status:%Q }", &registration_status) > 0 &&
+      strcmp(registration_status, OCPP_STATUS_ACCEPTED) == 0) {
+    LOG(LL_DEBUG, ("Handle OCPP boot notification response with id %s, payload %s", id, payload));
+    registered = true;
+    if (mgos_sys_config_get_ocpp_transaction_id() > 0) {
+      ocpp_send_status_notification(OCPP_STATUS_CHARGING);
+    } else {
+      ocpp_send_status_notification(OCPP_STATUS_AVAILABLE);
+    }
+    if (json_scanf(payload, strlen(payload), "{ interval:%d }", &heartbeat_interval) > 0) {
+      int interval = mgos_sys_config_get_ocpp_config_heartbeat_interval();
+      if (heartbeat_interval >= 60 && heartbeat_interval != interval) {
+        mgos_sys_config_set_ocpp_config_heartbeat_interval(heartbeat_interval);
+        mgos_sys_config_save_level(&mgos_sys_config, MGOS_CONFIG_LEVEL_USER, false, NULL);
+        LOG(LL_INFO, ("Heartbeat interval set to %d as per server request", heartbeat_interval));
       }
     }
-    if (status != NULL) {
-      free(status);
-      status = NULL;
+    if (registration_status != NULL) {
+      free(registration_status);
+      registration_status = NULL;
     }
+  } else if (json_scanf(payload, strlen(payload), "{ status:%Q }", &registration_status) > 0 &&
+             strcmp(registration_status, OCPP_STATUS_PENDING) == 0) {
+    LOG(LL_INFO, ("Registration pending on the central server"));
+    if (registration_status != NULL) {
+      free(registration_status);
+      registration_status = NULL;
+    }
+  } else {
+    LOG(LL_INFO, ("Registration failure on the central server"));
+  }
+}
+
+void ocpp_handle_ocpp_response(struct mg_connection *nc, const char *id, const char *payload) {
+  if (strcmp(id, start_transaction_uuid) == 0) {
+    ocpp_handle_response_start_transaction(id, payload);
+  } else if (strcmp(id, stop_transaction_uuid) == 0) {
+    ocpp_handle_response_stop_transaction(id);
+  } else if (strcmp(id, boot_notification_uuid) == 0) {
+    ocpp_handle_response_boot_notification(id, payload);
+  } else {
+    ocpp_handle_response(id, payload);
   }
 
   (void) nc;
 }
 
 void ocpp_handle_ocpp_cmd(struct mg_connection *nc, const char *cmd, const char *id, const char *payload) {
+  if (!registered) {
+    LOG(LL_WARN, ("Received an OCPP command %s while unregistered", cmd));
+  }
   LOG(LL_DEBUG, ("Handle OCPP cmd %s with id %s", cmd, id));
   struct mg_str data;
 

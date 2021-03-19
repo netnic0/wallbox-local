@@ -29,8 +29,10 @@ void ocpp_synchronize();
 
 void ocpp_send_heartbeat(bool = true);
 void ocpp_send_boot_notification();
-void ocpp_send_ocpp_status_notification(const char *);
-void ocpp_send_ocpp_meter_values();
+void ocpp_send_status_notification(const char *);
+void ocpp_send_meter_values();
+void ocpp_send_stop_transaction(const char *);
+void ocpp_send_start_transaction();
 
 void ocpp_send_ocpp_request(struct mg_connection *, const char *, const char *, struct mg_str);
 void ocpp_send_ocpp_response(struct mg_connection *, const char *, const char *);
