@@ -56,7 +56,9 @@ config_schema:
   - ["provision.led.pin", 0]
   - ["provision.led.active_high", false]
   - ["file_logger.enable", false]
-  - ["file_logger.max_file_size", 8000]
+  - ["file_logger.buf_size", 1000]
+  - ["file_logger.max_file_size", 10000]
+  - ["file_logger.max_num_files", 5]
   - ["file_logger.level", 0]
   - ["mqtt.enable", false]
   - ["mqtt.server", ""]
@@ -112,7 +114,7 @@ conds:
         - ["file_logger.enable", true]
         - ["file_logger.level", 3]
         - ["wifi.ap.trigger_on_gpio", 2]
-        - ["debug.file_level", "main.cpp=2,wb_ocpp.cpp=2,wb_thermistor.cpp=2,wb_power.cpp=3,=0"]
+        - ["debug.file_level", "main.cpp=2,wb_ocpp.cpp=2,wb_thermistor.cpp=2,wb_power.cpp=2,=0"]
         - ["dns_sd.host_name", "wallbox-dev"]
   - when: build_vars.TARGET == "production"
     apply:

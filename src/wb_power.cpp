@@ -26,7 +26,7 @@ static struct HLW8012 *hlw8012 = NULL;
 
 void power_init() {
   if ((hlw8012 = mgos_hlw8012_create()) == NULL) {
-    LOG(LL_ERROR, ("Unable to initialize HLW8012"));
+    LOG(LL_ERROR, ("Cannot initialize HLW8012"));
     return;
   }
   mgos_hlw8012_begin(hlw8012,
@@ -68,21 +68,21 @@ void power_update() {
   }
 
   if (energy <= 0) {
-    LOG(LL_ERROR, ("Energy negative %d", energy));
+    LOG(LL_ERROR, ("Negative energy %d", energy));
     return;
   }
   if (energy > INT_MAX) {
-    LOG(LL_ERROR, ("Energy %d exceeds INT_MAX %d", energy, INT_MAX));
+    LOG(LL_ERROR, ("Energy %d exceeds capacity %d", energy, INT_MAX));
     return;
   }
 
   if (uptime <= previousUptime) {
-    LOG(LL_ERROR, ("Invalid uptime %d under previous value %d", uptime, previousUptime));
+    LOG(LL_ERROR, ("Invalid uptime %d, less than previous value %d", uptime, previousUptime));
   } else {
     double coeff = 3600 / (uptime - previousUptime);
     intensity = (energy - previousEnergy) * coeff / 240;
     mgos_sys_config_set_ocpp_transaction_intensity(intensity);
-    LOG(LL_INFO, ("Intensity %dA in %d sec", intensity, uptime - previousUptime));
+    LOG(LL_DEBUG, ("Intensity: %dA / %ds", intensity, uptime - previousUptime));
   }
 
   mgos_sys_config_set_ocpp_transaction_uptime(uptime);
