@@ -106,6 +106,7 @@ document.getElementById("ocpp_save_btn").onclick = function () {
                 name: ocppName.value,
             },
         },
+        level: 8,
         save: true,
         reboot: true,
     };
@@ -131,6 +132,7 @@ document.getElementById("mqtt_save_btn").onclick = function () {
                 pass: mqttPass.value
             },
         },
+        level: 8,
         save: true,
         reboot: true,
     };

@@ -83,6 +83,63 @@ void process_loop(void *arg) {
   (void) arg;
 }
 
+void reset_config(int level) {
+  LOG(LL_INFO, ("Resetting config %d", level));
+  mgos_config_reset(level);
+  mgos_fs_gc();
+  mgos_system_restart_after(100);
+}
+
+void set_reboot_counter(int value) {
+  struct mgos_config *cfg = NULL;
+  cfg = (struct mgos_config *) calloc(1, sizeof(*cfg));
+  if (cfg != NULL) {
+    if (mgos_sys_config_load_level(cfg, MGOS_CONFIG_LEVEL_VENDOR_4)) {
+      mgos_config_set_reboot_counter(cfg, value);
+      mgos_sys_config_set_reboot_counter(value);
+
+      if (!mgos_sys_config_save_level(cfg, MGOS_CONFIG_LEVEL_VENDOR_4, false, NULL)) {
+        LOG(LL_ERROR, ("Cannot save config (4)"));
+      }
+    } else {
+      LOG(LL_ERROR, ("Cannot load config (4)"));
+    }
+  } else {
+    LOG(LL_WARN, ("Cannot allocate space for config (4)"));
+  }
+
+  free(cfg);
+}
+
+void migrate_config() {
+  struct mgos_config *cfg = NULL;
+  cfg = (struct mgos_config *) calloc(1, sizeof(*cfg));
+  if (cfg != NULL) {
+    if (mgos_sys_config_load_level(cfg, MGOS_CONFIG_LEVEL_VENDOR_8)) {
+      mgos_config_set_ocpp_url(cfg, mgos_sys_config_get_ocpp_url());
+      mgos_config_set_ocpp_name(cfg, mgos_sys_config_get_ocpp_name());
+      mgos_config_set_conf_version(cfg, 1);
+      if (!mgos_sys_config_save_level(cfg, MGOS_CONFIG_LEVEL_VENDOR_8, false, NULL)) {
+        LOG(LL_ERROR, ("Cannot save config (8)"));
+      }
+    } else {
+      LOG(LL_ERROR, ("Cannot load config (8)"));
+    }
+  } else {
+    LOG(LL_WARN, ("Cannot allocate space for config (8)"));
+  }
+
+  free(cfg);
+
+  mgos_fs_gc();
+  mgos_system_restart_after(100);
+}
+
+void reset_reboot_counter(void *arg) {
+  set_reboot_counter(mgos_config_get_default_reboot_counter());
+  (void) arg;
+}
+
 /*
  * Mongoose OS app init
  */
@@ -99,6 +156,22 @@ enum mgos_app_init_result mgos_app_init(void) {
 #endif
 
   LOG(LL_INFO, ("Starting Wallbox"));
+
+  if (mgos_sys_config_get_conf_version() < 1) {
+    migrate_config();
+    return MGOS_APP_INIT_SUCCESS;
+  }
+
+  int rebootCounter = mgos_sys_config_get_reboot_counter() + 1;
+  set_reboot_counter(rebootCounter);
+  if (rebootCounter == 3) {
+    reset_config(MGOS_CONFIG_LEVEL_USER);
+    return MGOS_APP_INIT_SUCCESS;
+  } else if (rebootCounter >= 6) {
+    reset_config(MGOS_CONFIG_LEVEL_VENDOR_4);
+    return MGOS_APP_INIT_SUCCESS;
+  }
+  mgos_set_timer(30000 /* ms */, 0, reset_reboot_counter, NULL);
 
   power_init();
   thermistor_init();

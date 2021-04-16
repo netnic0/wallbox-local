@@ -241,6 +241,7 @@ bool ocpp_is_connected() {
 }
 
 void ocpp_synchronize() {
+  power_update();
   if (!ws_connected) {
     LOG(LL_INFO, ("Reconnecting to CS"));
     ocpp_connect_backend();
@@ -352,7 +353,6 @@ void ocpp_send_status_notification(const char *status) {
 }
 
 void ocpp_update_transaction() {
-  power_update();
   if (mgos_sys_config_get_ocpp_transaction_intensity() > mgos_sys_config_get_ocpp_config_intensity_limit()) {
     LOG(LL_ERROR,
         ("Intensity %d higher than limit %d, stopping transaction",

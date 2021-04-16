@@ -117,7 +117,7 @@ void rpc_wallbox_reset_handler(struct mg_rpc_request_info *ri,
   ocpp_reset_hard();
 
   // Reset config
-  mgos_config_reset(MGOS_CONFIG_LEVEL_USER);
+  mgos_config_reset(MGOS_CONFIG_LEVEL_VENDOR_4);
 
   mg_rpc_send_responsef(ri, "{}");
   (void) cb_arg;
