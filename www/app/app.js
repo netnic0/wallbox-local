@@ -24,9 +24,9 @@ const mqttPass = document.getElementById("mqtt_pass");
 const showMqttPass = document.getElementById("mqtt_pass_show");
 
 const infoContainer = document.getElementById("info_container");
+const logsContainer = document.getElementById("logs_container");
 
 const infoSpinner = document.getElementById("info_spinner");
-const refreshSpinner = document.getElementById("refresh_spinner");
 const wifiSpinner = document.getElementById("wifi_spinner");
 const ocppSpinner = document.getElementById("ocpp_spinner");
 const mqttSpinner = document.getElementById("mqtt_spinner");
@@ -271,6 +271,7 @@ const getLogs = () => {
         if (res && res.data && res.data.length > 0) {
             res.data.sort();
             res.data.reverse();
+            let logCount = 0;
             res.data.forEach(function (filename) {
                 if (filename.startsWith("log_")) {
                     const a = document.createElement('a');
@@ -280,7 +281,9 @@ const getLogs = () => {
                     a.href = host + filename;
                     a.target = "_blank";
                     document.getElementById("logs").appendChild(a);
+                    logCount++;
                 }
+                logsContainer.style.display = (logCount > 0 ? "block" : "none");
             });
         }
     }).catch(function (err) {
@@ -289,7 +292,6 @@ const getLogs = () => {
 }
 
 const getInfo = () => {
-    refreshSpinner.className = "spin";
     axios.get(host + "/rpc/Wallbox.GetInfo").then(function (res) {
         wifiSSID0.value = res.data.wifi_ssid;
         wifiSSID1.value = res.data.wifi_ssid1;
@@ -323,13 +325,10 @@ const getInfo = () => {
         mqttUser.value = res.data.mqtt_user;
     }).catch(function (err) {
         handleAxiosError(err);
-    }).then(function () {
-        refreshSpinner.className = "";
     });
 }
 
 const refreshInfo = () => {
-    refreshSpinner.className = "spin";
     axios.get(host + "/rpc/Wallbox.GetInfo").then(function (res) {
         document.getElementById("energy").innerText = `${(res.data.energy ? res.data.energy : 0).toFixed(0)} Wh`;
         document.getElementById("intensity").innerText = `${(res.data.intensity ? res.data.intensity : 0).toFixed(0)} A`;
@@ -347,12 +346,8 @@ const refreshInfo = () => {
         ocppState.className = oState ? "connected" : "disconnected";
     }).catch(function (err) {
         handleAxiosError(err);
-    }).then(function () {
-        refreshSpinner.className = "";
     });
 }
-
-document.getElementById("refresh_btn").onclick = getInfo;
 
 const updateFirmware = evt => {
     evt.preventDefault();

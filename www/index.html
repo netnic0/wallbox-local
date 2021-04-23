@@ -38,11 +38,30 @@
           <label>Intensity:</label>
           <span id="intensity"></span>
         </div>
-        <div class="form-actions">
-          <button id="refresh_btn">
-            Refresh
-            <span id="refresh_spinner"></span>
-          </button>
+        <div class="form-control">
+          <label>Temperature:</label>
+          <span id="temperature"></span>
+        </div>
+        <div class="form-separator"></div>
+        <div class="form-control">
+          <label>Device:</label>
+          <span id="device_id"></span>
+        </div>
+        <div class="form-control">
+          <label>Serial number:</label>
+          <span id="device_sn"></span>
+        </div>
+        <div class="form-control">
+          <label>IP address:</label>
+          <span id="device_ip"></span>
+        </div>
+        <div class="form-control">
+          <label>MAC address:</label>
+          <span id="device_mac"></span>
+        </div>
+        <div class="form-control">
+          <label>Up time:</label>
+          <span id="uptime"></span>
         </div>
       </div>
     </div>
@@ -50,7 +69,8 @@
 
   <div class="container" id="wifi_container">
     <h1 class="">Wi-Fi</h1>
-    <h2>Configuration of the Wi-Fi connection</h2>
+    <h2>Configuration of the Wi-Fi connections</h2>
+    <p>You may configure up to two Wi-Fi networks for two locations.</p>
     <div class="form">
       <div class="">
         <form id="wifi_form">
@@ -59,7 +79,6 @@
             <label>SSID:</label>
             <input type="text" id="wifi_ssid_0" autocomplete="wifi ssid">
           </div>
-
           <div class="form-control">
             <label>Password:</label>
             <input type="password" id="wifi_pass_0" autocomplete="wifi current-password">
@@ -74,7 +93,6 @@
             <label>SSID:</label>
             <input type="text" id="wifi_ssid_1" autocomplete="wifi ssid">
           </div>
-
           <div class="form-control">
             <label>Password:</label>
             <input type="password" id="wifi_pass_1" autocomplete="wifi current-password">
@@ -84,7 +102,6 @@
             <input type="checkbox" id="wifi_pass_show_1">
             <label for="wifi_pass_show_1" id="wifi_pass_show_label" class="passhint">Show password</label>
           </div>
-          
           <div class="form-actions">
             <button id="wifi_save_btn">
               Save
@@ -99,6 +116,7 @@
   <div class="container" id="ocpp_container">
     <h1 class="">e-Mobility</h1>
     <h2>Configuration of the connection to the OCPP server</h2>
+    <p>You should not need to modify this configuration. Check with your e-Mobility administrator.</p>
     <div class="form">
       <div class="">
         <div class="form-control">
@@ -122,6 +140,7 @@
   <div class="container" id="mqtt_container">
     <h1 class="">MQTT</h1>
     <h2>Configuration of the connection to the MQTT server</h2>
+    <p>The wallbox publishes status information. You can track your wallbox in your IoT landscape.</p>
     <div class="form">
       <div class="">
         <form id="mqtt_form">
@@ -160,6 +179,7 @@
   <div class="container" id="fw_container">
     <h1 class="">Firmware</h1>
     <h2>Information and configuration of the wallbox firmware</h2>
+    <p>You can check the firmware information and update your wallbox remotely.</p>
     <div class="form">
       <div class="">
         <div class="form-control">
@@ -196,35 +216,12 @@
 
   <div class="container" id="admin_container">
     <h1 class="">Administration</h1>
-    <h2>Configuration and tasks to administer the wallbox</h2>
+    <h2>Tasks for the administration of the wallbox</h2>
+    <p>You can reboot or reset your wallbox in case of issue.</p>
     <div class="form">
       <div class="">
-        <div class="form-control">
-          <label>Device:</label>
-          <span id="device_id"></span>
-        </div>
-        <div class="form-control">
-          <label>Serial number:</label>
-          <span id="device_sn"></span>
-        </div>
-        <div class="form-control">
-          <label>IP address:</label>
-          <span id="device_ip"></span>
-        </div>
-        <div class="form-control">
-          <label>MAC address:</label>
-          <span id="device_mac"></span>
-        </div>
-        <div class="form-control">
-          <label>Up time:</label>
-          <span id="uptime"></span>
-        </div>
-        <div class="form-control">
-          <label>Temperature:</label>
-          <span id="temperature"></span>
-        </div>
         <div class="form-actions">
-          <button class="admin-btn" id="reboot_btn">
+          <button class="btn" id="reboot_btn">
             Reboot
             <span id="reboot_spinner"></span>
           </button>
@@ -246,6 +243,10 @@
     <h2>Download Wallbox log files</h2>
     <div id="logs" class="flex-list">
     </div>
+  </div>
+
+  <div class="footer">
+    <p>&copy; SAP Labs France - d-shop Caen</p>
   </div>
 
   <div class="popup" id="info_container">

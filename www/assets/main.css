@@ -64,11 +64,20 @@ h1 {
 
 h2 {
   color: #999999;
-  font-size: medium;
+  font-size: large;
   font-weight: normal;
   margin: 0;
   padding-bottom: 0.2em;
   padding-top: 0.2em;
+  text-align: left;
+}
+
+h3 {
+  color: #333333;
+  font-size: large;
+  font-weight: bold;
+  margin: 0;
+  padding-top: 0.75em;
   text-align: left;
 }
 
@@ -81,6 +90,30 @@ h2 {
   margin: 1em auto;
   max-width: 640px;
   padding: 0 1em;
+}
+
+.container p {
+  margin: 0.5em auto;
+}
+
+.footer {
+  margin: 1em auto;
+  padding: 1em;
+  width: 90%;
+}
+
+.footer p {
+  color: #999999;
+  font-size: smaller;
+  font-variant: small-caps;
+  text-align: center;
+}
+
+.form-separator {
+  border-top: solid 1px #00000022;
+  display: flex;
+  width: 100%;
+  margin: 1em 0;
 }
 
 .form-control {

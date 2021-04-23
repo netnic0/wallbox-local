@@ -1,14 +1,14 @@
 {
-  "name": "shelly-wallbox",
+  "name": "shelly-ocpp-wallbox",
   "version": "0.7.0",
   "description": "Wallbox firmware for Shelly 1PM relay",
   "author": "SAP Labs France, d-shop Caen",
-  "homepage": "https://github.com/ellavas/mongoose-app-shelly#readme",
+  "homepage": "https://github.com/sebastien-savalle/shelly-ocpp-wallbox#readme",
   "license": "SEE LICENSE IN LICENSE",
   "scripts": {
     "mos-build": "mos build --local --platform esp8266 --build-var TARGET:development",
     "mos-build:remote": "mos build --platform esp8266 --build-var TARGET:development",
-    "lint": "./node_modules/.bin/eslint www",
+    "lint": "eslint www",
     "build": "npm run lint && npm run webpack && npm run mos-build",
     "build:remote": "npm run lint && npm run webpack && npm run mos-build:remote",
     "console": "mos --port udp://:1993/ console",
@@ -17,10 +17,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ellavas/mongoose-app-shelly.git"
+    "url": "git+https://github.com/sebastien-savalle/shelly-ocpp-wallbox.git"
   },
   "bugs": {
-    "url": "https://github.com/ellavas/mongoose-app-shelly/issues"
+    "url": "https://github.com/sebastien-savalle/shelly-ocpp-wallbox/issues"
   },
   "keywords": [
     "wallbox",
