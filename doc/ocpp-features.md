@@ -5,22 +5,22 @@
 
 ### Core Profile
 
-- :heavy_check_mark: Authorize
-- :heavy_check_mark: BootNotification
-- :heavy_check_mark: ChangeAvailability
-- :heavy_check_mark: ChangeConfiguration
-- :heavy_check_mark: ClearCache
+- :white_check_mark: Authorize
+- :white_check_mark: BootNotification
+- :white_check_mark: ChangeAvailability
+- :white_check_mark: ChangeConfiguration
+- :white_check_mark: ClearCache
 - :no_entry: DataTransfer
-- :heavy_check_mark: GetConfiguration
-- :heavy_check_mark: Heartbeat
-- :heavy_check_mark: MeterValues
-- :heavy_check_mark: RemoteStartTransaction
-- :heavy_check_mark: RemoteStopTransaction
-- :heavy_check_mark: Reset
+- :white_check_mark: GetConfiguration
+- :white_check_mark: Heartbeat
+- :white_check_mark: MeterValues
+- :white_check_mark: RemoteStartTransaction
+- :white_check_mark: RemoteStopTransaction
+- :white_check_mark: Reset
 - :no_entry: StartTransaction
-- :heavy_check_mark: StatusNotification
+- :white_check_mark: StatusNotification
 - :no_entry: StopTransaction
-- :heavy_check_mark: UnlockConnector
+- :white_check_mark: UnlockConnector
 
 ### Firmware Management Profile
 
@@ -53,27 +53,27 @@
 
 ### Core Profile
 
-- :heavy_check_mark: AuthorizeRemoteTxRequests (type: boolean) (units: -)
-- :heavy_check_mark: ClockAlignedDataInterval (type: int) (units: seconds)
-- :heavy_check_mark: ConnectionTimeOut (type: int) (units: seconds)
-- :heavy_check_mark: GetConfigurationMaxKeys (type: int) (units: -)
-- :heavy_check_mark: HeartbeatInterval (type: int) (units: seconds)
-- :heavy_check_mark: LocalAuthorizeOffline (type: boolean) (units: -)
-- :heavy_check_mark: LocalPreAuthorize (type: boolean) (units: -)
-- :heavy_check_mark: MeterValuesAlignedData (type: CSL) (units: -)
-- :heavy_check_mark: MeterValuesSampledData (type: CSL) (units: -)
-- :heavy_check_mark: MeterValueSampleInterval (type: int) (units: seconds)
-- :heavy_check_mark: NumberOfConnectors (type: int) (units: -)
-- :heavy_check_mark: ResetRetries (type: int) (units: times)
-- :heavy_check_mark: ConnectorPhaseRotation (type: CSL) (units: -)
+- :white_check_mark: AuthorizeRemoteTxRequests (type: boolean) (units: -)
+- :white_check_mark: ClockAlignedDataInterval (type: int) (units: seconds)
+- :white_check_mark: ConnectionTimeOut (type: int) (units: seconds)
+- :white_check_mark: GetConfigurationMaxKeys (type: int) (units: -)
+- :white_check_mark: HeartbeatInterval (type: int) (units: seconds)
+- :white_check_mark: LocalAuthorizeOffline (type: boolean) (units: -)
+- :white_check_mark: LocalPreAuthorize (type: boolean) (units: -)
+- :white_check_mark: MeterValuesAlignedData (type: CSL) (units: -)
+- :white_check_mark: MeterValuesSampledData (type: CSL) (units: -)
+- :white_check_mark: MeterValueSampleInterval (type: int) (units: seconds)
+- :white_check_mark: NumberOfConnectors (type: int) (units: -)
+- :white_check_mark: ResetRetries (type: int) (units: times)
+- :white_check_mark: ConnectorPhaseRotation (type: CSL) (units: -)
 - :interrobang: StopTransactionOnEVSideDisconnect (type: boolean) (units: -)
 - :interrobang: StopTransactionOnInvalidId (type: boolean) (units: -)
-- :heavy_check_mark: StopTxnAlignedData (type: CSL) (units: -)
-- :heavy_check_mark: StopTxnSampledData (type: CSL) (units: -)
-- :heavy_check_mark: SupportedFeatureProfiles (type: CSL) (units: -)
+- :white_check_mark: StopTxnAlignedData (type: CSL) (units: -)
+- :white_check_mark: StopTxnSampledData (type: CSL) (units: -)
+- :white_check_mark: SupportedFeatureProfiles (type: CSL) (units: -)
 - :interrobang: TransactionMessageAttempts (type: int) (units: times)
 - :interrobang: TransactionMessageRetryInterval (type: int) (units: seconds)
-- :heavy_check_mark: UnlockConnectorOnEVSideDisconnect (type: boolean) (units: -)
+- :white_check_mark: UnlockConnectorOnEVSideDisconnect (type: boolean) (units: -)
 
 ### Firmware Management Profile
 
