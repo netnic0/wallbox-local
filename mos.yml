@@ -1,7 +1,7 @@
 author: SAP Labs France, d-shop Caen
 name: Wallbox-Shelly1PM
 description: SAP e-Mobility Wallbox firmware for Shelly 1PM
-version: 0.7.1
+version: 0.7.2
 platform: esp8266
 
 libs_version: ${mos.version}
@@ -111,7 +111,7 @@ cdefs:
 conds:
   - when: build_vars.TARGET == "development"
     apply:
-      version: 0.7.2-dev
+      version: 0.7.3-dev
       config_schema:
         - ["file_logger.enable", true]
         - ["file_logger.level", 3]
