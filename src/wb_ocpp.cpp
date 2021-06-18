@@ -430,7 +430,8 @@ mg_str ocpp_stop_transaction(const char *reason) {
        mgos_sys_config_get_ocpp_transaction_tag_id(),
        reason));
 
-  ocpp_send_status_notification(OCPP_STATUS_FINISHING);
+  // This status is not required and it conflicts with the stop transactions since the last modifications on emobility
+  // ocpp_send_status_notification(OCPP_STATUS_FINISHING);
   mgos_gpio_write(mgos_sys_config_get_gpio_relay(), 0);
 
   power_update();
