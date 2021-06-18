@@ -432,6 +432,7 @@ mg_str ocpp_stop_transaction(const char *reason) {
 
   // This status is not required and it conflicts with the stop transactions since the last modifications on emobility
   // ocpp_send_status_notification(OCPP_STATUS_FINISHING);
+  // see https://github.com/sap-labs-france/ev-server/pull/2522
   mgos_gpio_write(mgos_sys_config_get_gpio_relay(), 0);
 
   power_update();
