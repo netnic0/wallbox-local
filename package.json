@@ -1,6 +1,6 @@
 {
   "name": "shelly-ocpp-wallbox",
-  "version": "0.7.2",
+  "version": "0.7.3",
   "description": "Wallbox firmware for Shelly 1PM relay",
   "author": "SAP Labs France, d-shop Caen",
   "homepage": "https://github.com/sebastien-savalle/shelly-ocpp-wallbox#readme",
@@ -8,12 +8,13 @@
   "scripts": {
     "mos-build": "mos build --local --platform esp8266 --build-var TARGET:development",
     "mos-build:remote": "mos build --platform esp8266 --build-var TARGET:development",
-    "lint": "eslint www",
+    "lint": "eslint .",
+    "lint:fix": "npm run lint -- --fix",
     "build": "npm run lint && npm run webpack && npm run mos-build",
     "build:remote": "npm run lint && npm run webpack && npm run mos-build:remote",
     "console": "mos --port udp://:1993/ console",
     "start": "webpack serve --mode=development",
-    "webpack": "webpack --mode=production && node scripts/copy.js dist/index.html.gz dist/gzip/index.html.gz"
+    "webpack": "webpack --mode=production"
   },
   "repository": {
     "type": "git",
@@ -31,6 +32,9 @@
   ],
   "engines": {
     "npm": ">=7"
+  },
+  "dependencies": {
+    "axios": "^0.21.1"
   },
   "devDependencies": {
     "@babel/core": "^7.13.16",

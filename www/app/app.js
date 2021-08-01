@@ -2,6 +2,7 @@
 /*eslint no-console: "off"*/
 require('../assets/main.css');
 
+const axios = require('axios');
 const host = "";
 let refreshTimer;
 
@@ -51,10 +52,10 @@ const showToast = message => {
 }
 
 const handleAxiosError = err => {
-    console.error(err);
     let msg = err;
-    if (err.response) {
-        msg = err.response.data.message;
+    console.error(msg);
+    if (err.response && err.response.statusText) {
+        msg = err.response.statusText;
     }
     showToast(msg);
 }

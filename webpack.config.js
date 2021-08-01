@@ -8,7 +8,7 @@ const CopyPlugin = require('copy-webpack-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
-module.exports = {
+module.exports = (env, argv) => ({
     entry: './www/app/app.js',
     output: {
         path: path.resolve(__dirname, 'dist'),
@@ -32,17 +32,16 @@ module.exports = {
     },
     optimization: {
         minimize: true,
-        minimizer: [
+        minimizer: argv.mode === 'production' ? [
             `...`,
             new CssMinimizerPlugin(),
-        ],
+        ] : [],
     },
     plugins: [
         new CleanWebpackPlugin(),
         new CopyPlugin({
             patterns: [
-                { from: 'www/lib', to: 'gzip' },
-                { from: 'www/lib', to: '' }
+                { from: 'www/assets/favicon.png', to: '' }
             ],
         }),
         new MiniCssExtractPlugin({
@@ -57,10 +56,12 @@ module.exports = {
         new HtmlInlineScriptPlugin([
             /.+[.]js$/u
           ]),
-        new CompressionPlugin(),
+        new CompressionPlugin({
+            deleteOriginalAssets: argv.mode === 'production'
+        }),
     ],
     devServer: {
         port: 3000,
         contentBase: './dist'
     }
-}
+});

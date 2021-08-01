@@ -29,14 +29,3 @@ jobs:
       run: |
         npm install
         npm run build:remote
-
-    - name: Git Release
-      uses: "marvinpinto/action-automatic-releases@latest"
-      with:
-        repo_token: "${{ secrets.GITHUB_TOKEN }}"
-        automatic_release_tag: "draft"
-        draft: true
-        title: "Draft"
-        files: |
-          LICENSE
-          build/*.zip
