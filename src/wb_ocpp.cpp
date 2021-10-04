@@ -43,6 +43,7 @@
 #define OCPP_RESPONSE_ACCEPTED "{\"status\":\"Accepted\"}"
 #define OCPP_RESPONSE_REJECTED "{\"status\":\"Rejected\"}"
 #define OCPP_RESPONSE_NOTSUPPORTED "{\"status\":\"NotSupported\"}"
+#define OCPP_RESPONSE_REBOOTREQUIRED "{\"status\":\"RebootRequired\"}"
 
 #define OCPP_REQUEST_BOOT_NOTIFICATION "BootNotification"
 #define OCPP_REQUEST_GET_CONFIGURATION "GetConfiguration"
@@ -577,7 +578,7 @@ mg_str ocpp_change_configuration(const char *payload) {
           }
           safe_free(key);
           safe_free(value);
-          return mg_mk_str(OCPP_RESPONSE_ACCEPTED);
+          return mg_mk_str(OCPP_RESPONSE_REBOOTREQUIRED);
         }
       }
       LOG(LL_WARN, ("ChangeConfiguration request without value for key: \"%s\"", key));
@@ -596,7 +597,7 @@ mg_str ocpp_change_configuration(const char *payload) {
           }
           safe_free(key);
           safe_free(value);
-          return mg_mk_str(OCPP_RESPONSE_ACCEPTED);
+          return mg_mk_str(OCPP_RESPONSE_REBOOTREQUIRED);
         }
       }
       LOG(LL_WARN, ("ChangeConfiguration request without value for key: \"%s\"", key));
