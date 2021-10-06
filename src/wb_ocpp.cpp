@@ -609,18 +609,16 @@ mg_str ocpp_change_configuration(const char *payload) {
 
     } else if (strcasecmp("IntensityLimit", key) == 0) {
       int value;
-      if (json_scanf(payload, strlen(payload), "{ value:%d }", &value) > 0) {
-        LOG(LL_INFO, ("Change configuration key \"%s\", value \"%d\"", key, value));
+      if (json_scanf(payload, strlen(payload), "{ value:%d }", &value) > 0 && value > 0 && value <= 16) {
         const int currentValue = mgos_sys_config_get_ocpp_config_intensity_limit();
-        if (value != currentValue && value > 0 && value <= 16) {
+        if (value != currentValue) {
+          LOG(LL_INFO, ("Change configuration key \"%s\", value \"%d\"", key, value));
           mgos_sys_config_set_ocpp_config_intensity_limit(value);
           mgos_sys_config_save_level(&mgos_sys_config, MGOS_CONFIG_LEVEL_USER, false, NULL);
-          return mg_mk_str(OCPP_RESPONSE_ACCEPTED);
         }
-        LOG(LL_ERROR, ("ChangeConfiguration request with incorrect value for key: \"%s\", value \"%d\"", key, value));
-        return mg_mk_str(OCPP_RESPONSE_REJECTED);
+        return mg_mk_str(OCPP_RESPONSE_ACCEPTED);
       }
-      LOG(LL_ERROR, ("ChangeConfiguration request without number value for key: \"%s\"", key));
+      LOG(LL_ERROR, ("ChangeConfiguration request invalid for key: \"%s\", payload \"%s\"", key, payload));
       return mg_mk_str(OCPP_RESPONSE_REJECTED);
 
     } else {
