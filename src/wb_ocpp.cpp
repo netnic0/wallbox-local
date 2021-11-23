@@ -471,7 +471,6 @@ mg_str ocpp_start_transaction(const char *payload) {
   if (json_scanf(payload, strlen(payload), "{ idTag:%Q }", &tag_id) > 0) {
     LOG(LL_INFO, ("Starting transaction for tag %s", tag_id));
 
-    ocpp_send_status_notification(OCPP_STATUS_PREPARING);
     ocpp_send_start_transaction();
 
     if (mqtt_is_connected()) {
