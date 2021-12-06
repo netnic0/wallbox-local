@@ -1,6 +1,6 @@
 author: SAP Labs France, d-shop Caen
 name: Wallbox-Shelly1PM
-description: SAP e-Mobility Wallbox firmware for Shelly 1PM
+description: Open e-Mobility Wallbox firmware for Shelly 1PM
 version: 0.7.5
 platform: esp8266
 

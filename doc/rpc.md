@@ -53,7 +53,7 @@ Attributes:
 - state: `true` if a charging session is on-going, else `false`
 - ocpp_url: URL of the OCPP central system
 - ocpp_name: the name of the charging station
-- ocpp_state: `true` if the wallbox is connected to e-Mobility, else `false`
+- ocpp_state: `true` if the wallbox is connected to Open e-Mobility, else `false`
 - mqtt_state: `true` if the wallbox is sending MQTT topics, else `false`
 - mqtt_server: the URL the MQTT broker the wallbox is connected to
 - mqtt_user: the user name for the MQTT broker

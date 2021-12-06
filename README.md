@@ -1,6 +1,6 @@
 # Wallbox
 
-e-Mobility wallbox firmware for Shelly 1PM.
+Open e-Mobility wallbox firmware for Shelly 1PM.
 
 ## Features
 

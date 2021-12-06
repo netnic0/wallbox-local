@@ -51,7 +51,7 @@ The message is sent once, but not guaranteed (QOS 0). The message is not retaine
 Attributes:
 
 - uptime: the number of seconds since the wallbox started, in seconds
-- connected: `true` if the wallbox is connected to e-Mobility, else `false`
+- connected: `true` if the wallbox is connected to Open e-Mobility, else `false`
 - charging: `true` if a charging session is on-going, else `false`
 - energy: the amount of energy for the current charging session, in Wh
 - intensity: the current intensity for the charging session, in A
@@ -91,7 +91,7 @@ Example `wallbox.yaml` package:
 homeassistant:
   customize:
     binary_sensor.wallbox_connected:
-      friendly_name: Connexion e-Mobility
+      friendly_name: Connexion Open e-Mobility
     binary_sensor.wallbox_charging:
       friendly_name: En charge
     sensor.wallbox_energy:
