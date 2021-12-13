@@ -1,6 +1,6 @@
 {
   "name": "shelly-ocpp-wallbox",
-  "version": "0.7.5",
+  "version": "0.7.6",
   "description": "Wallbox firmware for Shelly 1PM relay",
   "author": "SAP Labs France, d-shop Caen",
   "homepage": "https://github.com/sebastien-savalle/shelly-ocpp-wallbox#readme",

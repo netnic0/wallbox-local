@@ -118,7 +118,7 @@ void migrate_config() {
     if (mgos_sys_config_load_level(cfg, MGOS_CONFIG_LEVEL_VENDOR_8)) {
       mgos_config_set_ocpp_url(cfg, mgos_sys_config_get_ocpp_url());
       mgos_config_set_ocpp_name(cfg, mgos_sys_config_get_ocpp_name());
-      mgos_config_set_conf_version(cfg, 1);
+      mgos_config_set_conf_version(cfg, 2);
       if (!mgos_sys_config_save_level(cfg, MGOS_CONFIG_LEVEL_VENDOR_8, false, NULL)) {
         LOG(LL_ERROR, ("Cannot save config (8)"));
       }
@@ -157,7 +157,7 @@ enum mgos_app_init_result mgos_app_init(void) {
 
   LOG(LL_INFO, ("Starting Wallbox"));
 
-  if (mgos_sys_config_get_conf_version() < 1) {
+  if (mgos_sys_config_get_conf_version() < 2) {
     migrate_config();
     return MGOS_APP_INIT_SUCCESS;
   }

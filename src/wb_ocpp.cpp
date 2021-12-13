@@ -575,8 +575,21 @@ mg_str ocpp_change_configuration(const char *payload) {
         if (value != NULL && strlen(value) <= 500) {
           const char *currentValue = mgos_sys_config_get_ocpp_url();
           if (strcmp(value, currentValue) != 0) {
-            mgos_sys_config_set_ocpp_url(value);
-            mgos_sys_config_save_level(&mgos_sys_config, MGOS_CONFIG_LEVEL_USER, false, NULL);
+            struct mgos_config *cfg = NULL;
+            cfg = (struct mgos_config *) calloc(1, sizeof(*cfg));
+            if (cfg != NULL) {
+              if (mgos_sys_config_load_level(cfg, MGOS_CONFIG_LEVEL_VENDOR_8)) {
+                mgos_config_set_ocpp_url(cfg, value);
+                if (!mgos_sys_config_save_level(cfg, MGOS_CONFIG_LEVEL_VENDOR_8, false, NULL)) {
+                  LOG(LL_ERROR, ("Cannot save config (8)"));
+                }
+              } else {
+                LOG(LL_ERROR, ("Cannot load config (8)"));
+              }
+            } else {
+              LOG(LL_WARN, ("Cannot allocate space for config (8)"));
+            }
+            safe_free(cfg);
           }
           safe_free(key);
           safe_free(value);
@@ -594,8 +607,21 @@ mg_str ocpp_change_configuration(const char *payload) {
         if (value != NULL && strlen(value) <= 500) {
           const char *currentValue = mgos_sys_config_get_ocpp_name();
           if (strcmp(value, currentValue) != 0) {
-            mgos_sys_config_set_ocpp_name(value);
-            mgos_sys_config_save_level(&mgos_sys_config, MGOS_CONFIG_LEVEL_USER, false, NULL);
+            struct mgos_config *cfg = NULL;
+            cfg = (struct mgos_config *) calloc(1, sizeof(*cfg));
+            if (cfg != NULL) {
+              if (mgos_sys_config_load_level(cfg, MGOS_CONFIG_LEVEL_VENDOR_8)) {
+                mgos_config_set_ocpp_name(cfg, value);
+                if (!mgos_sys_config_save_level(cfg, MGOS_CONFIG_LEVEL_VENDOR_8, false, NULL)) {
+                  LOG(LL_ERROR, ("Cannot save config (8)"));
+                }
+              } else {
+                LOG(LL_ERROR, ("Cannot load config (8)"));
+              }
+            } else {
+              LOG(LL_WARN, ("Cannot allocate space for config (8)"));
+            }
+            safe_free(cfg);
           }
           safe_free(key);
           safe_free(value);
@@ -651,7 +677,7 @@ void ocpp_handle_response(const char *id, const char *payload) {
 
 bool is_response_authorized(const char *payload) {
   char *status;
-  bool authorized = false ;
+  bool authorized = false;
   if (json_scanf(payload, strlen(payload), "{ idTagInfo:{ status:%Q } }", &status) > 0) {
     authorized = strcmp(status, OCPP_STATUS_ACCEPTED) == 0;
   }
@@ -664,7 +690,8 @@ void ocpp_handle_response_start_transaction(const char *id, const char *payload)
 
   LOG(LL_DEBUG, ("Handle OCPP %s response with ID %s, payload: %s", OCPP_REQUEST_START_TRANSACTION, id, payload));
 
-  if (is_response_authorized(payload) && json_scanf(payload, strlen(payload), "{ transactionId:%d }", &transaction_id) > 0) {
+  if (is_response_authorized(payload) &&
+      json_scanf(payload, strlen(payload), "{ transactionId:%d }", &transaction_id) > 0) {
     ocpp_send_status_notification(OCPP_STATUS_CHARGING);
     power_reset_energy();
     mgos_gpio_write(mgos_sys_config_get_gpio_relay(), 1);
