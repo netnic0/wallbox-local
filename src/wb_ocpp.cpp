@@ -501,6 +501,7 @@ mg_str ocpp_reset_hard() {
 
   if (mgos_sys_config_get_ocpp_transaction_id() > 0) {
     ocpp_stop_transaction(OCPP_STOP_TRANSACTION_REASON_HARDRESET);
+    cleanup_transaction();
   }
 
   mgos_system_restart_after(10000);
@@ -715,16 +716,20 @@ void ocpp_handle_response_stop_transaction(const char *id, const char *payload) 
   LOG(LL_DEBUG, ("Handle OCPP %s response with ID %s", OCPP_REQUEST_STOP_TRANSACTION, id));
   if (is_response_authorized(payload)) {
     ocpp_send_status_notification(OCPP_STATUS_AVAILABLE);
-    power_reset_energy();
-    mgos_sys_config_set_ocpp_transaction_consumption(0);
-    mgos_sys_config_set_ocpp_transaction_intensity(0);
-    mgos_sys_config_set_ocpp_transaction_reset_consumption(0);
-    mgos_sys_config_set_ocpp_transaction_id(-1);
-    mgos_sys_config_save(&mgos_sys_config, false, NULL);
+    cleanup_transaction();
     LOG(LL_INFO, ("Transaction stopped"));
   } else {
     LOG(LL_ERROR, ("StopTransaction rejected"));
   }
+}
+
+void cleanup_transaction() {
+  power_reset_energy();
+  mgos_sys_config_set_ocpp_transaction_consumption(0);
+  mgos_sys_config_set_ocpp_transaction_intensity(0);
+  mgos_sys_config_set_ocpp_transaction_reset_consumption(0);
+  mgos_sys_config_set_ocpp_transaction_id(-1);
+  mgos_sys_config_save(&mgos_sys_config, false, NULL);
 }
 
 void ocpp_handle_response_boot_notification(const char *id, const char *payload) {
