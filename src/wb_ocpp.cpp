@@ -57,9 +57,7 @@
 #define OCPP_REQUEST_STATUS_NOTIFICATION "StatusNotification"
 #define OCPP_REQUEST_RESET "Reset"
 #define OCPP_REQUEST_UPDATE_FIRMWARE "UpdateFirmware"
-#define OCPP_REQUEST_CLEAR_CACHE "ClearCache"
 #define OCPP_REQUEST_UNLOCK_CONNECTOR "UnlockConnector"
-#define OCPP_REQUEST_CHANGE_AVAILABILITY "ChangeAvailability"
 
 const char *OCPP_BOOTNOTIFICATION =
     "{"
@@ -779,33 +777,39 @@ void ocpp_handle_ocpp_response(struct mg_connection *nc, const char *id, const c
 
 void ocpp_handle_ocpp_cmd(struct mg_connection *nc, const char *cmd, const char *id, const char *payload) {
   if (!registered) {
-    LOG(LL_WARN, ("Received an OCPP command %s while unregistered", cmd));
+    LOG(LL_WARN, ("Received OCPP cmd %s while unregistered", cmd));
   }
-  LOG(LL_DEBUG, ("Handle OCPP cmd %s with ID %s", cmd, id));
+  LOG(LL_DEBUG, ("Handle OCPP cmd %s, ID %s", cmd, id));
   struct mg_str data;
 
   if (strcmp(cmd, OCPP_REQUEST_GET_CONFIGURATION) == 0) {
+    // Core / GetConfiguration
     char resp[3000];
     ocpp_get_configuration(payload, resp);
     data = mg_mk_str(resp);
   } else if (strcmp(cmd, OCPP_REQUEST_CHANGE_CONFIGURATION) == 0) {
+    // Core / ChangeConfiguration
     data = ocpp_change_configuration(payload);
   } else if (strcmp(cmd, OCPP_REQUEST_REMOTE_START_TRANSACTION) == 0) {
+    // Core / RemoteStartTransaction
     data = ocpp_start_transaction(payload);
   } else if (strcmp(cmd, OCPP_REQUEST_REMOTE_STOP_TRANSACTION) == 0) {
+    // Core / RemoteStopTransaction
     data = ocpp_stop_transaction(payload, OCPP_STOP_TRANSACTION_REASON_REMOTE);
   } else if (strcmp(cmd, OCPP_REQUEST_RESET) == 0) {
+    // Core / Reset
     data = ocpp_reset(payload);
   } else if (strcmp(cmd, OCPP_REQUEST_UPDATE_FIRMWARE) == 0) {
+    // Firmware Management / UpdateFirmware
     data = ocpp_update_firmware(payload);
-  } else if (strcmp(cmd, OCPP_REQUEST_CLEAR_CACHE) == 0) {
-    data = mg_mk_str(OCPP_RESPONSE_REJECTED);
   } else if (strcmp(cmd, OCPP_REQUEST_UNLOCK_CONNECTOR) == 0) {
+    // Core / UnlockConnector
     data = mg_mk_str(OCPP_RESPONSE_NOTSUPPORTED);
-  } else if (strcmp(cmd, OCPP_REQUEST_CHANGE_AVAILABILITY) == 0) {
-    data = mg_mk_str(OCPP_RESPONSE_REJECTED);
   } else {
-    data = mg_mk_str("{}");
+    // Core / ChangeAvailability
+    // Core / ClearCache
+    // Core / DataTransfer
+    data = mg_mk_str(OCPP_RESPONSE_REJECTED);
   }
 
   ocpp_send_ocpp_response(nc, id, data);
