@@ -66,13 +66,13 @@
 - :white_check_mark: NumberOfConnectors (type: int) (units: -)
 - :white_check_mark: ResetRetries (type: int) (units: times)
 - :white_check_mark: ConnectorPhaseRotation (type: CSL) (units: -)
-- :interrobang: StopTransactionOnEVSideDisconnect (type: boolean) (units: -)
-- :interrobang: StopTransactionOnInvalidId (type: boolean) (units: -)
+- :white_check_mark: StopTransactionOnEVSideDisconnect (type: boolean) (units: -)
+- :white_check_mark: StopTransactionOnInvalidId (type: boolean) (units: -)
 - :white_check_mark: StopTxnAlignedData (type: CSL) (units: -)
 - :white_check_mark: StopTxnSampledData (type: CSL) (units: -)
 - :white_check_mark: SupportedFeatureProfiles (type: CSL) (units: -)
-- :interrobang: TransactionMessageAttempts (type: int) (units: times)
-- :interrobang: TransactionMessageRetryInterval (type: int) (units: seconds)
+- :white_check_mark: TransactionMessageAttempts (type: int) (units: times)
+- :white_check_mark: TransactionMessageRetryInterval (type: int) (units: seconds)
 - :white_check_mark: UnlockConnectorOnEVSideDisconnect (type: boolean) (units: -)
 
 ### Firmware Management Profile
@@ -112,7 +112,7 @@
 | AuthorizeRemoteTxRequests | false | true |
 | ClockAlignedDataInterval | 0 | true |
 | ConnectionTimeOut | 180 | true |
-| GetConfigurationMaxKeys | 32 | true |
+| GetConfigurationMaxKeys | 0 | true |
 | HeartbeatInterval | 180 | false |
 | LocalAuthorizeOffline | false | true |
 | LocalPreAuthorize | false | true |
@@ -121,15 +121,12 @@
 | MeterValueSampleInterval | 60 | true |
 | NumberOfConnectors | 1 | true |
 | ResetRetries | 0 | true |
-| ConnectorPhaseRotation | 1.NotApplicable | true |
-| ConnectorPhaseRotationMaxLength | 1 | true |
-| StopTransactionOnEVSideDisconnect | true | true |
-| StopTransactionOnInvalidId | true | true |
+| ConnectorPhaseRotation | NotApplicable | true |
+| StopTransactionOnEVSideDisconnect | false | true |
+| StopTransactionOnInvalidId | false | true |
 | StopTxnAlignedData |  | true |
-| StopTxnAlignedDataMaxLength | 0 | true |
 | StopTxnSampledData |  | true |
-| StopTxnSampledDataMaxLength | 0 | true |
 | SupportedFeatureProfiles | Core | true |
-| TransactionMessageAttempts | 10 | true |
+| TransactionMessageAttempts | 1 | true |
 | TransactionMessageRetryInterval | 60 | true |
 | UnlockConnectorOnEVSideDisconnect | true | true |

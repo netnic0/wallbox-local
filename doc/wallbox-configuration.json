@@ -23,7 +23,7 @@
         {
             "key": "GetConfigurationMaxKeys",
             "readonly": true,
-            "value": 32
+            "value": 0
         },
         {
             "key": "HeartbeatInterval",
@@ -68,22 +68,17 @@
         {
             "key": "ConnectorPhaseRotation",
             "readonly": true,
-            "value": "1.NotApplicable"
-        },
-        {
-            "key": "ConnectorPhaseRotationMaxLength",
-            "readonly": true,
-            "value": 1
+            "value": "NotApplicable"
         },
         {
             "key": "StopTransactionOnEVSideDisconnect",
             "readonly": true,
-            "value": true
+            "value": false
         },
         {
             "key": "StopTransactionOnInvalidId",
             "readonly": true,
-            "value": true
+            "value": false
         },
         {
             "key": "StopTxnAlignedData",
@@ -91,19 +86,9 @@
             "value": ""
         },
         {
-            "key": "StopTxnAlignedDataMaxLength",
-            "readonly": true,
-            "value": 0
-        },
-        {
             "key": "StopTxnSampledData",
             "readonly": true,
             "value": ""
-        },
-        {
-            "key": "StopTxnSampledDataMaxLength",
-            "readonly": true,
-            "value": 0
         },
         {
             "key": "SupportedFeatureProfiles",
@@ -113,7 +98,7 @@
         {
             "key": "TransactionMessageAttempts",
             "readonly": true,
-            "value": 10
+            "value": 1
         },
         {
             "key": "TransactionMessageRetryInterval",
