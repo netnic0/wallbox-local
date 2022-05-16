@@ -56,6 +56,7 @@
 #define OCPP_REQUEST_HEARTBEAT "Heartbeat"
 #define OCPP_REQUEST_STATUS_NOTIFICATION "StatusNotification"
 #define OCPP_REQUEST_RESET "Reset"
+#define OCPP_REQUEST_TRIGGER_MESSAGE "TriggerMessage"
 #define OCPP_REQUEST_UPDATE_FIRMWARE "UpdateFirmware"
 #define OCPP_REQUEST_UNLOCK_CONNECTOR "UnlockConnector"
 
@@ -129,7 +130,7 @@ const char *OCPP_CONFIGURATION =
     "{\"key\":\"StopTransactionOnInvalidId\",\"readonly\":true,\"value\":false},"
     "{\"key\":\"StopTxnAlignedData\",\"readonly\":true,\"value\":\"\"},"
     "{\"key\":\"StopTxnSampledData\",\"readonly\":true,\"value\":\"\"},"
-    "{\"key\":\"SupportedFeatureProfiles\",\"readonly\":true,\"value\":\"Core\"},"
+    "{\"key\":\"SupportedFeatureProfiles\",\"readonly\":true,\"value\":\"Core,Remote Trigger\"},"
     "{\"key\":\"TransactionMessageAttempts\",\"readonly\":true,\"value\":1},"
     "{\"key\":\"TransactionMessageRetryInterval\",\"readonly\":true,\"value\":60},"
     "{\"key\":\"UnlockConnectorOnEVSideDisconnect\",\"readonly\":true,\"value\":true}"
@@ -527,6 +528,33 @@ mg_str ocpp_reset(const char *payload) {
   return mg_mk_str(OCPP_RESPONSE_REJECTED);
 }
 
+mg_str ocpp_trigger_message(const char *payload) {
+  char *requested_message = NULL;
+
+  if (json_scanf(payload, strlen(payload), "{ type:%Q }", &requested_message) > 0) {
+    LOG(LL_INFO, ("Trigger message \"%s\" requested", requested_message));
+
+    if (strcmp(OCPP_REQUEST_BOOT_NOTIFICATION, requested_message) == 0) {
+      safe_free(requested_message);
+      ocpp_send_boot_notification();
+      return mg_mk_str(OCPP_RESPONSE_ACCEPTED);
+    } else if (strcmp(OCPP_REQUEST_HEARTBEAT, requested_message) == 0) {
+      safe_free(requested_message);
+      ocpp_send_heartbeat(false);
+      return mg_mk_str(OCPP_RESPONSE_ACCEPTED);
+    } else if (strcmp(OCPP_REQUEST_STATUS_NOTIFICATION, requested_message) == 0) {
+      safe_free(requested_message);
+      ocpp_send_status_notification(OCPP_STATUS_AVAILABLE);
+      return mg_mk_str(OCPP_RESPONSE_ACCEPTED);
+    }
+    LOG(LL_WARN, ("Trigger message \"%s\" not supported", requested_message));
+    safe_free(requested_message);
+    return mg_mk_str(OCPP_RESPONSE_NOTSUPPORTED);
+  }
+  LOG(LL_WARN, ("Trigger message without message type"));
+  return mg_mk_str(OCPP_RESPONSE_NOTSUPPORTED);
+}
+
 void ocpp_get_configuration(const char *payload, char *response) {
   LOG(LL_DEBUG, ("OCPP GetConfiguration request: %.*s", sizeof(payload), payload));
 
@@ -802,7 +830,10 @@ void ocpp_handle_ocpp_cmd(struct mg_connection *nc, const char *cmd, const char 
   } else if (strcmp(cmd, OCPP_REQUEST_UNLOCK_CONNECTOR) == 0) {
     // Core / UnlockConnector
     data = mg_mk_str(OCPP_RESPONSE_NOTSUPPORTED);
-  } else {
+  } else if (strcmp(cmd, OCPP_REQUEST_TRIGGER_MESSAGE) == 0) {
+    // Remote Trigger / TriggerMessage
+    data = ocpp_trigger_message(payload);
+  }  else {
     // Core / ChangeAvailability
     // Core / ClearCache
     // Core / DataTransfer

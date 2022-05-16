@@ -47,7 +47,7 @@
 
 ### Remote Trigger Profile
 
-- :x: TriggerMessage
+- :white_check_mark: TriggerMessage
 
 ## Required configuration keys
 
@@ -126,7 +126,7 @@
 | StopTransactionOnInvalidId | false | true |
 | StopTxnAlignedData |  | true |
 | StopTxnSampledData |  | true |
-| SupportedFeatureProfiles | Core | true |
+| SupportedFeatureProfiles | Core,Remote Trigger | true |
 | TransactionMessageAttempts | 1 | true |
 | TransactionMessageRetryInterval | 60 | true |
 | UnlockConnectorOnEVSideDisconnect | true | true |

@@ -93,7 +93,7 @@
         {
             "key": "SupportedFeatureProfiles",
             "readonly": true,
-            "value": "Core"
+            "value": "Core,Remote Trigger"
         },
         {
             "key": "TransactionMessageAttempts",
