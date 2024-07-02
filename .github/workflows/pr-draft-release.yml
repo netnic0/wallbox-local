@@ -24,7 +24,7 @@ jobs:
       run: |
         sudo add-apt-repository ppa:mongoose-os/mos
         sudo apt-get update
-        sudo apt-get install mos
+        sudo apt-get install mos-latest
     - name: Build Firmware
       run: |
         npm install
