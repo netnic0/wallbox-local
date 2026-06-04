@@ -55,6 +55,14 @@ int power_read_active_power() {
   return mgos_hlw8012_readActivePower(hlw8012);
 }
 
+unsigned int power_read_voltage() {
+  return mgos_hlw8012_readVoltage(hlw8012);
+}
+
+double power_read_current() {
+  return mgos_hlw8012_readCurrent(hlw8012);
+}
+
 void power_update() {
   int energy = (int) power_read_energy() / 3600;
   int previousEnergy = mgos_sys_config_get_ocpp_transaction_consumption();

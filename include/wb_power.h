@@ -32,4 +32,8 @@ int power_read_energy();
 
 int power_read_active_power();
 
+unsigned int power_read_voltage();
+
+double power_read_current();
+
 #endif /* wb_power_h */
