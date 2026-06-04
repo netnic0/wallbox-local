@@ -1,4 +1,4 @@
-author: netnic0 (fork of SAP Labs France, d-shop Caen — see NOTICE)
+author: netnic0 (fork of SAP Labs France, d-shop Caen -- see NOTICE)
 name: Wallbox-Shelly1PM
 description: Local-only wallbox firmware for Shelly 1PM with Home Assistant MQTT integration
 version: 1.0.0
@@ -34,7 +34,7 @@ config_schema:
   - ["gpio.cf1", "i", 13, {"CF1 pin"}]
   - ["gpio.sel", "i", 12, {"SEL pin"}]
   - ["debug.level", 3]
-  - ["conf_version", "i", 0, {"Config version"}]
+  - ["conf_version", "i", 2, {"Config version (2 = post-OCPP migration baseline, v1.0.0)"}]
   - ["reboot_counter", "i", 0, {"Reboot counter used to reset configuration"}]
   - ["meter", "o", {"Energy meter (BL0937 / HLW8012)"}]
   - ["meter.total_energy", "i", 0, {"Total energy in Wh, monotonically increasing until ResetEnergy"}]
