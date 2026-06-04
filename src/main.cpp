@@ -111,28 +111,6 @@ void set_reboot_counter(int value) {
   free(cfg);
 }
 
-void migrate_config() {
-  struct mgos_config *cfg = NULL;
-  cfg = (struct mgos_config *) calloc(1, sizeof(*cfg));
-  if (cfg != NULL) {
-    if (mgos_sys_config_load_level(cfg, MGOS_CONFIG_LEVEL_VENDOR_8)) {
-      mgos_config_set_conf_version(cfg, 2);
-      if (!mgos_sys_config_save_level(cfg, MGOS_CONFIG_LEVEL_VENDOR_8, false, NULL)) {
-        LOG(LL_ERROR, ("Cannot save config (8)"));
-      }
-    } else {
-      LOG(LL_ERROR, ("Cannot load config (8)"));
-    }
-  } else {
-    LOG(LL_WARN, ("Cannot allocate space for config (8)"));
-  }
-
-  free(cfg);
-
-  mgos_fs_gc();
-  mgos_system_restart_after(100);
-}
-
 void reset_reboot_counter(void *arg) {
   set_reboot_counter(mgos_config_get_default_reboot_counter());
   (void) arg;
@@ -154,11 +132,6 @@ enum mgos_app_init_result mgos_app_init(void) {
 #endif
 
   LOG(LL_INFO, ("Starting Wallbox"));
-
-  if (mgos_sys_config_get_conf_version() < 2) {
-    migrate_config();
-    return MGOS_APP_INIT_SUCCESS;
-  }
 
   int rebootCounter = mgos_sys_config_get_reboot_counter() + 1;
   set_reboot_counter(rebootCounter);

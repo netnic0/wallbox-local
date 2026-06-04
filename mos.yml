@@ -1,7 +1,7 @@
-author: SAP Labs France, d-shop Caen
+author: netnic0 (fork of SAP Labs France, d-shop Caen — see NOTICE)
 name: Wallbox-Shelly1PM
-description: Open e-Mobility Wallbox firmware for Shelly 1PM
-version: 0.7.7
+description: Local-only wallbox firmware for Shelly 1PM with Home Assistant MQTT integration
+version: 1.0.0
 platform: esp8266
 
 libs_version: ${mos.version}
@@ -35,19 +35,6 @@ config_schema:
   - ["gpio.sel", "i", 12, {"SEL pin"}]
   - ["debug.level", 3]
   - ["conf_version", "i", 0, {"Config version"}]
-  - ["ocpp", "o", {"OCPP settings"}]
-  - ["ocpp.url", "s", "", {"Url of the OCPP Backend"}]
-  - ["ocpp.name", "s", "", {"Name of the wallbox in OCPP Backend"}]
-  - ["ocpp.transaction", "o", {"OCPP Transaction"}]
-  - ["ocpp.transaction.id", "i", -1, {"Id of the current transaction"}]
-  - ["ocpp.transaction.tag_id", "s", "", {"Tag used for the current transaction"}]
-  - ["ocpp.transaction.consumption", "i", 0, {"Consumption of the current transaction"}]
-  - ["ocpp.transaction.uptime", "i", 0, {"Uptime of the current transaction"}]
-  - ["ocpp.transaction.reset_consumption", "i", 0, {"Consumption saved when the consumption is reset"}]
-  - ["ocpp.transaction.intensity", "i", 0, {"Intensity of the current transaction"}]
-  - ["ocpp.config", "o", {"OCPP configuration"}]
-  - ["ocpp.config.heartbeat_interval", "i", 180, {"Interval of inactivity with CS after which CP should send HB"}]
-  - ["ocpp.config.intensity_limit", "i", 8, {"Maximum current intensity in A, that the CP should allow"}]
   - ["reboot_counter", "i", 0, {"Reboot counter used to reset configuration"}]
   - ["meter", "o", {"Energy meter (BL0937 / HLW8012)"}]
   - ["meter.total_energy", "i", 0, {"Total energy in Wh, monotonically increasing until ResetEnergy"}]
@@ -86,7 +73,6 @@ libs:
   - origin: https://github.com/mongoose-os-libs/http-server
   - origin: https://github.com/mongoose-os-libs/rpc-ws
   - origin: https://github.com/mongoose-os-libs/ota-http-server
-  - origin: https://github.com/mongoose-os-libs/ota-http-client
   - origin: https://github.com/mongoose-os-libs/rpc-service-ota
   - origin: https://github.com/mongoose-os-libs/wifi
   - origin: https://github.com/mongoose-os-libs/sntp
@@ -115,12 +101,12 @@ cdefs:
 conds:
   - when: build_vars.TARGET == "development"
     apply:
-      version: 0.8.0-dev
+      version: 1.1.0-dev
       config_schema:
         - ["file_logger.enable", true]
         - ["file_logger.level", 3]
         - ["wifi.ap.trigger_on_gpio", 2]
-        - ["debug.file_level", "main.cpp=2,wb_ocpp.cpp=2,wb_thermistor.cpp=2,wb_power.cpp=2,=0"]
+        - ["debug.file_level", "main.cpp=2,wb_thermistor.cpp=2,wb_power.cpp=2,=0"]
         - ["dns_sd.host_name", "wallbox-dev"]
   - when: build_vars.TARGET == "production"
     apply:
