@@ -1,6 +1,6 @@
 # Wallbox-Local — Plan d'implémentation
 
-> **Status au 2026-06-04 11:30** : Phase 0bis ✅ TERMINÉE. Plan détaillé Livraison 1 rédigé et reviewé par senior-plan-reviewer (APPROUVÉ AVEC 5 AMENDEMENTS, confidence 89%). En attente d'approbation user pour démarrer l'implémentation L1. **Nouvelle décision à acter : push du repo sur github.com/netnic0** (au lieu de l'origin actuel `sebastien-savalle`). Pas encore de remote configuré pour netnic0.
+> **Status au 2026-06-04 16:30** : Livraison 1 ✅ TERMINÉE (tag `v1.0.0`). Livraison 2-A ✅ TERMINÉE (MQTT cmd topic + doc HA 2024+). Push sur `github.com/netnic0/wallbox-local`. **EN PAUSE — reprise quand tu veux**. Reste à faire : flash test sur la box + L2-B (WebUI moderne) + L3 (HA Discovery + sécurité).
 
 ## Contexte
 
@@ -158,98 +158,107 @@ Fichiers à modifier :
 
 ## Comment reprendre demain
 
-## 📍 État au 2026-06-04 11:30 — PAUSE EN COURS
+## 📍 État au 2026-06-04 16:30 — PAUSE EN COURS
 
-### ✅ Phase 0bis terminée
-- Docker 29.5.3 installé dans WSL Ubuntu 26.04
-- Image `mgos/esp8266-build:2.2.1-1.5.0-r5` pullée (1.74 GB) — note: tag `2.17.0-1.5.0-r5` du PLAN.md initial **N'EXISTE PAS** sur Docker Hub
-- Image `mgos/mos:latest` pullée (orchestre le build via Docker socket)
-- Serveurs Mongoose OS officiels DOWN (`mongoose-os.com/downloads → 404`) — `mos build --remote` mort, seul `--local` fonctionne
-- `npm install` (629 packages) + `npm run webpack` OK → `dist/index.html.gz` (18 KB)
-- 1er build de validation **RÉUSSI** : `build/fw.zip` 935 950 bytes vs `fw (7).zip` 941 958 bytes (Δ −0.6%, structure identique)
+### ✅ Ce qui est terminé
+
+**Phase 0bis — Toolchain** (build local Docker + Mongoose OS) ✅
+- WSL Ubuntu 26.04 + Docker 29.5.3 + image `mgos/esp8266-build:2.2.1-1.5.0-r5` + `mgos/mos:latest`
+- Note : tag Docker `2.17.0-1.5.0-r5` du PLAN initial **n'existe pas** sur Docker Hub. On utilise `2.2.1-1.5.0-r5`.
+- Serveurs Mongoose OS (mongoose-os.com/downloads) **down (404)** → seul `mos build --local` fonctionne.
+
+**Livraison 1 — Backend cleanup** ✅ (taggé `v1.0.0`)
+- 13 commits, 940 LoC supprimées net, OCPP entièrement retiré, namespace `meter.*` créé, RPCs `Wallbox.SetRelay`/`Wallbox.ResetEnergy` ajoutés, MQTT enrichi (power/voltage/current), 5 amendements review intégrés
+- Tag : `v1.0.0` → commit `d0973c1` (build clean OK from scratch)
+- Détails dans `docs/PLAN-L1.md` (V2 amended)
+
+**Livraison 2-A — MQTT command topic + doc HA** ✅
+- 2 commits (`6e588e3` feature + `e9e402c` review fix)
+- Topic `wallbox/<id>/cmd` ajouté → la box accepte `{"action":"start"|"stop"|"reset_energy"}`
+- 4 amendements review intégrés (no double-sub, immediate state publish, helper factor, HA 2024+ syntax)
+- Doc `doc/mqtt.md` réécrit avec contrat MQTT complet + exemple HA `mqtt: → switch:` prêt à coller
+- Détails dans `docs/PLAN-L2-A.md` (V2 amended)
+
+**Repo GitHub** ✅
+- `https://github.com/netnic0/wallbox-local` — public, branche `main`
+- Auth : `gh` CLI installé dans WSL, account `netnic0` connecté
+- Identité git locale : `netnic0 <nicolas.diguet@gmail.com>`
+- Remote upstream `sebastien-savalle/shelly-ocpp-wallbox` retiré, tag local `upstream-58c3691` conservé pour rollback éventuel
 
 ### 📜 Commande de build de référence (à mémoriser)
+
 ```bash
 cd /mnt/c/Users/I058304/Downloads/shelly-ocpp-wallbox
-npm run webpack  # si pas déjà fait
 docker run --rm \
   --entrypoint /bin/sh \
   -v /var/run/docker.sock:/var/run/docker.sock \
-  -v $PWD:$PWD -w $PWD \
+  -v /mnt/c/Users/I058304/Downloads/shelly-ocpp-wallbox:/mnt/c/Users/I058304/Downloads/shelly-ocpp-wallbox \
+  -w /mnt/c/Users/I058304/Downloads/shelly-ocpp-wallbox \
   mgos/mos:latest \
-  -c 'git config --global --add safe.directory "*" && mos build --local --platform esp8266 --verbose'
-# Sortie: build/fw.zip
+  -c 'git config --global --add safe.directory "*" && mos build --local --platform esp8266'
+# Sortie: build/fw.zip (~924 KB)
+
+# Vérifier le fw produit:
+python3 scripts/compare_fw.py [build/fw.zip] [reference.zip]
 ```
 
-### ✅ Plan Livraison 1 rédigé et reviewé
-- Plan détaillé : `docs/PLAN-L1.md` (refactor backend, suppression OCPP 844 LoC, ajout RPCs SetRelay/ResetEnergy, MQTT enrichi power/voltage/current)
-- Approche retenue : **A — Nettoyage chirurgical minimal** (9 étapes auto-vérifiables)
-- Senior-plan-reviewer verdict : **APPROUVÉ AVEC 5 AMENDEMENTS** (confidence 89%)
+### 📌 Reste à faire — choisis l'ordre à la reprise
 
-### 🔴 5 Amendements obligatoires (à intégrer avant tout edit)
-1. **`power_update()` doit migrer dans `process_loop()`** (sinon énergie figée) — il est actuellement appelé via `ocpp_synchronize() → power_update()` (`wb_ocpp.cpp:248`)
-2. **`ocpp_reset_hard()` est utilisé dans 2 RPCs non-OCPP** (`wb_rpc.cpp:102, 117`) — remplacer par `mgos_system_restart_after(10000)` AVANT de supprimer wb_ocpp.cpp
-3. **NE PAS retirer la lib `mongoose` de `mos.yml` en L1** — `rpc-ws` en dépend. Ne retirer que `ota-http-client`
-4. **Stratégie migration énergie** : reco `(b)` repartir de 0 (HA recorder garde l'historique), sinon `(c)` flag `meter.migrated:bool` plutôt qu'heuristique sur valeur zéro
-5. **Critère "grep ocpp = 0"** doit être reformulé : exception si migration énergie au boot conservée
+**Option 1 — Flash + test runtime** (le plus utile pour valider)
+1. Flasher le `build/fw.zip` actuel (= L1 v1.0.0 + L2-A) sur la box via OTA
+   ```bash
+   curl -v -F file=@build/fw.zip http://wallbox.local/update
+   ```
+2. Vérifier après reboot :
+   - HA reçoit toujours les topics `wallbox/<id>/state` et `/system`
+   - Les nouveaux champs `power`, `voltage`, `current` arrivent dans les sensors
+   - `mosquitto_pub -t wallbox/<id>/cmd -m '{"action":"start"}'` allume le relais
+   - `mosquitto_pub -t wallbox/<id>/cmd -m '{"action":"stop"}'` éteint le relais
+3. Configurer HA : copier-coller le YAML de `doc/mqtt.md` dans `configuration.yaml`
+4. Si problème, rollback OTA possible avec `fw (7).zip` original (v0.3.0 OCPP)
 
-### 🎯 Décisions implicitement validées par la review
-- Q2 `connected` → **(c)** toujours `true` (sentinelle de présence pour `expire_after: 180` HA)
-- Q3 `tid` → **(a)** garder `tid: 0` en dur (rétro-compat HA)
-- Q4 spike HLW8012 → **invalide** : `mgos_hlw8012_readVoltage()` (returns `unsigned int`) et `readCurrent()` (returns `double`) confirmés présents dans `deps/mongoose-lib-hlw8012/include/mgos_hlw8012.h`
+**Option 2 — Livraison 2-B : WebUI moderne** (~3-4 h estimées)
+- Refonte `www/index.html`, `www/app.js`, `www/style.css` en vanilla JS pur (cible <30 KB gzipés)
+- Bloc hero live (puissance + jauge SVG) + bouton ON/OFF principal
+- Sections collapsibles (Wi-Fi, MQTT, Firmware, Admin) — suppression section OCPP cassée
+- WebSocket sur `ws://wallbox.local/rpc` ou polling 2s pour live data (à décider)
+- Refactor `package.json` : retirer webpack/babel/axios → garder juste minif + gzip
+- Style : Moderne minimal (décidé)
+- Actuellement la WebUI 0.7.7 toujours présente affiche des champs OCPP cassés (champs absents dans `Wallbox.GetInfo` post-L1) → c'est pourquoi L2-B la réécrit.
 
-### 🐙 Demande user en cours : push sur github.com/netnic0
-**État** :
-- Origin actuel : `https://github.com/sebastien-savalle/shelly-ocpp-wallbox.git` (fetch + push)
-- Branch : `master` à HEAD `58c3691`
-- Files non commités :
-  - `PLAN.md` (untracked — plan haut niveau)
-  - `docs/PLAN-L1.md` (untracked — plan détaillé Livraison 1)
-- `gh` CLI **non installé dans WSL Ubuntu** (seulement git)
-- Aucun remote `netnic0` configuré
+**Option 3 — Livraison 3 : Polish** (~1-2 h estimées)
+- HA MQTT Discovery (auto-création des entités HA)
+- Détection charge VE améliorée : `charging = relais_on AND power > 100W`
+- Protections temp (>80°C → coupe relais + reboot) + courant (>12A pendant 5s → coupe relais)
+- Nouveau fichier `src/wb_safety.cpp` + `src/wb_discovery.cpp`
+- Doc finale + release notes
 
-### 📌 À FAIRE à la reprise (par ordre)
+**Option 4 — Cleanup technique** (mineur, à faire en passant)
+- Convertir les 4 `sprintf` de topics MQTT en `snprintf` (sécurité défensive contre `device.id` longs) — flagged par code review L2-A
+- Optimiser le parser action MQTT : remplacer `json_scanf %Q` (alloc heap) par `strncmp` direct sur le payload (économie RAM/cycles)
 
-**Bloc A — Setup GitHub netnic0** (priorité immédiate selon dernière demande user)
-1. Installer `gh` CLI dans WSL Ubuntu : `sudo apt install gh` (ou via le repo officiel cli.github.com)
-2. Auth : `gh auth login` (ou utiliser un PAT existant via `gh auth login --with-token`)
-3. Créer le repo `netnic0/wallbox-local` (nom à confirmer avec user — pas forcément `shelly-ocpp-wallbox` puisque le projet pivote)
-4. Décider la stratégie :
-   - **(a)** Nouveau repo vierge (squash de tout l'historique upstream + commit initial "fork: Wallbox-Local from sebastien-savalle/shelly-ocpp-wallbox @ 58c3691")
-   - **(b)** Push complet de l'historique upstream + 1 commit "docs: add PLAN.md and PLAN-L1.md"
-   - **(c)** Garder origin sebastien-savalle, ajouter remote netnic0 en parallèle
-5. Configurer git user.email/user.name pour les commits (à confirmer : email perso ou pro ?)
-6. Premier commit + push sur netnic0/master ou main
-7. Couper l'accès origin sebastien-savalle si plus utile (`git remote remove origin`)
+### 🎯 Recommandation à la reprise
 
-**Bloc B — Reprise Livraison 1** (après Bloc A)
-1. Présenter au user les 5 amendements + 3 décisions issus du review (déjà fait dans la dernière réponse, à lui de valider explicitement)
-2. Mettre à jour `docs/PLAN-L1.md` avec les amendements intégrés
-3. Implémenter étape par étape (build de validation entre chaque) :
-   - Étape 0 : (skip — spike inutile)
-   - Étape 1 : ajout namespace `meter.*` dans `mos.yml`
-   - Étape 2 : `power_read_voltage()` + `power_read_current()` dans `wb_power.h/cpp`
-   - Étape 3 : RPCs `Wallbox.SetRelay`, `Wallbox.ResetEnergy` dans `wb_rpc.h/cpp`
-   - Étape 4 : étendre JSON `MQTT_STATE` avec `power`, `voltage`, `current`
-   - Étape 5 : déplacer `power_update()` dans `process_loop()` de `main.cpp` (+ remplacer `ocpp_synchronize()`)
-   - Étape 6 : (selon décision Q1) migration énergie au boot OU repartir de 0
-   - Étape 7 : substituer `ocpp_*` → équivalents (incl. les 2 `ocpp_reset_hard()` dans `wb_rpc.cpp`)
-   - Étape 8 : supprimer `wb_ocpp.cpp/h`, retirer `ota-http-client` de `mos.yml`, bumper `version: 1.0.0`
-   - Étape 9 : build final + check `manifest.name == Wallbox-Shelly1PM`, `version == 1.0.0`
+Tu m'as dit dans cette session : *"l'objectif #1 c'est que HA via MQTT marche bien"*. Donc **Option 1 (flash + test HA)** est la plus utile maintenant — elle valide TOUT le travail des sessions précédentes. Si quelque chose marche pas, on debug avant de continuer. Si tout marche, on a la liberté de choisir L2-B / L3 sans pression.
 
 ### 💾 Memory dispo pour reprise
-- `~/.claude/projects/C--Users-I058304/memory/project_wallbox-local-firmware.md`
-- Transcript session : `C:\Users\I058304\.claude\projects\C--Users-I058304\5b29ef1b-709a-410f-a23a-d4c374d7f71e.jsonl`
+
+- `~/.claude/projects/C--Users-I058304/memory/project_wallbox-local-firmware.md` (à mettre à jour avec L1+L2-A done)
+- Repo : `C:\Users\I058304\Downloads\shelly-ocpp-wallbox` — branche `main` HEAD `e9e402c`
+- Tag : `v1.0.0` → `d0973c1`
 
 ---
 
-## Comment reprendre demain
+## 🔁 Comment reprendre
 
-Dis-moi simplement :
-> **"Reprends le projet wallbox depuis PLAN.md"**
+À la prochaine session, dis-moi simplement **une** de ces phrases :
 
-ou
+- **"Reprends le projet wallbox depuis PLAN.md"** → je relis le PLAN et je te demande quelle option tu veux attaquer (1 / 2 / 3 / 4)
 
-> **"On continue la Phase 0bis du wallbox"**
+- **"Wallbox : on flashe la box"** → je te guide pour flasher `build/fw.zip` via OTA et tester avec HA (Option 1)
 
-Je relirai automatiquement ce fichier et le memory associé, et on enchaîne sur l'installation Docker/mos dans WSL.
+- **"Wallbox : on attaque L2-B"** → je rédige le plan WebUI L2-B, je le fais reviewer par senior-plan-reviewer, et on attaque (Option 2)
+
+- **"Wallbox : on attaque L3"** → on saute la WebUI et on fait le polish HA Discovery + safety (Option 3)
+
+- **"Wallbox : flash et raconte ce qui se passe sur la box: <description>"** → tu flashes toi-même, tu me décris ce que HA voit, je debug si nécessaire
