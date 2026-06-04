@@ -16,7 +16,6 @@
  */
 
 #include "wb_mqtt.h"
-#include "wb_ocpp.h"
 #include "wb_power.h"
 #include "wb_rpc.h"
 #include "wb_thermistor.h"
@@ -118,8 +117,6 @@ void migrate_config() {
   cfg = (struct mgos_config *) calloc(1, sizeof(*cfg));
   if (cfg != NULL) {
     if (mgos_sys_config_load_level(cfg, MGOS_CONFIG_LEVEL_VENDOR_8)) {
-      mgos_config_set_ocpp_url(cfg, mgos_sys_config_get_ocpp_url());
-      mgos_config_set_ocpp_name(cfg, mgos_sys_config_get_ocpp_name());
       mgos_config_set_conf_version(cfg, 2);
       if (!mgos_sys_config_save_level(cfg, MGOS_CONFIG_LEVEL_VENDOR_8, false, NULL)) {
         LOG(LL_ERROR, ("Cannot save config (8)"));
@@ -181,24 +178,14 @@ enum mgos_app_init_result mgos_app_init(void) {
   mgos_set_timer(60000 /* ms */, MGOS_TIMER_REPEAT, process_loop, NULL);
 
   mgos_gpio_set_mode(mgos_sys_config_get_gpio_relay(), MGOS_GPIO_MODE_OUTPUT);
-
-  if (mgos_sys_config_get_ocpp_transaction_id() > 0) {
-    mgos_gpio_write(mgos_sys_config_get_gpio_relay(), 1);
-  } else {
-    mgos_gpio_write(mgos_sys_config_get_gpio_relay(), 0);
-  }
-
-  mgos_sys_config_set_ocpp_transaction_reset_consumption(mgos_sys_config_get_ocpp_transaction_consumption());
-  mgos_sys_config_save(&mgos_sys_config, false, NULL);
+  /* Relay starts OFF on boot. Use Wallbox.SetRelay {on:true} to turn on. */
+  mgos_gpio_write(mgos_sys_config_get_gpio_relay(), 0);
 
   // RPC handlers
   rpc_init();
 
   // MQTT setup and announce
   mqtt_init();
-
-  // OCPP
-  ocpp_connect_backend();
 
   return MGOS_APP_INIT_SUCCESS;
 }
