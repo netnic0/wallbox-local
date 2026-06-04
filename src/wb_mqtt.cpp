@@ -16,7 +16,6 @@
  */
 
 #include "wb_mqtt.h"
-#include "wb_ocpp.h"
 #include "wb_power.h"
 #include "wb_thermistor.h"
 #include "wb_util.h"

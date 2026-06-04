@@ -16,7 +16,6 @@
  */
 
 #include "wb_rpc.h"
-#include "wb_ocpp.h"
 #include "wb_power.h"
 #include "wb_thermistor.h"
 #include "wb_util.h"
@@ -41,9 +40,6 @@ const char *RPC_GETINFO =
     "energy: %d,"
     "intensity: %d,"
     "state: %B,"
-    "ocpp_url: %Q,"
-    "ocpp_name: %Q,"
-    "ocpp_state: %B,"
     "mqtt_state: %B,"
     "mqtt_server: %Q,"
     "mqtt_user: %Q"
@@ -80,12 +76,9 @@ void rpc_wallbox_get_info_handler(struct mg_rpc_request_info *ri,
                         thermistor_read_celsius(),
                         mgos_sys_config_get_wifi_sta_ssid(),
                         mgos_sys_config_get_wifi_sta1_ssid(),
-                        mgos_sys_config_get_ocpp_transaction_consumption(),
-                        mgos_sys_config_get_ocpp_transaction_intensity(),
+                        mgos_sys_config_get_meter_session_energy(),
+                        mgos_sys_config_get_meter_intensity(),
                         mgos_gpio_read(mgos_sys_config_get_gpio_relay()),
-                        mgos_sys_config_get_ocpp_url(),
-                        mgos_sys_config_get_ocpp_name(),
-                        ocpp_is_connected(),
                         mgos_sys_config_get_mqtt_enable(),
                         mgos_sys_config_get_mqtt_server(),
                         mgos_sys_config_get_mqtt_user());
@@ -101,8 +94,8 @@ void rpc_wallbox_reboot_handler(struct mg_rpc_request_info *ri,
                                 struct mg_str args) {
   LOG(LL_INFO, ("RPC request to reboot"));
 
-  // OCPP reset and reboot
-  ocpp_reset_hard();
+  /* Schedule a reboot in 10s, leaving time for the response to be sent. */
+  mgos_system_restart_after(10000);
 
   mg_rpc_send_responsef(ri, "{}");
   (void) cb_arg;
@@ -116,11 +109,9 @@ void rpc_wallbox_reset_handler(struct mg_rpc_request_info *ri,
                                struct mg_str args) {
   LOG(LL_INFO, ("RPC request to reset to factory settings"));
 
-  // OCPP reset and reboot
-  ocpp_reset_hard();
-
-  // Reset config
+  /* Reset config first, then schedule a reboot. */
   mgos_config_reset(MGOS_CONFIG_LEVEL_VENDOR_4);
+  mgos_system_restart_after(10000);
 
   mg_rpc_send_responsef(ri, "{}");
   (void) cb_arg;
