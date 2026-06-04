@@ -83,7 +83,7 @@ static void mqtt_cmd_handler(struct mg_connection *nc, const char *topic,
   char *action = NULL;
   if (json_scanf(msg, msg_len, "{action: %Q}", &action) != 1 || action == NULL) {
     LOG(LL_WARN, ("MQTT cmd: malformed payload [%.*s]", msg_len, msg));
-    free(action);
+    free(action);  /* free(NULL) is a defined no-op per C11 §7.22.3.3 */
     return;
   }
 

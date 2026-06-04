@@ -141,11 +141,7 @@ mqtt:
       unique_id: wallbox_charging
       state_topic: "wallbox/wallbox-ABCDEF/state"
       device_class: battery_charging
-      payload_off: "false"
-      payload_on: "true"
-      value_template: "{{ value_json.charging }}"
-      availability_topic: "wallbox/wallbox-ABCDEF/state"
-      availability_template: "online"
+      value_template: "{{ 'ON' if value_json.charging else 'OFF' }}"
       expire_after: 180
 
   sensor:
@@ -216,7 +212,7 @@ mqtt:
       unique_id: wallbox_charging_switch
       state_topic: "wallbox/wallbox-ABCDEF/state"
       command_topic: "wallbox/wallbox-ABCDEF/cmd"
-      value_template: "{{ value_json.charging }}"
+      value_template: "{{ value_json.charging | lower }}"
       state_on: "true"
       state_off: "false"
       payload_on: '{"action":"start"}'
