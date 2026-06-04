@@ -1,0 +1,7 @@
+node_modules/
+build/
+deps/
+dest/
+tmp/
+*.min.js
+fs/init.js

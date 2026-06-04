@@ -1,0 +1,64 @@
+{
+  "name": "shelly-ocpp-wallbox",
+  "version": "0.7.7",
+  "description": "Wallbox firmware for Shelly 1PM relay",
+  "author": "SAP Labs France, d-shop Caen",
+  "homepage": "https://github.com/sebastien-savalle/shelly-ocpp-wallbox#readme",
+  "license": "SEE LICENSE IN LICENSE",
+  "scripts": {
+    "start": "webpack serve --mode=development",
+    "build": "npm run build:remote",
+    "build:local": "npm run web-build && npm run mos-build:local",
+    "build:remote": "npm run web-build && npm run mos-build:remote",
+    "clean": "npm run mos-clean && npm run web-clean",
+    "console": "mos --port udp://:1993/ console",
+    "lint": "eslint .",
+    "lint:fix": "npm run lint -- --fix",
+    "mos-build": "npm run mos-build:remote",
+    "mos-build:local": "npm run mos-build:remote -- --local",
+    "mos-build:remote": "mos build --platform esp8266 --build-var TARGET:development",
+    "mos-clean": "rimraf build deps",
+    "web-build": "npm run lint && npm run webpack",
+    "web-clean": "rimraf dist",
+    "webpack": "webpack --mode=production"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sebastien-savalle/shelly-ocpp-wallbox.git"
+  },
+  "bugs": {
+    "url": "https://github.com/sebastien-savalle/shelly-ocpp-wallbox/issues"
+  },
+  "keywords": [
+    "wallbox",
+    "shelly",
+    "firmware",
+    "charging",
+    "emobility"
+  ],
+  "engines": {
+    "npm": ">=7"
+  },
+  "dependencies": {
+    "axios": "^0.21.4"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.24.7",
+    "babel-loader": "^8.3.0",
+    "clean-webpack-plugin": "^4.0.0",
+    "compression-webpack-plugin": "^7.1.2",
+    "copy-webpack-plugin": "^8.1.1",
+    "css-loader": "^5.2.7",
+    "css-minimizer-webpack-plugin": "^2.0.0",
+    "eslint": "^7.32.0",
+    "html-inline-css-webpack-plugin": "^1.11.2",
+    "html-inline-script-webpack-plugin": "^2.0.3",
+    "html-webpack-plugin": "^5.6.0",
+    "mini-css-extract-plugin": "^1.6.2",
+    "rimraf": "^3.0.2",
+    "tslib": "^2.6.3",
+    "webpack": "^5.92.1",
+    "webpack-cli": "^5.1.4",
+    "webpack-dev-server": "^5.0.4"
+  }
+}

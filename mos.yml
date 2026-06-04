@@ -1,0 +1,126 @@
+author: SAP Labs France, d-shop Caen
+name: Wallbox-Shelly1PM
+description: Open e-Mobility Wallbox firmware for Shelly 1PM
+version: 0.7.7
+platform: esp8266
+
+libs_version: ${mos.version}
+modules_version: ${mos.version}
+mongoose_os_version: ${mos.version}
+
+# List of files / directories with C sources. No slashes at the end of dir names.
+sources:
+  - src
+
+# A list of directories with C/C++ include files. No slashes at the end of dir names.
+includes:
+  - include
+
+# List of dirs. Files from these dirs will be copied to the device filesystem
+filesystem:
+  - dist
+
+# Custom configuration entries, settable via "device configuration"
+config_schema:
+  - ["device.id", "wallbox-??????"]
+  - ["wifi.ap.ssid", "Wallbox-Hotspot"]
+  - ["wifi.ap.pass", "Wallbox1"]
+  - ["wifi.sta2.ssid", "smartphone"]
+  - ["wifi.sta2.pass", "123456789"]
+  - ["http.index_files", "index.html.gz,index.html"]
+  - ["gpio", "o", {"GPIO settings"}]
+  - ["gpio.relay", "i", 15, {"Relay pin"}]
+  - ["gpio.cf", "i", 5, {"CF pin"}]
+  - ["gpio.cf1", "i", 13, {"CF1 pin"}]
+  - ["gpio.sel", "i", 12, {"SEL pin"}]
+  - ["debug.level", 3]
+  - ["conf_version", "i", 0, {"Config version"}]
+  - ["ocpp", "o", {"OCPP settings"}]
+  - ["ocpp.url", "s", "", {"Url of the OCPP Backend"}]
+  - ["ocpp.name", "s", "", {"Name of the wallbox in OCPP Backend"}]
+  - ["ocpp.transaction", "o", {"OCPP Transaction"}]
+  - ["ocpp.transaction.id", "i", -1, {"Id of the current transaction"}]
+  - ["ocpp.transaction.tag_id", "s", "", {"Tag used for the current transaction"}]
+  - ["ocpp.transaction.consumption", "i", 0, {"Consumption of the current transaction"}]
+  - ["ocpp.transaction.uptime", "i", 0, {"Uptime of the current transaction"}]
+  - ["ocpp.transaction.reset_consumption", "i", 0, {"Consumption saved when the consumption is reset"}]
+  - ["ocpp.transaction.intensity", "i", 0, {"Intensity of the current transaction"}]
+  - ["ocpp.config", "o", {"OCPP configuration"}]
+  - ["ocpp.config.heartbeat_interval", "i", 180, {"Interval of inactivity with CS after which CP should send HB"}]
+  - ["ocpp.config.intensity_limit", "i", 8, {"Maximum current intensity in A, that the CP should allow"}]
+  - ["reboot_counter", "i", 0, {"Reboot counter used to reset configuration"}]
+  - ["provision.stable_state", 2]
+  # - ["provision.btn.pin", 2]
+  - ["provision.timeout", 120]
+  - ["provision.btn.pull_up", false]
+  - ["provision.btn.hold_ms", 5000]
+  - ["provision.led.pin", 0]
+  - ["provision.led.active_high", false]
+  - ["file_logger.enable", false]
+  - ["file_logger.buf_size", 1000]
+  - ["file_logger.max_file_size", 10000]
+  - ["file_logger.max_num_files", 5]
+  - ["file_logger.level", 0]
+  - ["mqtt.enable", false]
+  - ["mqtt.server", ""]
+  - ["mqtt.user", ""]
+  - ["mqtt.pass", ""]
+  - ["dns_sd.enable", true]
+  - ["dns_sd.adv_only", true]
+  - ["dns_sd.host_name", "wallbox"]
+
+libs:
+  - origin: https://github.com/mongoose-os-libs/mbedtls
+    variant: esp8266-noatca
+  - origin: https://github.com/mongoose-os-libs/mongoose
+    variant: esp8266
+  - origin: https://github.com/mongoose-os-libs/core
+  - origin: https://github.com/mongoose-os-libs/rpc-service-config
+  - origin: https://github.com/mongoose-os-libs/rpc-service-fs
+  - origin: https://github.com/mongoose-os-libs/rpc-uart
+  - origin: https://github.com/mongoose-os-libs/http-server
+  - origin: https://github.com/mongoose-os-libs/rpc-ws
+  - origin: https://github.com/mongoose-os-libs/ota-http-server
+  - origin: https://github.com/mongoose-os-libs/ota-http-client
+  - origin: https://github.com/mongoose-os-libs/rpc-service-ota
+  - origin: https://github.com/mongoose-os-libs/wifi
+  - origin: https://github.com/mongoose-os-libs/sntp
+  - origin: https://github.com/mongoose-os-libs/adc
+  - origin: https://github.com/mongoose-os-libs/file-logger
+  - origin: https://github.com/mongoose-os-libs/mqtt
+  - origin: https://github.com/ellavas/provision
+  - origin: https://github.com/ellavas/mongoose-lib-hlw8012
+    name: hlw8012
+    version: master
+  - origin: https://github.com/mongoose-os-libs/dns-sd
+    version: master
+
+build_vars:
+  FLASH_SIZE: 2097152
+  FS_SIZE: 262144
+  BOOT_CONFIG_ADDR: 0x1000  # To be compatible with stock firmware.
+  MGOS_ROOT_FS_TYPE: SPIFFS
+  # We don't need the cryptochip support. Saves approx 12K flash.
+  MGOS_MBEDTLS_ENABLE_ATCA: 0
+  TARGET: production
+
+cdefs:
+  MG_ENABLE_SSL: 1
+
+conds:
+  - when: build_vars.TARGET == "development"
+    apply:
+      version: 0.8.0-dev
+      config_schema:
+        - ["file_logger.enable", true]
+        - ["file_logger.level", 3]
+        - ["wifi.ap.trigger_on_gpio", 2]
+        - ["debug.file_level", "main.cpp=2,wb_ocpp.cpp=2,wb_thermistor.cpp=2,wb_power.cpp=2,=0"]
+        - ["dns_sd.host_name", "wallbox-dev"]
+  - when: build_vars.TARGET == "production"
+    apply:
+      config_schema:
+        - ["debug.level", 0]
+
+# Used by the mos tool to catch mos binaries incompatible with this file format
+manifest_version: 2020-01-29

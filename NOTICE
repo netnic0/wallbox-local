@@ -1,0 +1,24 @@
+Wallbox-Local
+Copyright 2026 Nicolas Diguet (netnic0)
+
+This product includes software developed by SAP Labs France and d-shop Caen,
+originally distributed as "Wallbox-Shelly1PM" / "shelly-ocpp-wallbox" under
+the Apache License, Version 2.0:
+
+  https://github.com/sebastien-savalle/shelly-ocpp-wallbox
+
+Forked at upstream commit 58c3691 (master).
+
+The OCPP / Open e-Mobility integration of the original work has been removed.
+The remaining source files retain their original copyright headers
+(Copyright (c) 2020 SAP Labs France, d-shop Caen — Apache 2.0).
+
+This product also includes Mongoose OS libraries developed by Cesanta and
+contributors, distributed under the Apache License, Version 2.0:
+
+  https://github.com/mongoose-os
+  https://github.com/mongoose-os-libs
+
+And the HLW8012 library by Ellavas:
+
+  https://github.com/ellavas/mongoose-lib-hlw8012

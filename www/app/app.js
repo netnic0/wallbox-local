@@ -1,0 +1,411 @@
+/*eslint no-alert: "off"*/
+/*eslint no-console: "off"*/
+require('../assets/main.css');
+
+const axios = require('axios');
+const host = "";
+let refreshTimer;
+
+const toast = document.getElementById("toast");
+
+const wifiSSID0 = document.getElementById("wifi_ssid_0");
+const wifiPass0 = document.getElementById("wifi_pass_0");
+const wifiSSID1 = document.getElementById("wifi_ssid_1");
+const wifiPass1 = document.getElementById("wifi_pass_1");
+const showWifiPass0 = document.getElementById("wifi_pass_show_0");
+const showWifiPass1 = document.getElementById("wifi_pass_show_1");
+const ocppUrl = document.getElementById("ocpp_url");
+const ocppName = document.getElementById("ocpp_name");
+const deviceState = document.getElementById("state");
+const ocppState = document.getElementById("ocpp_state");
+const mqttEnable = document.getElementById("mqtt_enable");
+const mqttServer = document.getElementById("mqtt_server");
+const mqttUser = document.getElementById("mqtt_user");
+const mqttPass = document.getElementById("mqtt_pass");
+const showMqttPass = document.getElementById("mqtt_pass_show");
+
+const infoContainer = document.getElementById("info_container");
+const logsContainer = document.getElementById("logs_container");
+
+const infoSpinner = document.getElementById("info_spinner");
+const wifiSpinner = document.getElementById("wifi_spinner");
+const ocppSpinner = document.getElementById("ocpp_spinner");
+const mqttSpinner = document.getElementById("mqtt_spinner");
+const rebootSpinner = document.getElementById("reboot_spinner");
+const resetSpinner = document.getElementById("reset_spinner");
+const resetWifiSpinner = document.getElementById("reset_wifi_spinner");
+const firmwareSpinner = document.getElementById("fw_spinner");
+
+const infoTitle = document.getElementById("info_title");
+const infoMessage = document.getElementById("info_message");
+
+const showFormControl = (ctrl, show) => {
+    ctrl.style.display = show ? "flex" : "none";
+}
+
+const showToast = message => {
+    toast.innerHTML = message;
+    toast.className = "show";
+    setTimeout(() => {
+        toast.className = toast.className.replace("show", "");
+    }, 4000);
+}
+
+const handleAxiosError = err => {
+    let msg = err;
+    console.error(msg);
+    if (err.response && err.response.statusText) {
+        msg = err.response.statusText;
+    }
+    showToast(msg);
+}
+
+const showInfoDialog = (message, title, spin, reboot) => {
+    clearInterval(refreshTimer);
+    if (reboot) {
+        setTimeout(function () { document.location.reload() }, 6000);
+    }
+
+    infoSpinner.className = spin ? "spin reboot" : "";
+    infoContainer.style.display = "block";
+    infoTitle.innerHTML = title;
+    infoMessage.innerHTML = message;
+}
+
+const hideInfoDialog = () => {
+    infoContainer.style.display = "none";
+}
+
+const TimeLevels = {
+    scale: [24, 60, 60, 1],
+    units: ['d ', 'h ', 'm ', 's ']
+};
+
+const intervalToLevels = (interval, levels) => {
+    const cbFun = (d, c) => {
+        let bb = d[1] % c[0],
+            aa = (d[1] - bb) / c[0];
+        aa = aa > 0 ? aa + c[1] : '';
+
+        return [d[0] + aa, bb];
+    };
+
+    let result = levels.scale.map((d, i, a) => a.slice(i).reduce((d, c) => d * c))
+        .map((d, i) => ([d, levels.units[i]]))
+        .reduce(cbFun, ['', interval]);
+    return result[0];
+};
+
+const secondsToString = interval => intervalToLevels(interval, TimeLevels);
+
+document.getElementById("ocpp_save_btn").onclick = function () {
+    ocppSpinner.className = "spin";
+    const data = {
+        config: {
+            ocpp: {
+                url: ocppUrl.value,
+                name: ocppName.value,
+            },
+        },
+        level: 8,
+        save: true,
+        reboot: true,
+    };
+    axios.post(host + "/rpc/Config.Set", data).then(function () {
+        showInfoDialog(
+            "Device is rebooting and connecting to OCPP backend.",
+            "Configuration", true, true);
+    }).catch(function (err) {
+        handleAxiosError(err);
+    }).then(function () {
+        ocppSpinner.className = "";
+    });
+};
+
+document.getElementById("mqtt_save_btn").onclick = function () {
+    mqttSpinner.className = "spin";
+    const data = {
+        config: {
+            mqtt: {
+                enable: mqttEnable.checked,
+                server: mqttServer.value,
+                user: mqttUser.value,
+                pass: mqttPass.value
+            },
+        },
+        level: 8,
+        save: true,
+        reboot: true,
+    };
+    axios.post(host + "/rpc/Config.Set", data).then(function () {
+        showInfoDialog(
+            "Device is rebooting.",
+            "Configuration", true, true);
+    }).catch(function (err) {
+        handleAxiosError(err);
+    }).then(function () {
+        mqttSpinner.className = "";
+    });
+};
+
+document.getElementById("wifi_save_btn").onclick = function () {
+    wifiSpinner.className = "spin";
+    let valid = false;
+    const data = {
+        /* eslint-disable */
+        config: {
+            wifi: {
+                sta2: { enable: true },
+                ap: { enable: false },
+            },
+            provision: {
+                max_state: 0
+            }
+        },
+        save: true,
+        reboot: true,
+        /* eslint-enable */
+    };
+    if (wifiSSID0.value && wifiSSID0.value.length > 0) {
+        data.config.wifi.sta = {
+            enable: true,
+            ssid: wifiSSID0.value
+        }
+        valid = true;
+        if (wifiPass0.value && wifiPass0.value.length > 0) {
+            data.config.wifi.sta.pass = wifiPass0.value;
+        }
+    }
+    if (wifiSSID1.value && wifiSSID1.value.length > 0) {
+        data.config.wifi.sta1 = {
+            enable: true,
+            ssid: wifiSSID1.value
+        }
+        valid = true;
+        if (wifiPass1.value && wifiPass1.value.length > 0) {
+            data.config.wifi.sta1.pass = wifiPass1.value;
+        }
+    }
+
+    if (valid) {
+        axios.post(host + "/rpc/Config.Set", data).then(function () {
+            showInfoDialog(
+                "Device is rebooting and connecting to " + wifiSSID0.value + ".<br/>" +
+                "Connect to the same network and visit <a href='http://wallbox.local/'>wallbox.local</a>.",
+                "Configuration", false, false);
+        }).catch(function (err) {
+            handleAxiosError(err);
+        }).then(function () {
+            wifiSpinner.className = "";
+        });
+    } else {
+        showToast("Wifi Update failed. Check your data.");
+    }
+};
+
+document.getElementById("reset_wifi_btn").onclick = function () {
+    const ok = confirm("This action will delete current Wi-Fi configuration \n" +
+        "and restart the device in AP mode.\nDo you want to proceed?");
+    if (!ok) {
+        return;
+    }
+    resetWifiSpinner.className = "spin";
+    const data = {};
+    axios.post(host + "/rpc/Wallbox.ResetWifi", data).then(function () {
+        showInfoDialog(
+            "Wi-Fi configuration is reset.<br>" +
+            "Reconnect to the Wallbox access point to configure the Wi-Fi.",
+            "Reset",
+            false,
+            false);
+    }).catch(function (err) {
+        handleAxiosError(err);
+    }).then(function () {
+        resetWifiSpinner.className = "";
+    });
+};
+
+document.getElementById("reset_btn").onclick = function () {
+    const ok = confirm("This action will wipe all user configuration\n" +
+        "and reset the device to factory settings.\nDo you want to proceed?");
+    if (!ok) {
+        return;
+    }
+    resetSpinner.className = "spin";
+    const data = {};
+    axios.post(host + "/rpc/Wallbox.Reset", data).then(function () {
+        showInfoDialog(
+            "Device configuration is reset.<br>" +
+            "Reconnect to the Wallbox access point to configure the Wi-Fi.",
+            "Reset",
+            false,
+            false);
+    }).catch(function (err) {
+        handleAxiosError(err);
+    }).then(function () {
+        resetSpinner.className = "";
+    });
+};
+
+document.getElementById("reboot_btn").onclick = function () {
+    const ok = confirm("This action will restart the device.\nDo you want to proceed?");
+    if (!ok) {
+        return;
+    }
+    rebootSpinner.className = "spin";
+    const data = {};
+    axios.post(host + "/rpc/Wallbox.Reboot", data).then(function () {
+        showInfoDialog(
+            "Device is rebooting. Please wait...",
+            "Reboot",
+            true,
+            true);
+    }).catch(function (err) {
+        handleAxiosError(err);
+    }).then(function () {
+        rebootSpinner.className = "";
+    });
+};
+
+const getLogs = () => {
+    axios.get(host + "/rpc/FS.List").then(function (res) {
+        if (res && res.data && res.data.length > 0) {
+            res.data.sort();
+            res.data.reverse();
+            let logCount = 0;
+            res.data.forEach(function (filename) {
+                if (filename.startsWith("log_")) {
+                    const a = document.createElement('a');
+                    const link = document.createTextNode(filename);
+                    a.appendChild(link);
+                    a.title = filename;
+                    a.href = host + filename;
+                    a.target = "_blank";
+                    document.getElementById("logs").appendChild(a);
+                    logCount++;
+                }
+                logsContainer.style.display = (logCount > 0 ? "block" : "none");
+            });
+        }
+    }).catch(function (err) {
+        handleAxiosError(err);
+    });
+}
+
+const getInfo = () => {
+    axios.get(host + "/rpc/Wallbox.GetInfo").then(function (res) {
+        wifiSSID0.value = res.data.wifi_ssid;
+        wifiSSID1.value = res.data.wifi_ssid1;
+        ocppUrl.value = res.data.ocpp_url;
+        ocppName.value = res.data.ocpp_name;
+        document.getElementById("device_id").innerText = res.data.id;
+        document.getElementById("device_sn").innerText = res.data.sn;
+        document.getElementById("device_mac").innerText = res.data.mac;
+        document.getElementById("device_ip").innerText = res.data.ip;
+        document.getElementById("app_name").innerText = res.data.app;
+        document.getElementById("app_version").innerText = res.data.version;
+        document.getElementById("app_build").innerText = res.data.fw_build;
+        document.getElementById("app_date").innerText = res.data.fw_ts;
+        document.getElementById("energy").innerText = `${(res.data.energy ? res.data.energy : 0).toFixed(0)} Wh`;
+        document.getElementById("intensity").innerText = `${(res.data.intensity ? res.data.intensity : 0).toFixed(0)} A`;
+        document.getElementById("uptime").innerText = (res.data.uptime ? secondsToString(res.data.uptime) : "-");
+        document.getElementById("temperature").innerText = `${res.data.temperature ? res.data.temperature.toFixed(1) : "-"} °C`;
+
+        const dState = res.data.state;
+        deviceState.innerText = dState ? "Charging" : "Available";
+        deviceState.className = dState ? "connected" : "";
+        showFormControl(document.getElementById("energy-control"), dState);
+        showFormControl(document.getElementById("intensity-control"), dState);
+
+        const oState = res.data.ocpp_state;
+        ocppState.innerText = oState ? "Connected" : "Disconnected";
+        ocppState.className = oState ? "connected" : "disconnected";
+
+        mqttEnable.checked = (res.data.mqtt_state === true);
+        mqttServer.value = res.data.mqtt_server;
+        mqttUser.value = res.data.mqtt_user;
+    }).catch(function (err) {
+        handleAxiosError(err);
+    });
+}
+
+const refreshInfo = () => {
+    axios.get(host + "/rpc/Wallbox.GetInfo").then(function (res) {
+        document.getElementById("energy").innerText = `${(res.data.energy ? res.data.energy : 0).toFixed(0)} Wh`;
+        document.getElementById("intensity").innerText = `${(res.data.intensity ? res.data.intensity : 0).toFixed(0)} A`;
+        document.getElementById("uptime").innerText = (res.data.uptime ? secondsToString(res.data.uptime) : "-");
+        document.getElementById("temperature").innerText = `${res.data.temperature ? res.data.temperature.toFixed(1) : "-"} °C`;
+
+        const dState = res.data.state;
+        deviceState.innerText = dState ? "Charging" : "Available";
+        deviceState.className = dState ? "connected" : "";
+        showFormControl(document.getElementById("energy-control"), dState);
+        showFormControl(document.getElementById("intensity-control"), dState);
+
+        const oState = res.data.ocpp_state;
+        ocppState.innerText = oState ? "Connected" : "Disconnected";
+        ocppState.className = oState ? "connected" : "disconnected";
+    }).catch(function (err) {
+        handleAxiosError(err);
+    });
+}
+
+const updateFirmware = evt => {
+    evt.preventDefault();
+    const selectedFile = document.getElementById("fw_select_file").files[0];
+
+    if (selectedFile) {
+        console.info("Updating firmware...");
+        firmwareSpinner.className = "spin";
+        const formData = new FormData();
+        formData.append("file", selectedFile);
+
+        showInfoDialog(
+            "Updating firmware, please wait...",
+            "Update",
+            true,
+            false);
+
+        axios.post('/update', formData, {
+            headers: {
+                'Content-Type': "multipart/form-data; boundary=" + formData._boundary
+            }
+        }).then(function (response) {
+            firmwareSpinner.className = "";
+            console.info("Firmware updated");
+            console.log(response);
+            hideInfoDialog();
+            showInfoDialog(
+                "Firmware update successful.<br>Device is rebooting, please wait...",
+                "Update",
+                true,
+                true);
+        }).catch(function (error) {
+            firmwareSpinner.className = "";
+            console.error(error);
+            hideInfoDialog();
+            showToast("Update failed. Check firmware file.");
+        });
+    }
+}
+
+document.getElementById("fw_upload_btn").onclick = updateFirmware;
+
+const showPassword = (input, cb) => {
+    if (input.type === "text") {
+        input.type = "password";
+        cb.checked = false;
+    } else {
+        input.type = "text";
+        cb.checked = true;
+    }
+};
+showWifiPass0.onclick = () => { showPassword(wifiPass0, showWifiPass0); };
+showWifiPass1.onclick = () => { showPassword(wifiPass1, showWifiPass1); };
+showMqttPass.onclick = () => { showPassword(mqttPass, showMqttPass); };
+
+(function () {
+    getInfo();
+    getLogs();
+    refreshTimer = setInterval(refreshInfo, 10000);
+}());

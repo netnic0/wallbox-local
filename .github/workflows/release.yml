@@ -1,0 +1,74 @@
+# This is a basic workflow to help you get started with Actions
+
+name: CI
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the master branch
+on:
+  push:
+    branches: [ master ]
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+    - uses: actions/checkout@v2
+
+    - name: Build UI
+      run: |
+        npm install
+        npm run lint
+        npm run webpack
+
+    - name: Install MOS
+      run: |
+        sudo add-apt-repository ppa:mongoose-os/mos
+        sudo apt-get update
+        sudo apt-get install mos-latest
+
+    - name: Build Firmware
+      run: mos build
+      
+    - name: Check version changes
+      id: check
+      uses: EndBug/version-check@v2
+      with: 
+        diff-search: true
+        token: "${{ secrets.GITHUB_TOKEN }}"
+        
+    - name: Log version changes
+      run: 'echo "Version change ${{ steps.check.outputs.changed }} in commit ${{ steps.check.outputs.commit }}! New version: ${{ steps.check.outputs.version }} (${{ steps.check.outputs.type }})"'
+
+    - name: Create Pre Release
+      if: steps.check.outputs.changed == 'false'
+      uses: "marvinpinto/action-automatic-releases@latest"
+      with:
+        repo_token: "${{ secrets.GITHUB_TOKEN }}"
+        automatic_release_tag: "latest"
+        draft: false
+        title: "Pre Release"
+        files: |
+          LICENSE
+          build/*.zip
+          
+    - name: Create Tag
+      if: steps.check.outputs.changed == 'true'
+      uses: neverendingqs/gh-action-tag-on-npm-version@master
+      
+    - name: Create Release
+      if: steps.check.outputs.changed == 'true'
+      uses: "marvinpinto/action-automatic-releases@latest"
+      with:
+        repo_token: "${{ secrets.GITHUB_TOKEN }}"
+        prerelease: false
+        draft: false
+        automatic_release_tag: "v${{ steps.check.outputs.version }}"
+        files: |
+          LICENSE
+          build/*.zip
