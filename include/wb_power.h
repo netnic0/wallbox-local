@@ -26,6 +26,8 @@ void power_init();
 
 void power_reset_energy();
 
+void power_do_reset_energy();
+
 void power_update();
 
 int power_read_energy();

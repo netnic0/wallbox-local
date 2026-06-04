@@ -173,15 +173,7 @@ void rpc_wallbox_reset_energy_handler(struct mg_rpc_request_info *ri,
                                       struct mg_rpc_frame_info *fi,
                                       struct mg_str args) {
   LOG(LL_INFO, ("RPC ResetEnergy: zeroing meter counters"));
-
-  /* power_reset_energy() is a safe no-op if HLW8012 is not initialized;
-     we still zero the persisted counters so the user observes a clean reset. */
-  power_reset_energy();
-  mgos_sys_config_set_meter_total_energy(0);
-  mgos_sys_config_set_meter_session_energy(0);
-  mgos_sys_config_set_meter_intensity(0);
-  mgos_sys_config_set_meter_uptime((int) mgos_uptime());
-  mgos_sys_config_save(&mgos_sys_config, false, NULL);
+  power_do_reset_energy();
 
   mg_rpc_send_responsef(ri, "{}");
   (void) cb_arg;

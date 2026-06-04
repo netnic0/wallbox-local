@@ -48,6 +48,19 @@ void power_reset_energy() {
   mgos_hlw8012_resetEnergy(hlw8012);
 }
 
+/* Reset all energy counters (HLW8012 internal + persisted meter.*).
+ * Called by Wallbox.ResetEnergy RPC and the MQTT cmd action "reset_energy".
+ * Safe no-op if HLW8012 is not initialized (the persisted counters are
+ * still zeroed for a clean user-visible reset). */
+void power_do_reset_energy() {
+  power_reset_energy();
+  mgos_sys_config_set_meter_total_energy(0);
+  mgos_sys_config_set_meter_session_energy(0);
+  mgos_sys_config_set_meter_intensity(0);
+  mgos_sys_config_set_meter_uptime((int) mgos_uptime());
+  mgos_sys_config_save(&mgos_sys_config, false, NULL);
+}
+
 int power_read_energy() {
   if (hlw8012 == NULL) return 0;
   unsigned long raw = mgos_hlw8012_readEnergy(hlw8012);

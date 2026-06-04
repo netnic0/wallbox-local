@@ -23,6 +23,8 @@
 #include "mgos.h"
 #include "mgos_mqtt.h"
 #include "mgos_vfs.h"
+#include "frozen.h"
+#include <string.h>
 
 const char *MQTT_ANNOUNCE =
     "{"
@@ -62,11 +64,57 @@ bool mqtt_announced = false;
 char mqtt_announce_topic[50];
 char mqtt_state_topic[50];
 char mqtt_system_topic[50];
+char mqtt_cmd_topic[60];
+
+/*
+ * Handler for the MQTT command topic wallbox/<id>/cmd.
+ * Expected payload: {"action":"start"} | {"action":"stop"} | {"action":"reset_energy"}
+ * Re-subscription on reconnect is handled automatically by the MQTT lib.
+ */
+static void mqtt_cmd_handler(struct mg_connection *nc, const char *topic,
+                             int topic_len, const char *msg, int msg_len,
+                             void *ud) {
+  (void) nc;
+  (void) topic;
+  (void) topic_len;
+  (void) ud;
+
+  /* msg is NOT null-terminated; always pass msg_len to json_scanf. */
+  char *action = NULL;
+  if (json_scanf(msg, msg_len, "{action: %Q}", &action) != 1 || action == NULL) {
+    LOG(LL_WARN, ("MQTT cmd: malformed payload [%.*s]", msg_len, msg));
+    free(action);
+    return;
+  }
+
+  LOG(LL_INFO, ("MQTT cmd: action=%s", action));
+
+  if (strcmp(action, "start") == 0) {
+    mgos_gpio_write(mgos_sys_config_get_gpio_relay(), 1);
+    mqtt_send_state_topic();
+  } else if (strcmp(action, "stop") == 0) {
+    mgos_gpio_write(mgos_sys_config_get_gpio_relay(), 0);
+    mqtt_send_state_topic();
+  } else if (strcmp(action, "reset_energy") == 0) {
+    power_do_reset_energy();
+    mqtt_send_state_topic();
+  } else {
+    LOG(LL_WARN, ("MQTT cmd: unknown action '%s', dropping", action));
+  }
+
+  free(action);
+}
 
 void mqtt_init() {
   sprintf(mqtt_announce_topic, "wallbox/%s/announce", mgos_sys_config_get_device_id());
   sprintf(mqtt_state_topic, "wallbox/%s/state", mgos_sys_config_get_device_id());
   sprintf(mqtt_system_topic, "wallbox/%s/system", mgos_sys_config_get_device_id());
+  sprintf(mqtt_cmd_topic, "wallbox/%s/cmd", mgos_sys_config_get_device_id());
+
+  /* Subscribe to the command topic. The MQTT lib stores the subscription
+   * and automatically re-subscribes on every reconnect — calling this
+   * once is sufficient. */
+  mgos_mqtt_sub(mqtt_cmd_topic, mqtt_cmd_handler, NULL);
 
   mqtt_send_topics();
 }
