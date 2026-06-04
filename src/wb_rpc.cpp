@@ -160,8 +160,8 @@ void rpc_wallbox_set_relay_handler(struct mg_rpc_request_info *ri,
   LOG(LL_INFO, ("RPC SetRelay: %s", on ? "ON" : "OFF"));
   mgos_gpio_write(mgos_sys_config_get_gpio_relay(), on ? 1 : 0);
 
-  /* NOTE: relay state is not persisted across reboots. At boot, main.cpp
-     restores relay from ocpp.transaction.id (to be replaced at L1 step 7). */
+  /* NOTE: relay state is not persisted across reboots; at boot the
+     relay is forced OFF for safety (see mgos_app_init). */
   mg_rpc_send_responsef(ri, "{relay: %B}", on);
   (void) cb_arg;
   (void) fi;
