@@ -17,6 +17,7 @@
 
 #include "wb_mqtt.h"
 #include "wb_ocpp.h"
+#include "wb_power.h"
 #include "wb_thermistor.h"
 #include "wb_util.h"
 
@@ -43,7 +44,10 @@ const char *MQTT_STATE =
     "energy: %d,"
     "intensity: %d,"
     "tid: %d,"
-    "temperature: %.1f"
+    "temperature: %.1f,"
+    "power: %u,"
+    "voltage: %u,"
+    "current: %.2f"
     "}";
 
 const char *MQTT_SYSTEM =
@@ -109,26 +113,28 @@ void mqtt_send_announce_topic() {
 
 void mqtt_send_state_topic() {
   if (mgos_mqtt_global_is_connected()) {
-    int energy = mgos_sys_config_get_ocpp_transaction_consumption();
+    int energy = mgos_sys_config_get_meter_session_energy();
     int intensity = mgos_sys_config_get_ocpp_transaction_intensity();
     bool charging = mgos_gpio_read(mgos_sys_config_get_gpio_relay());
-    int tid = mgos_sys_config_get_ocpp_transaction_id();
-    if (tid < 0) {
-      tid = 0;
-    }
     double temperature = thermistor_read_celsius();
+    unsigned int power = power_read_active_power();
+    unsigned int voltage = power_read_voltage();
+    double current = power_read_current();
 
     mgos_mqtt_pubf(mqtt_state_topic,
                    0,
                    false,
                    MQTT_STATE,
                    (int) mgos_uptime(),
-                   ocpp_is_connected(),
+                   true,    /* connected: sentinel of presence (Q2=c) */
                    charging,
                    energy,
                    intensity,
-                   tid,
-                   temperature);
+                   0,       /* tid: hardcoded for HA backward-compat (Q3=a) */
+                   temperature,
+                   power,
+                   voltage,
+                   current);
   }
 }
 
