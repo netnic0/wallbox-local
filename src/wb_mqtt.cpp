@@ -45,8 +45,8 @@ const char *MQTT_STATE =
     "intensity: %d,"
     "tid: %d,"
     "temperature: %.1f,"
-    "power: %u,"
-    "voltage: %u,"
+    "power: %d,"
+    "voltage: %d,"
     "current: %.2f"
     "}";
 
@@ -113,7 +113,11 @@ void mqtt_send_announce_topic() {
 
 void mqtt_send_state_topic() {
   if (mgos_mqtt_global_is_connected()) {
-    int energy = mgos_sys_config_get_meter_session_energy();
+    /* TODO L1 step 5: switch to mgos_sys_config_get_meter_session_energy()
+       once power_update() is refactored to write the meter.* namespace.
+       For now we keep reading the legacy ocpp field so intermediate L1
+       firmwares remain flashable without breaking the energy telemetry. */
+    int energy = mgos_sys_config_get_ocpp_transaction_consumption();
     int intensity = mgos_sys_config_get_ocpp_transaction_intensity();
     bool charging = mgos_gpio_read(mgos_sys_config_get_gpio_relay());
     double temperature = thermistor_read_celsius();
@@ -132,8 +136,8 @@ void mqtt_send_state_topic() {
                    intensity,
                    0,       /* tid: hardcoded for HA backward-compat (Q3=a) */
                    temperature,
-                   power,
-                   voltage,
+                   (int) power,    /* frozen does not officially support %u */
+                   (int) voltage,  /* values fit comfortably in signed int */
                    current);
   }
 }

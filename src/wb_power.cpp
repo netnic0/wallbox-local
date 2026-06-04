@@ -44,22 +44,32 @@ void power_init() {
 }
 
 void power_reset_energy() {
+  if (hlw8012 == NULL) return;
   mgos_hlw8012_resetEnergy(hlw8012);
 }
 
 int power_read_energy() {
-  return mgos_hlw8012_readEnergy(hlw8012);
+  if (hlw8012 == NULL) return 0;
+  unsigned long raw = mgos_hlw8012_readEnergy(hlw8012);
+  if (raw > (unsigned long) INT_MAX) {
+    LOG(LL_WARN, ("Energy counter saturated, capping at INT_MAX"));
+    return INT_MAX;
+  }
+  return (int) raw;
 }
 
 int power_read_active_power() {
+  if (hlw8012 == NULL) return 0;
   return mgos_hlw8012_readActivePower(hlw8012);
 }
 
 unsigned int power_read_voltage() {
+  if (hlw8012 == NULL) return 0;
   return mgos_hlw8012_readVoltage(hlw8012);
 }
 
 double power_read_current() {
+  if (hlw8012 == NULL) return 0.0;
   return mgos_hlw8012_readCurrent(hlw8012);
 }
 
@@ -77,10 +87,6 @@ void power_update() {
 
   if (energy <= 0) {
     LOG(LL_ERROR, ("Negative energy %d", energy));
-    return;
-  }
-  if (energy > INT_MAX) {
-    LOG(LL_ERROR, ("Energy %d exceeds capacity %d", energy, INT_MAX));
     return;
   }
 
