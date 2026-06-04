@@ -17,6 +17,7 @@
 
 #include "wb_rpc.h"
 #include "wb_ocpp.h"
+#include "wb_power.h"
 #include "wb_thermistor.h"
 #include "wb_util.h"
 
@@ -53,6 +54,8 @@ void rpc_init() {
   mg_rpc_add_handler(mgos_rpc_get_global(), "Wallbox.Reboot", "", rpc_wallbox_reboot_handler, NULL);
   mg_rpc_add_handler(mgos_rpc_get_global(), "Wallbox.Reset", "", rpc_wallbox_reset_handler, NULL);
   mg_rpc_add_handler(mgos_rpc_get_global(), "Wallbox.ResetWifi", "", rpc_wallbox_reset_wifi_handler, NULL);
+  mg_rpc_add_handler(mgos_rpc_get_global(), "Wallbox.SetRelay", "{on: %B}", rpc_wallbox_set_relay_handler, NULL);
+  mg_rpc_add_handler(mgos_rpc_get_global(), "Wallbox.ResetEnergy", "", rpc_wallbox_reset_energy_handler, NULL);
 }
 
 void rpc_wallbox_get_info_handler(struct mg_rpc_request_info *ri,
@@ -143,6 +146,44 @@ void rpc_wallbox_reset_wifi_handler(struct mg_rpc_request_info *ri,
   mgos_sys_config_save(&mgos_sys_config, false, NULL);
 
   mgos_system_restart_after(5000);
+
+  mg_rpc_send_responsef(ri, "{}");
+  (void) cb_arg;
+  (void) fi;
+  (void) args;
+}
+
+void rpc_wallbox_set_relay_handler(struct mg_rpc_request_info *ri,
+                                   void *cb_arg,
+                                   struct mg_rpc_frame_info *fi,
+                                   struct mg_str args) {
+  bool on = false;
+  if (json_scanf(args.p, args.len, ri->args_fmt, &on) != 1) {
+    mg_rpc_send_errorf(ri, 400, "missing 'on' boolean argument");
+    (void) cb_arg;
+    (void) fi;
+    return;
+  }
+
+  LOG(LL_INFO, ("RPC SetRelay: %s", on ? "ON" : "OFF"));
+  mgos_gpio_write(mgos_sys_config_get_gpio_relay(), on ? 1 : 0);
+
+  mg_rpc_send_responsef(ri, "{relay: %B}", on);
+  (void) cb_arg;
+  (void) fi;
+}
+
+void rpc_wallbox_reset_energy_handler(struct mg_rpc_request_info *ri,
+                                      void *cb_arg,
+                                      struct mg_rpc_frame_info *fi,
+                                      struct mg_str args) {
+  LOG(LL_INFO, ("RPC ResetEnergy: zeroing meter counters"));
+
+  power_reset_energy();
+  mgos_sys_config_set_meter_total_energy(0);
+  mgos_sys_config_set_meter_session_energy(0);
+  mgos_sys_config_set_meter_uptime(mgos_uptime());
+  mgos_sys_config_save(&mgos_sys_config, false, NULL);
 
   mg_rpc_send_responsef(ri, "{}");
   (void) cb_arg;
