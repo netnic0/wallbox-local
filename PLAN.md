@@ -262,3 +262,63 @@ Tu m'as dit dans cette session : *"l'objectif #1 c'est que HA via MQTT marche bi
 - **"Wallbox : on attaque L3"** → on saute la WebUI et on fait le polish HA Discovery + safety (Option 3)
 
 - **"Wallbox : flash et raconte ce qui se passe sur la box: <description>"** → tu flashes toi-même, tu me décris ce que HA voit, je debug si nécessaire
+
+---
+
+## 😰 Inquiétude flash : "j'ai peur de tout casser"
+
+Acté en fin de session 2026-06-04 : tu as **peur de briquer la box** en flashant le 1.0.0. C'est légitime. Voici les options pour sécuriser ça à la reprise.
+
+### 📊 Évaluation du risque réel
+
+| Scénario | Proba | Récupération |
+|---|---|---|
+| Box reboot OK, marche | ~95% | Rien à faire |
+| Bug runtime, rboot rollback auto vers 0.3.0 | ~3% | 60s d'attente, rien à faire |
+| Wi-Fi pas reconnecté | ~1% | AP fallback `Wallbox-Hotspot` / pass `Wallbox1` |
+| Box totalement inaccessible | <1% | USB-to-TTL ~5€ + esptool, toujours récupérable |
+
+**Récupération totale : 100%** (jamais brique définitive sur Shelly 1PM Gen1, le pire cas nécessite juste un USB-to-TTL).
+
+### 🛡️ 3 Stratégies de mitigation possibles à la reprise
+
+**Stratégie 1 — Mock Python + validation HA AVANT flash (RECOMMANDÉE)**
+- Je t'écris un script Python qui simule exactement les topics MQTT de la box
+- Tu connectes ton HA réel sur ce mock
+- Tu valides : sensors apparaissent ? switch envoie le bon payload ?
+- Une fois HA validé contre le mock, on flashe la vraie box → la surface de bug se réduit drastiquement
+- **Durée** : ~30 min mock + 15 min flash
+- **Phrase à me dire** : *"Wallbox : code-moi le mock Python avant de flasher"*
+
+**Stratégie 2 — Mécanisme commit/rollback dans le firmware (PLAN B)**
+- On code une feature : le firmware démarre en mode "tentative", auto-rollback si pas commité dans 5 min
+- Plus de code = plus de surface de bug, mais zéro risque de briquage
+- Cycle plus long : nouveau plan + review + nouveau flash test
+- **Durée** : ~3-4 h
+- **Phrase à me dire** : *"Wallbox : ajoute le commit/rollback auto dans le firmware"*
+
+**Stratégie 3 — Flash en live ensemble (PLAN C, le plus simple)**
+- Tu flashes pendant qu'on est en session
+- Je suis là pour debug en temps réel si quelque chose coince
+- Ne prévient pas la casse mais réduit le stress
+- **Durée** : ~15-30 min
+- **Phrase à me dire** : *"Wallbox : on flashe ensemble maintenant"*
+
+### 🛒 Filet de sécurité à acheter (~5€, optionnel mais rassurant)
+
+Un USB-to-TTL CH340 ou FTDI sur Amazon (~5€, livraison J+1) garantit que **même** dans le pire cas (box totalement inaccessible), tu peux re-flasher en 15 min. Si tu en as un, l'inquiétude est totalement infondée.
+
+### 📋 Ressources de récupération déjà en place
+
+- **`fw (7).zip`** dans `Downloads/` = ton rollback OTA (le firmware 0.3.0 actuel de la box)
+- **`scripts/compare_fw.py`** = vérifie que `build/fw.zip` est OK avant flash
+- **Tag git `v1.0.0`** sur le commit `d0973c1` = état figé du firmware actuel
+- **Tag git `upstream-58c3691`** = source upstream sebastien-savalle pour rollback complet
+
+### 🎯 Ma recommandation à la reprise
+
+**Stratégie 1 (mock Python).** Ça transforme le flash d'un acte risqué en une formalité technique : tu sauras à 99% que ça va marcher avant même de toucher la box.
+
+---
+
+> **Status au 2026-06-04 17:00** : Pause sur la peur du flash. Reprise au choix de la stratégie ci-dessus.
