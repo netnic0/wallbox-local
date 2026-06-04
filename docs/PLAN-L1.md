@@ -1,7 +1,63 @@
 # Livraison 1 — Plan détaillé (refactor backend, suppression OCPP)
 
-> Plan pour Critical Reasoning + senior-plan-reviewer.
-> NOT YET APPROVED — do not implement before user approval.
+> **Status: V2 AMENDED — APPROVED 2026-06-04**
+> Reviewed by `senior-plan-reviewer` agent (confidence 89%, APPROVED WITH AMENDMENTS).
+> Validated by user 2026-06-04 with the 5 mandatory amendments below.
+
+## V2 Amendments (binding for implementation)
+
+The 5 review amendments and 3 user decisions below **override** the corresponding sections of the original V1 plan further down. When in doubt, the V2 amendments are authoritative.
+
+### Amendments from review
+
+1. **A1 — `power_update()` MUST be called from `process_loop()`** (currently invoked indirectly via `ocpp_synchronize() → power_update()` at `wb_ocpp.cpp:248`). Without this migration, the energy counter would be permanently frozen. Step 5 must add the explicit `power_update()` call to `process_loop()` in `main.cpp` AFTER removing `ocpp_synchronize()`. Tableau LoC corrigé en `+3 / -1`.
+
+2. **A2 — `ocpp_reset_hard()` is used in 2 NON-OCPP RPC handlers** (`wb_rpc.cpp:102` for `Wallbox.Reboot` and `wb_rpc.cpp:117` for `Wallbox.Reset`). These two calls must be replaced by a direct `mgos_system_restart_after(10000)` BEFORE deleting `wb_ocpp.cpp` at step 8 — otherwise the build breaks. This is now Step 6 in the V2 ordering.
+
+3. **A3 — Do NOT remove the `mongoose` lib (variant esp8266) from `mos.yml` in L1.** The `rpc-ws` lib depends transitively on it. Only remove `ota-http-client` (which is genuinely OCPP-only). Step 8 list of libs to remove is reduced to `ota-http-client` only.
+
+4. **A4 — Energy migration strategy: option (b) — start from zero.** The HA recorder already keeps the historical Wh values, so resetting the firmware-side cumulative counter at OTA upgrade has no functional impact for the user. No migration code is needed in `main.cpp`. The `meter.*` namespace starts empty.
+
+5. **A5 — Reformulate the success criterion `grep -ri "ocpp" src/ include/ mos.yml = 0 results`.** With option (b) chosen, no migration code references `ocpp.*`, so the criterion can stay as a hard zero. However, the `migrate_config()` function currently references `ocpp.url` and `ocpp.name` — it must be deleted (or rewritten) at step 7 since `conf_version` already passed 2 on existing deployments. Updated criterion: `0 results in src/ include/ mos.yml`.
+
+### User decisions (ratified 2026-06-04)
+
+- **Q1 = (b)** Start fresh — no firmware-side migration of `ocpp.transaction.consumption` to `meter.total_energy`. HA recorder is the source of truth for historical energy.
+- **Q2 = (c)** `connected: true` constant in MQTT state JSON (sentinel of presence for HA `expire_after: 180`).
+- **Q3 = (a)** Keep `tid: 0` hardcoded in MQTT state JSON for HA backward-compat.
+- **Q4** = invalid (skipped). API HLW8012 already validated by the review: `mgos_hlw8012_readVoltage()` returns `unsigned int`, `mgos_hlw8012_readCurrent()` returns `double`. Both exist in `deps/mongoose-lib-hlw8012/include/mgos_hlw8012.h`.
+
+### V2 Step ordering (overrides V1 §8)
+
+| V2 Step | Action | Files | LoC ±  | Build OK after |
+|---|---|---|---|---|
+| 1 | Add `meter.*` namespace | `mos.yml` | +6 / 0 | yes (config additive) |
+| 2 | Add `power_read_voltage()` + `power_read_current()` | `wb_power.h/cpp` | +14 / 0 | yes |
+| 3 | Add RPCs `Wallbox.SetRelay`, `Wallbox.ResetEnergy` | `wb_rpc.h/cpp` | +60 / 0 | yes |
+| 4 | Extend `MQTT_STATE` JSON with `power`, `voltage`, `current` | `wb_mqtt.cpp` | +12 / 0 | yes |
+| 5 | Migrate `power_update()` into `process_loop`; refactor `power_update` to write `meter.*` | `main.cpp`, `wb_power.cpp` | +20 / -10 | yes |
+| 6 | Replace `ocpp_reset_hard()` in 2 RPC handlers; substitute `ocpp_is_connected` etc. | `wb_rpc.cpp`, `wb_mqtt.cpp` | +5 / -8 | yes |
+| 7 | Clean `main.cpp` (remove `ocpp_synchronize`, `ocpp_connect_backend`, OCPP boot logic, delete `migrate_config`) | `main.cpp` | +5 / -25 | yes |
+| 8 | Delete `wb_ocpp.cpp` + `include/wb_ocpp.h`. Remove `ota-http-client` from `mos.yml`. Remove OCPP `config_schema` entries. Bump `version: 1.0.0`. | repo | 0 / -899 | **final** |
+| 9 | Build final + verify DoD | — | — | — |
+
+### V2 Definition of Done (overrides V1 §9)
+
+- [ ] `mos build --local` produces a `build/fw.zip` < 1 MB.
+- [ ] `manifest.name == Wallbox-Shelly1PM`, `version == 1.0.0`.
+- [ ] `wb_ocpp.cpp` and `include/wb_ocpp.h` are deleted.
+- [ ] `grep -ri "ocpp" src/ include/ mos.yml` returns **0 results** (no exception clause — Q1=(b) eliminates the migration code path).
+- [ ] No reference to `ocpp_is_connected`, `ocpp_synchronize`, `ocpp_connect_backend`, `ocpp_reset_hard` anywhere in `src/`.
+- [ ] MQTT topic `wallbox/<id>/state` JSON contains: `uptime`, `connected`, `charging`, `energy`, `intensity`, `tid`, `temperature`, **+** `power`, `voltage`, `current`. Field `connected` is always `true`. Field `tid` is always `0`.
+- [ ] RPCs `Wallbox.SetRelay {on:bool}` and `Wallbox.ResetEnergy` respond and behave correctly (manual smoke test on box).
+- [ ] HA dashboard continues to receive valid readings on `connected`, `charging`, `energy`, `intensity`, `tid`, `temperature` (backward compat preserved).
+- [ ] Each commit on the implementation branch corresponds to one V2 step and builds independently.
+
+---
+
+## Original V1 plan (kept for traceability — superseded by V2 above)
+
+> The sections below were the original plan submitted to `senior-plan-reviewer`. They are kept verbatim for traceability. Do NOT follow V1 directly: V2 amendments above are authoritative.
 
 ## 1. Classification
 
