@@ -188,7 +188,8 @@ void rpc_wallbox_reset_energy_handler(struct mg_rpc_request_info *ri,
   power_reset_energy();
   mgos_sys_config_set_meter_total_energy(0);
   mgos_sys_config_set_meter_session_energy(0);
-  mgos_sys_config_set_meter_uptime(mgos_uptime());
+  mgos_sys_config_set_meter_intensity(0);
+  mgos_sys_config_set_meter_uptime((int) mgos_uptime());
   mgos_sys_config_save(&mgos_sys_config, false, NULL);
 
   mg_rpc_send_responsef(ri, "{}");

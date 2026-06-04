@@ -74,32 +74,45 @@ double power_read_current() {
 }
 
 void power_update() {
-  int energy = (int) power_read_energy() / 3600;
-  int previousEnergy = mgos_sys_config_get_ocpp_transaction_consumption();
-  int resetEnergy = mgos_sys_config_get_ocpp_transaction_reset_consumption();
-  int previousUptime = mgos_sys_config_get_ocpp_transaction_uptime();
-  int uptime = mgos_uptime();
+  if (hlw8012 == NULL) return;
+
+  int energy = power_read_energy() / 3600;  /* Wh since last HLW8012 reset (= session) */
+  int previous_session = mgos_sys_config_get_meter_session_energy();
+  int previous_total = mgos_sys_config_get_meter_total_energy();
+  int previous_uptime = mgos_sys_config_get_meter_uptime();
+  int uptime = (int) mgos_uptime();
+
+  if (energy == previous_session) {
+    return;  /* nothing to update */
+  }
+
+  if (energy < 0) {
+    LOG(LL_ERROR, ("Negative energy %d, ignoring tick", energy));
+    return;
+  }
+
+  /* Total energy is monotonic across HLW8012 resets and reboots.
+     Increment only by the positive delta (a drop means HLW8012 was reset). */
+  int delta_energy = energy - previous_session;
+  if (delta_energy < 0) {
+    delta_energy = energy;  /* HLW8012 was reset; the new value IS the delta */
+  }
+  int new_total = previous_total + delta_energy;
+
+  /* Intensity = delta energy (Wh) over delta time (s) at 230 V (Europe).
+     Approximation, not a true RMS current measurement. */
   int intensity = 0;
-
-  if (energy == previousEnergy) {
-    return;
+  if (uptime > previous_uptime && delta_energy > 0) {
+    int dt = uptime - previous_uptime;
+    intensity = (delta_energy * 3600) / (dt * 230);
+    LOG(LL_DEBUG, ("Intensity: %dA over %ds", intensity, dt));
+  } else if (uptime <= previous_uptime) {
+    LOG(LL_ERROR, ("Invalid uptime %d, less than previous %d", uptime, previous_uptime));
   }
 
-  if (energy <= 0) {
-    LOG(LL_ERROR, ("Negative energy %d", energy));
-    return;
-  }
-
-  if (uptime <= previousUptime) {
-    LOG(LL_ERROR, ("Invalid uptime %d, less than previous value %d", uptime, previousUptime));
-  } else {
-    double coeff = 3600 / (uptime - previousUptime);
-    intensity = (energy - previousEnergy) * coeff / 240;
-    mgos_sys_config_set_ocpp_transaction_intensity(intensity);
-    LOG(LL_DEBUG, ("Intensity: %dA / %ds", intensity, uptime - previousUptime));
-  }
-
-  mgos_sys_config_set_ocpp_transaction_uptime(uptime);
-  mgos_sys_config_set_ocpp_transaction_consumption(resetEnergy + energy);
+  mgos_sys_config_set_meter_session_energy(energy);
+  mgos_sys_config_set_meter_total_energy(new_total);
+  mgos_sys_config_set_meter_intensity(intensity);
+  mgos_sys_config_set_meter_uptime(uptime);
   mgos_sys_config_save(&mgos_sys_config, false, NULL);
 }

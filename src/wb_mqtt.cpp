@@ -113,12 +113,8 @@ void mqtt_send_announce_topic() {
 
 void mqtt_send_state_topic() {
   if (mgos_mqtt_global_is_connected()) {
-    /* TODO L1 step 5: switch to mgos_sys_config_get_meter_session_energy()
-       once power_update() is refactored to write the meter.* namespace.
-       For now we keep reading the legacy ocpp field so intermediate L1
-       firmwares remain flashable without breaking the energy telemetry. */
-    int energy = mgos_sys_config_get_ocpp_transaction_consumption();
-    int intensity = mgos_sys_config_get_ocpp_transaction_intensity();
+    int energy = mgos_sys_config_get_meter_session_energy();
+    int intensity = mgos_sys_config_get_meter_intensity();
     bool charging = mgos_gpio_read(mgos_sys_config_get_gpio_relay());
     double temperature = thermistor_read_celsius();
     unsigned int power = power_read_active_power();

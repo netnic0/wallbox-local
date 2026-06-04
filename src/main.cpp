@@ -73,7 +73,9 @@ void process_loop(void *arg) {
     return;
   }
 
-  ocpp_synchronize();
+  /* Power meter tick: aggregate energy from HLW8012 into meter.* namespace.
+     Previously called via ocpp_synchronize() which is being removed. */
+  power_update();
 
   // MQTT
   if (mqtt_is_connected()) {

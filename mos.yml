@@ -52,6 +52,7 @@ config_schema:
   - ["meter", "o", {"Energy meter (BL0937 / HLW8012)"}]
   - ["meter.total_energy", "i", 0, {"Total energy in Wh, monotonically increasing until ResetEnergy"}]
   - ["meter.session_energy", "i", 0, {"Energy in Wh for the current charging session"}]
+  - ["meter.intensity", "i", 0, {"Average current in A, computed from energy delta over time"}]
   - ["meter.uptime", "i", 0, {"Uptime in seconds at last power_update tick"}]
   - ["provision.stable_state", 2]
   # - ["provision.btn.pin", 2]
