@@ -50,7 +50,8 @@ const char *MQTT_STATE =
     "temperature: %.1f,"
     "power: %d,"
     "voltage: %d,"
-    "current: %.2f"
+    "current: %.2f,"
+    "ev: %B"
     "}";
 
 const char *MQTT_SYSTEM =
@@ -212,6 +213,7 @@ void mqtt_send_state_topic() {
     unsigned int power = power_read_active_power();
     unsigned int voltage = power_read_voltage();
     double current = power_read_current();
+    bool ev = power_ev_detected();
 
     mgos_mqtt_pubf(mqtt_state_topic,
                    0,
@@ -226,7 +228,8 @@ void mqtt_send_state_topic() {
                    temperature,
                    (int) power,    /* frozen does not officially support %u */
                    (int) voltage,  /* values fit comfortably in signed int */
-                   current);
+                   current,
+                   ev);
   }
 }
 

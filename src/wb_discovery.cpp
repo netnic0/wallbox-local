@@ -29,7 +29,7 @@
 /* Abort the sequence if free heap drops below this before a publish. */
 #define DISCOVERY_MIN_HEAP 12000
 /* Number of discovery topics (must match the entities table below). */
-#define DISCOVERY_COUNT 9
+#define DISCOVERY_COUNT 10
 
 /* One HA discovery entity. state_field is the JSON key in the frozen state
    topic (wallbox/<id>/state); NULL for entities that do not read a value
@@ -55,6 +55,7 @@ static const struct discovery_entity discovery_entities[DISCOVERY_COUNT] = {
     {"binary_sensor", "charging", "Charging", "battery_charging", NULL, "charging", NULL},
     {"switch", "relay", "Charge", NULL, NULL, "charging", NULL},
     {"availability", "availability", "", NULL, NULL, NULL, NULL},
+    {"binary_sensor", "ev", "EV", "plug", NULL, "ev", NULL},
 };
 
 static int discovery_index = -1; /* -1 = idle; 0..COUNT-1 = publishing */

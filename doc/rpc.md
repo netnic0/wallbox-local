@@ -59,6 +59,7 @@ Attributes:
 - voltage: the instantaneous line voltage measured by the meter, in V
 - current: the instantaneous line current measured by the meter, in A (2 decimals)
 - charging: `true` if the relay is closed (reflects the relay GPIO state), else `false`
+ - ev: `true` if an EV is detected based on active power hysteresis (present when power >= 150 W for 3 ticks; absent when power <= 80 W for 3 ticks)
 
 > Since v1.1.0 (L2-B), `GetInfo` returns 21 fields. The four live-metric fields
 > `power`, `voltage`, `current` and `charging` were added so the Web UI can display
