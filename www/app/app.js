@@ -650,6 +650,14 @@ showMqttPass.onclick = () => showPassword(mqttPass, showMqttPass);
 (function () {
   getInfo();
   getLogs();
+    // Collapse all cards by default on initial load
+    try {
+      document.querySelectorAll('.container').forEach(function (c) {
+        c.classList.add('card-collapsed');
+      });
+    } catch (e) {
+      console.debug('init collapse error', e);
+    }
   // Robust: use event delegation for toggles, with debugging
   document.addEventListener('click', function (e) {
     const btn = e.target && e.target.closest ? e.target.closest('[data-toggle="card"]') : null;
