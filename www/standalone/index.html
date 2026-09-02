@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Standalone Shelly Charging Station</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="./main.css">
+</head>
+<body>
+  <!-- Minimal standalone reproduction of the cards with toggles -->
+  <div class="container card-collapsed" id="main_container">
+    <div class="header-bar">
+      <div>
+        <h1>Shelly Charging Station</h1>
+        <div class="sub">Local-only firmware (Shelly 1PM Gen1)</div>
+      </div>
+      <div class="header-actions">
+        <div class="sub"><span>MQTT:</span> <span id="chip_mqtt" class="chip">-</span></div>
+        <button type="button" class="chevron" aria-label="Toggle" data-toggle="card" data-target="main_container">▾</button>
+      </div>
+    </div>
+    <h2>Information and status of the wallbox</h2>
+    <div id="device_banner" class="banner banner--idle">Device: Idle</div>
+    <div class="form">
+      <div>
+        <div class="summary" id="summary_main">Power: <span id="sum_power">-</span> | EV: <span id="sum_ev">-</span> | Temp: <span id="sum_temp">-</span></div>
+        <div class="form-control"><label>Status:</label><span id="state" class=""></span></div>
+        <div class="form-control" id="power-control"><label>Power:</label><span id="power"></span></div>
+        <div class="form-control" id="voltage-control"><label>Voltage:</label><span id="voltage"></span></div>
+        <div class="form-actions"><button class="btn" id="start_btn">Start</button><button class="btn btn--warning" id="stop_btn">Stop</button></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container" id="wifi_container">
+    <div class="header-bar">
+      <h1 class="">Wi-Fi</h1>
+      <div class="header-actions"><button type="button" class="chevron" aria-label="Toggle" data-toggle="card" data-target="wifi_container">▾</button></div>
+    </div>
+    <div class="summary" id="summary_wifi">SSID1: <span id="sum_wifi0">-</span> | SSID2: <span id="sum_wifi1">-</span></div>
+    <div class="form">
+      <div>
+        <div class="form-control"><label>SSID:</label><input type="text"></div>
+        <div class="form-actions"><button class="btn">Save</button></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  // Generic delegated toggle identical to app.js
+  document.addEventListener('click', function (e) {
+    var btn = e.target && e.target.closest ? e.target.closest('[data-toggle="card"]') : null;
+    if (!btn) return;
+    e.preventDefault();
+    var targetId = btn.getAttribute('data-target');
+    if (!targetId) return;
+    var container = document.getElementById(targetId);
+    if (!container) return;
+    var before = container.className;
+    container.classList.toggle('card-collapsed');
+    var after = container.className;
+    console.debug('toggle:', targetId, 'class:', before, '=>', after);
+  }, false);
+  </script>
+</body>
+</html>
