@@ -39,9 +39,7 @@
   "engines": {
     "npm": ">=7"
   },
-  "dependencies": {
-    "axios": "^0.21.4"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@babel/core": "^7.24.7",
     "babel-loader": "^8.3.0",

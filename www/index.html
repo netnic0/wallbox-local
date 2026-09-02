@@ -23,12 +23,20 @@
     <div class="form">
       <div class="">
         <div class="form-control">
-          <label>Open e-Mobility:</label>
-          <span id="ocpp_state" class="disconnected"></span>
-        </div>
-        <div class="form-control">
           <label>Status:</label>
           <span id="state" class=""></span>
+        </div>
+        <div class="form-control" id="power-control">
+          <label>Power:</label>
+          <span id="power"></span>
+        </div>
+        <div class="form-control" id="voltage-control">
+          <label>Voltage:</label>
+          <span id="voltage"></span>
+        </div>
+        <div class="form-control" id="current-control">
+          <label>Current:</label>
+          <span id="current"></span>
         </div>
         <div class="form-control" id="energy-control">
           <label>Energy delivered:</label>
@@ -41,6 +49,21 @@
         <div class="form-control">
           <label>Temperature:</label>
           <span id="temperature"></span>
+        </div>
+        <div class="form-separator"></div>
+        <div class="form-actions">
+          <button class="btn" id="start_btn">
+            Start charge
+            <span id="start_spinner"></span>
+          </button>
+          <button class="btn" id="stop_btn">
+            Stop charge
+            <span id="stop_spinner"></span>
+          </button>
+          <button class="admin-btn" id="reset_energy_btn">
+            Reset energy
+            <span id="reset_energy_spinner"></span>
+          </button>
         </div>
         <div class="form-separator"></div>
         <div class="form-control">
@@ -113,30 +136,6 @@
     </div>
   </div>
 
-  <div class="container" id="ocpp_container">
-    <h1 class="">Open e-Mobility</h1>
-    <h2>Configuration of the connection to the OCPP server</h2>
-    <p>You should not need to modify this configuration. Check with your Open e-Mobility administrator.</p>
-    <div class="form">
-      <div class="">
-        <div class="form-control">
-          <label>Wallbox name:</label>
-          <input type="text" id="ocpp_name" autocomplete="ocpp wallbox-name">
-        </div>
-        <div class="form-control">
-          <label>Backend URL:</label>
-          <input type="text" id="ocpp_url" autocomplete="ocpp backend-url">
-        </div>
-        <div class="form-actions">
-          <button id="ocpp_save_btn">
-            Save
-            <span id="ocpp_spinner"></span>
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <div class="container" id="mqtt_container">
     <h1 class="">MQTT</h1>
     <h2>Configuration of the connection to the MQTT server</h2>
@@ -151,10 +150,6 @@
           <div class="form-control">
             <label>Server:</label>
             <input type="text" id="mqtt_server" autocomplete="mqtt server">
-          </div>
-          <div class="form-control">
-            <label>User name:</label>
-            <input type="text" id="mqtt_user" autocomplete="mqtt user">
           </div>
           <div class="form-control">
             <label>Password:</label>

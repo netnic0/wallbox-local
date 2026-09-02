@@ -37,6 +37,11 @@ module.exports = (env, argv) => ({
             new CssMinimizerPlugin(),
         ] : [],
     },
+    performance: {
+        maxAssetSize: 30720,
+        maxEntrypointSize: 30720,
+        hints: 'error'
+    },
     plugins: [
         new CleanWebpackPlugin(),
         new CopyPlugin({

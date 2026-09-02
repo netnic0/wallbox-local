@@ -58,6 +58,7 @@ config_schema:
   - ["mqtt.server", ""]
   - ["mqtt.user", ""]
   - ["mqtt.pass", ""]
+  - ["mqtt.ha_discovery", "b", true, {title: "Publish Home Assistant MQTT discovery configs on connect"}]
   - ["dns_sd.enable", true]
   - ["dns_sd.adv_only", true]
   - ["dns_sd.host_name", "wallbox"]
@@ -67,6 +68,7 @@ config_schema:
   - ["http.auth_domain", "s", "wallbox", {title: "HTTP digest auth realm (matches RPC realm)"}]
   - ["http.auth_file", "s", "rpc_auth.htdigest", {title: "HTTP htdigest file (shared with RPC auth)"}]
   - ["http.auth_algo", "i", 0, {title: "htdigest hash algorithm: 0=MD5 (matches rpc_auth.htdigest)"}]
+  - ["update.commit_timeout", "i", 300, {title: "OTA auto-rollback timeout in seconds (0=disabled). 300s gives enough time for first-boot checks."}]
 
 libs:
   - origin: https://github.com/mongoose-os-libs/mbedtls

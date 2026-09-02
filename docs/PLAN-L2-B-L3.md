@@ -3,7 +3,10 @@
 > Audience: an implementing session (Sonnet). Read this fully before touching code.
 > Status at 2026-09-02: L1 (v1.0.0) done. L2-A (MQTT cmd topic) done. Code-review
 > Batches A/B/C + finding #7 done and BUILT successfully (build/fw.zip verified).
-> Remaining: L2-B Web UI rewrite (§3.1-3.5) + §3.7 doc sync. §2.0 and §3.0 DONE (2026-09-02).
+> §2.0 auth fix DONE. §3.0 GetInfo extension DONE. §3.1-3.5 Web UI rewrite DONE.
+> §3.7 doc sync DONE. L3.1 HA Discovery DONE (code + syntax-checked, NOT yet mos-built/flashed).
+> Remaining: §2.1 on-device auth test (deferred), then L3.3 Safety (§4.3), then L3.2 EV
+> detection (§4.2). See §9 "Progress log" at the bottom for the detailed status.
 > Reviewed by senior-plan-reviewer 2026-09-02: approve-with-changes.
 >
 > CODE-AUDIT CORRECTION 2026-09-02 (IMPORTANT - read before coding): an introspection of the
@@ -435,3 +438,88 @@ USB (docs/BUILD-AND-FLASH.md serial section).
 - (d) Baseline free heap at the moment wb_safety.cpp would arm its 1 s timer (after wifi +
   MQTT + SPIFFS + discovery published). Log mgos_get_free_heap_size() in a test build; if
   < 18 KB there, re-evaluate the timer approach.
+
+---
+
+## 9. Progress log (implementation status)
+
+> Maintained by the implementing session. "Syntax-checked" = parsed/type-checked
+> locally with g++ -Wall -Wextra against realistic mgos API stubs; it does NOT
+> include the mos/ESP8266 link step or on-device runtime, which still require a
+> WSL + Docker `mos build` and a flash (see §5).
+
+### Session summary (2026-09-02, Cline)
+Work done this session, on the wallbox repo (shelly-ocpp-wallbox):
+1. Reviewed PLAN-L2-B-L3.md; the user's earlier corrections were verified against the real code.
+2. §3.7 - synced doc/rpc.md (21 GetInfo fields, 6 methods + auth column).
+3. §3.1-3.5 - full Web UI rewrite (fetch, WebSocket, removed OCPP/mqtt_user/axios, <30 KB gate).
+4. L3.1 - HA MQTT Discovery (new wb_discovery.cpp/.h, 9 entities, staged + heap-guarded).
+5. Minute code review after EACH section -> 4 issues found and fixed (incl. a C++ compile bug
+   in the discovery: missing/stray brace from chunked edits).
+6. Updated this plan (§9 progress log).
+Local validations passed: ESLint 0/0 - Webpack 11.7 KiB gzipped - g++ -Wall -Wextra 0/0.
+Note: the two Claude-Code-specific constraints (§0.7 senior-plan-reviewer gate, §0.8 repo I/O
+block) do NOT apply to Cline and were not enforced; reviews were done manually instead.
+
+### Resume checklist (do this first next session)
+- [ ] NOTHING is committed yet. Decide: commit L2-B + L3.1 on feat/l2-b-webui, or keep going.
+- [ ] Before any L3 flash: add update.commit_timeout (e.g. 300) to mos.yml (§5.1 auto-rollback).
+- [ ] mos build (WSL + Docker) + flash the combined L2-B + L3.1 firmware.
+- [ ] Run §2.1 on-device Chrome+Firefox Digest auth matrix -> confirm Option A or switch to B.
+- [ ] On-device verify: UI live values, Start/Stop, OTA-with-auth, HA auto-discovery of 9 entities.
+- [ ] Then implement L3.3 Safety (§4.3), then L3.2 EV detection (§4.2). Review after each.
+
+### DONE (code complete + local validation)
+- [x] §2.0  HTTP Digest auth on /update + static assets (mos.yml http.auth_*). Committed earlier.
+- [x] §3.0  Wallbox.GetInfo extended to 21 fields (power, voltage, current, charging).
+           src/wb_rpc.cpp:26-49 + args 68-90.
+- [x] §3.1-3.5  Web UI rewrite:
+      - www/index.html: removed OCPP card, ocpp_state span and mqtt_user input; added
+        Power/Voltage/Current rows + Start/Stop/Reset-energy buttons.
+      - www/app/app.js: full rewrite - axios -> fetch (rpc() helper, credentials:include,
+        native browser Digest = Option A); WebSocket live poll of Wallbox.GetInfo (3 s) with
+        exponential-backoff reconnect and fetch-polling fallback (5 s) after 5 failures;
+        Start/Stop (SetRelay) and ResetEnergy handlers; OTA via fetch.
+      - package.json: removed axios dependency. .eslintrc.yml: removed axios global.
+      - webpack.config.js: added performance gate (maxAssetSize/maxEntrypointSize 30720,
+        hints:error).
+      - Validation: eslint 0/0; webpack production OK, dist/index.html.gz ~11.7 KiB gzipped
+        (<< 30 KB). No ocpp_*/mqtt_user/axios references remain in the bundle.
+      - Review fixes applied: (#1) stopRefresh() at top of connectWs() to avoid double timers;
+        (#2) MQTT save no longer overwrites mqtt.pass with an empty string (send pass only if typed).
+- [x] §3.7  doc/rpc.md synced: GetInfo -> real 21 fields (no ocpp_*, no mqtt_user); added
+           ResetWifi/SetRelay/ResetEnergy sections + a 6-method summary table with auth column.
+- [x] L3.1 HA MQTT Discovery:
+      - NEW include/wb_discovery.h + src/wb_discovery.cpp.
+      - 9 retained homeassistant/.../config topics (6 sensors, 1 binary_sensor charging,
+        1 switch relay, 1 availability). Staged publish: one-shot 2 s after CONNACK, then
+        1 topic / 300 ms; heap guard < 12000 before each publish; re-publish on every reconnect.
+      - value_templates bound to the FROZEN state-topic fields; switch bound to
+        wallbox/<id>/cmd {"action":"start|stop"} (matches mqtt_cmd_handler).
+      - New config flag mqtt.ha_discovery (bool, default true) in mos.yml.
+      - Hooked in src/wb_mqtt.cpp MG_EV_MQTT_CONNACK -> discovery_kick(); discovery_init()
+        called in src/main.cpp after mqtt_init().
+      - Review fixes applied: (A) fixed a missing closing brace / stray brace from chunked edits;
+        (B) uptime sensor state_class -> total_increasing (added state_class field to the table).
+      - Validation: g++ -std=c++11 -Wall -Wextra -fsyntax-only = 0/0 (run twice); mgos API
+        signatures verified against deps/; braces balanced in all touched .cpp files.
+
+### DEFERRED / NOT DONE
+- [ ] §2.1  On-device Chrome+Firefox Digest auth matrix (decides Option A vs B). Deferred by user;
+           current code assumes Option A (native browser Digest). If a browser re-challenges the
+           /update POST, switch to Option B (explicit Digest helper).
+- [ ] mos build (WSL + Docker) + flash of the combined L2-B + L3.1 firmware, then verify:
+      UI live values, Start/Stop, OTA with auth, and HA auto-discovery of the 9 entities.
+- [ ] §5.1  Add update.commit_timeout (e.g. 300) to mos.yml BEFORE the first L3 flash (auto-rollback).
+
+### REMAINING WORK (next sessions, in order)
+- [ ] L3.3 Safety (§4.3) - NEXT. Highest real-world importance; test carefully.
+- [ ] L3.2 EV charge detection (§4.2) - net-new power-threshold semantics; document in changelog.
+- [ ] Optional: finding #6 (dedup intensity vs current).
+
+### Git state at pause
+- Branch feat/l2-b-webui. NOT yet committed. Working tree (uncommitted):
+  - Modified: .eslintrc.yml, doc/rpc.md, mos.yml, package.json, webpack.config.js,
+    src/main.cpp, src/wb_mqtt.cpp, www/app/app.js, www/index.html
+  - New (untracked): include/wb_discovery.h, src/wb_discovery.cpp
+

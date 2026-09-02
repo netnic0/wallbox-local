@@ -16,7 +16,9 @@
  */
 
 #include "wb_mqtt.h"
+#include "wb_discovery.h"
 #include "wb_power.h"
+#include "wb_safety.h"
 #include "wb_thermistor.h"
 #include "wb_util.h"
 
@@ -92,9 +94,11 @@ static void mqtt_cmd_handler(struct mg_connection *nc, const char *topic,
 
   if (strcmp(action, "start") == 0) {
     mgos_gpio_write(mgos_sys_config_get_gpio_relay(), 1);
+    safety_arm();
     mqtt_send_state_topic();
   } else if (strcmp(action, "stop") == 0) {
     mgos_gpio_write(mgos_sys_config_get_gpio_relay(), 0);
+    safety_disarm();
     /* Charge just ended: persist the session energy now so an unexpected
        power loss after unplugging does not drop the last accumulated Wh (#4). */
     power_flush();
@@ -123,6 +127,13 @@ static void mqtt_ev_handler(struct mg_connection *nc, int ev, void *ev_data,
   if (ev == MG_EV_MQTT_CONNACK) {
     mgos_mqtt_pub(mqtt_availability_topic, "online", 6, 0 /* qos */, true /* retain */);
     LOG(LL_INFO, ("MQTT availability: online"));
+    /* (Re)publish Home Assistant discovery configs on every (re)connect.
+       Staged and heap-guarded inside wb_discovery.cpp. */
+    discovery_kick();
+  } else if (ev == MG_EV_MQTT_DISCONNECT) {
+    /* MQTT connection lost: disarm the safety timer so it does not run
+       without a connected broker (we cannot publish the tripped state). */
+    safety_disarm();
   }
 }
 

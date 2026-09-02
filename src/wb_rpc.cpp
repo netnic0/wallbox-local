@@ -17,6 +17,7 @@
 
 #include "wb_rpc.h"
 #include "wb_power.h"
+#include "wb_safety.h"
 #include "wb_thermistor.h"
 #include "wb_util.h"
 
@@ -100,6 +101,9 @@ void rpc_wallbox_reboot_handler(struct mg_rpc_request_info *ri,
                                 struct mg_str args) {
   LOG(LL_INFO, ("RPC request to reboot"));
 
+  /* Disarm safety timer before reboot so it does not fire during the 10s window */
+  safety_disarm();
+
   /* Schedule a reboot in 10s, leaving time for the response to be sent. */
   mgos_system_restart_after(10000);
 
@@ -166,9 +170,12 @@ void rpc_wallbox_set_relay_handler(struct mg_rpc_request_info *ri,
   LOG(LL_INFO, ("RPC SetRelay: %s", on ? "ON" : "OFF"));
   mgos_gpio_write(mgos_sys_config_get_gpio_relay(), on ? 1 : 0);
 
-  /* Turning the relay OFF ends a charge session: persist the meter counters
-     immediately so a subsequent power loss does not lose accumulated Wh (#4). */
-  if (!on) {
+  if (on) {
+    safety_arm();
+  } else {
+    safety_disarm();
+    /* Turning the relay OFF ends a charge session: persist the meter counters
+       immediately so a subsequent power loss does not lose accumulated Wh (#4). */
     power_flush();
   }
 
