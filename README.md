@@ -1,132 +1,213 @@
-# Wallbox-Local
+# Wallbox-Local (Shelly 1PM Gen1) — Guide de Configuration et Intégration
 
-Local-only wallbox firmware for **Shelly 1PM Gen1** (ESP8266 + BL0937), designed for direct integration with Home Assistant via MQTT — no cloud, no OCPP backend.
+Ce document explique comment configurer le firmware Wallbox-Local via l’interface Web intégrée, à quoi servent les champs, et comment intégrer la wallbox dans Home Assistant (HA) avec MQTT.
 
-> **Fork notice** — This project is a fork of [sebastien-savalle/shelly-ocpp-wallbox](https://github.com/sebastien-savalle/shelly-ocpp-wallbox), originally authored by SAP Labs France & d-shop Caen and licensed under Apache 2.0. Forked at upstream commit `58c3691`. The OCPP / Open e-Mobility integration has been removed; the firmware now targets a fully local Home Assistant deployment. Original copyright notices are preserved in the source headers and the [LICENSE](./LICENSE) file is unchanged. See [NOTICE](./NOTICE) for the formal attribution.
+Chemin du projet (Windows): C:\\Users\\I058304\\HomeAssistant\\shelly-ocpp-wallbox
 
-## Features
+—
 
-- 🏠 Native Home Assistant integration via MQTT (compatible with the original `wallbox/<id>/state` topic contract)
-- 📡 Real-time current/voltage/power readings via HLW8012 (BL0937)
-- 🔌 Manual relay control via RPC (`Wallbox.SetRelay`)
-- ⚡ Energy session + total counters (`Wallbox.ResetEnergy`)
-- 🚗 EV charge detection (planned for v1.2.0)
-- 🛡️ Thermal & overcurrent protection (planned for v1.2.0)
+## 1. Présentation
 
-## Security — RPC authentication
+- Appareil: Shelly 1PM Gen1 (ESP8266 + BL0937/HLW8012)
+- Firmware: Mongoose OS
+- Nom d’application (OTA): `Wallbox-Shelly1PM` (inévitable pour l’OTA stock)
+- Fonctionnement: local-only (pas d’OCPP), contrôle via UI (RPC), métriques via MQTT, auto-découverte HA
+- Sécurité: HTTP Digest (realm `wallbox`), utilisateur `admin`; mot de passe par défaut `wallbox` — à changer
 
-All RPC endpoints (HTTP, WebSocket, MQTT) require **HTTP Digest authentication**.
-Only the **UART/serial** channel is left open, for local bench debugging and recovery.
-This protects the open management surface (`Config.Set`, `FS.*`, `OTA.*`,
-`Wallbox.SetRelay`, `Wallbox.Reset`, ...) from unauthenticated access on the LAN.
+—
 
-The policy is a compiled-in ACL (`rpc.acl` in `mos.yml`); it cannot be changed
-without reflashing:
+## 2. Accéder à l’interface Web de la Wallbox
 
-| Channel | Access |
-|---|---|
-| UART / serial | open (no auth) |
-| HTTP / WS / MQTT | requires authenticated user `admin` |
+1) Connectez la wallbox à votre réseau Wi-Fi (ou en AP/hotspot la première fois)
+2) Ouvrez votre navigateur sur:
+   - `http://wallbox.local/` (mDNS), ou
+   - `http://<ip-de-la-wallbox>/` (ex: `http://192.168.1.57/`)
+3) Le navigateur demande une authentification HTTP Digest:
+   - Utilisateur: `admin`
+   - Mot de passe: `wallbox` (par défaut). Changez-le après installation.
 
-### ⚠️ CHANGE THE DEFAULT PASSWORD BEFORE PUTTING THE DEVICE ON A NETWORK
+—
 
-The firmware ships with a **fixed default credential** in
-[`fs/rpc_auth.htdigest`](./fs/rpc_auth.htdigest):
+## 3. Contrôles et champs de l’UI
 
-```
-user:     admin
-realm:    wallbox
-password: wallbox        <-- DEFAULT, IDENTICAL ON EVERY BUILD — CHANGE IT
-```
+L’UI est structurée en sections: Informations, Wi-Fi, MQTT, Firmware, Administration, Logs.
 
-This default exists only so the device is reachable on first boot. It is a known,
-shared secret and provides **no real protection until you change it**. Do not expose
-the device to an untrusted network with the default in place.
+### 3.1 Informations (lecture seule + actions)
 
-### Changing the password
+- Status: État du relais (Charging/Idle)
+- Power: Puissance active instantanée (W)
+- Voltage: Tension secteur (V)
+- Current: Courant (A; 2 décimales)
+- EV detected: Présence détectée du véhicule (hystérésis EV) — voir §7
+- Energy delivered: Énergie de la session en cours (Wh)
+- Intensity: Intensité calculée (A) — issue du delta d’énergie et du temps à 230 V
+- Temperature: Température interne (°C)
+- Device/Serial/IP/MAC/Uptime: Informations système
 
-The credential file uses the standard Apache `htdigest` format:
-`user:realm:MD5(user:realm:password)`. Regenerate the hash and rebuild, or push the
-new file to the running device:
+Actions:
+- Start charge: Ferme le relais (démarre la charge) — `Wallbox.SetRelay {on:true}`
+- Stop charge: Ouvre le relais (arrête la charge) — `Wallbox.SetRelay {on:false}`
+  - À l’arrêt, les compteurs d’énergie sont persistés immédiatement (sécurité en cas de coupure)
+- Reset energy: Remet à zéro les compteurs d’énergie — `Wallbox.ResetEnergy`
 
-```sh
-# realm MUST match rpc.auth_domain ("wallbox")
-htdigest -c rpc_auth.htdigest wallbox admin
-# then rebuild (fs/ is baked into SPIFFS) or upload the file via an authenticated
-# FS.Put RPC call, then reboot.
-```
+### 3.2 Wi-Fi (configuration)
 
-## Versions
+Vous pouvez configurer jusqu’à deux réseaux (lieux différents):
+- Network 1 / Network 2:
+  - SSID: nom du réseau
+  - Password: mot de passe du réseau (bouton “Show password” pour visibilité)
+- Sauvegarde: bouton “Save” pour appliquer — la wallbox bascule automatiquement vers un réseau disponible
 
-| Version | Status | Highlights |
-|---|---|---|
-| v1.0.0 | 🚧 in progress | Backend cleanup, OCPP removal, MQTT enrichment |
-| v1.1.0 | 📝 planned | Modern vanilla-JS Web UI |
-| v1.2.0 | 📝 planned | HA MQTT Discovery, EV charge detection, safety features |
+Remarques:
+- En cas de perte du Wi-Fi (station disconnect), le timer de sécurité est désarmé automatiquement pour éviter des coupures intempestives.
+- “Reset Wi-Fi” (section Administration) efface les stations et réactive le mode AP pour reprovisionnement.
 
-See [PLAN.md](./PLAN.md) and [docs/PLAN-L1.md](./docs/PLAN-L1.md) for the implementation roadmap.
+### 3.3 MQTT (configuration)
 
-## Documentation
+Le broker MQTT est optionnel pour l’UI, mais nécessaire pour Home Assistant (données et auto-découverte):
 
-- 📖 [RPC APIs](./doc/rpc.md) — administration APIs
-- 📖 [MQTT contract](./doc/mqtt.md) — topics and Home Assistant integration
-- 📖 [Quick Start Guide](./doc/quick-start.md) — initial setup
+- Enable: cochez pour activer la publication MQTT
+- Server: adresse et port du broker (ex: `192.168.1.10:1883`, ou `mqtt://192.168.1.10:1883`)
+- User: (optionnel) identifiant du compte sur le broker
+- Password: (optionnel) mot de passe du compte
+- Save: enregistre et applique la configuration
 
-## Development
+Remarques:
+- Le Last Will & Testament (LWT) est configuré pour publier `offline` sur `wallbox/<id>/availability` en cas de déconnexion.
+- La découverte HA est activée par défaut (`mqtt.ha_discovery=true`).
 
-### Requirements
+### 3.4 Firmware (OTA)
 
-- WSL2 / Linux with Docker
-- Node.js >= 18 (for the Web UI build)
+- Update: chargez le fichier `build/fw.zip` pour mettre à jour le firmware
+- Authentification: l’endpoint `/update` requiert HTTP Digest (`admin`, `wallbox`) — utilisez un navigateur ou:
+  ```bash
+  curl -v --digest -u admin:<motdepasse> -F file=@build/fw.zip http://<ip-de-la-wallbox>/update
+  ```
+- Succès: le dispositif redémarre automatiquement
 
-### Build (local, via Docker — Mongoose OS server-side build is no longer available)
+### 3.5 Administration
 
-```sh
-# 1. Install npm deps and build the Web UI
-npm install
-npm run webpack
+- Reboot: redémarre l’appareil (désarme le timer de sécurité avant reboot)
+- Reset Wi-Fi: efface la config Wi-Fi (réactive l’AP), redémarre
+- Factory Reset: réinitialise la configuration (niveau vendor), redémarre
 
-# 2. Build the firmware via Docker
-docker run --rm \
-  --entrypoint /bin/sh \
-  -v /var/run/docker.sock:/var/run/docker.sock \
-  -v "$PWD:$PWD" -w "$PWD" \
-  mgos/mos:latest \
-  -c 'git config --global --add safe.directory "*" && mos build --local --platform esp8266 --verbose'
+### 3.6 Logs
 
-# Output: build/fw.zip
-```
+- Téléchargez les fichiers de logs via la section Logs (liens listés si disponibles)
 
-### Flash / Update
+—
 
-OTA via the existing Web UI (recommended for an already-flashed Shelly):
+## 4. Intégration avec Home Assistant (HA)
 
-```sh
-curl -v -u admin:<password> -F file=@build/fw.zip http://<wallbox-ip>/update
-```
+### 4.1 Prérequis
 
-Initial flash via serial (USB-to-TTL adapter required for a stock Shelly):
+- Un broker MQTT (ex: Mosquitto)
+  - HA Add-on “Mosquitto broker” ou un broker externe
+  - Créez un utilisateur dédié (ex: `wallbox`) et un mot de passe
+- Intégration MQTT dans HA (Paramètres -> Appareils & Services -> Ajouter intégration -> MQTT)
+- Auto-découverte HA activée (par défaut dans HA)
 
-```sh
-mos --port COM8 flash
-```
+### 4.2 Mise en service
 
-### Device configuration
+1) Configurez MQTT dans l’UI de la Wallbox (section MQTT): Enable, Server, User/Password
+2) Redémarrez la Wallbox si nécessaire (Administration -> Reboot)
+3) Vérifiez que HA découvre automatiquement la Wallbox (nouvel appareil et entités) via Home Assistant Discovery
 
-```sh
-mos --port http://admin:<password>@<wallbox-ip>/rpc config-get
-mos --port http://admin:<password>@<wallbox-ip>/rpc config-set <key> <value>
-```
+### 4.3 Entités HA attendues
 
-### Console
+Entités publiées via MQTT Discovery (toutes retained):
+- Sensors:
+  - `power` (W) — mesure instantanée
+  - `voltage` (V)
+  - `current` (A)
+  - `energy` (Wh) — énergie de la session
+  - `temperature` (°C)
+  - `uptime` (s) — state_class: total_increasing
+- Binary sensors:
+  - `charging` — reflète l’état du relais (Close/Open)
+  - `ev` — détection EV via hysteresis (voir §7)
+- Switch:
+  - `relay` — commande Start/Stop via MQTT (topic `wallbox/<id>/cmd`)
+- Availability:
+  - `wallbox/<id>/availability` (online/offline)
 
-Via OTA (UDP log):
+### 4.4 Topics MQTT principaux
 
-```sh
-mos --port ws://<wallbox-ip>/rpc config-set debug.udp_log_addr=<your-host>:1993
-mos --port udp://:1993/ console
-```
+- `wallbox/<id>/state` — JSON métriques live:
+  ```json
+  {
+    "uptime": 12345,
+    "connected": true,
+    "charging": false,
+    "energy": 12.3,
+    "intensity": 8,
+    "tid": 0,
+    "temperature": 45.6,
+    "power": 3680,
+    "voltage": 230,
+    "current": 16.00,
+    "ev": true
+  }
+  ```
+- `wallbox/<id>/cmd` — commandes JSON:
+  ```json
+  { "action": "start" }
+  { "action": "stop" }
+  { "action": "reset_energy" }
+  ```
+- `wallbox/<id>/availability` — retained: `online` / `offline`
 
-## License
+—
 
-Apache 2.0 — see [LICENSE](./LICENSE) and [NOTICE](./NOTICE).
+## 5. Sécurité
+
+- HTTP/WS/MQTT protégés par HTTP Digest (`admin`, `wallbox` par défaut)
+- UART/serial (port de service) reste ouvert (pas d’auth) — réservé aux usages locaux/atelier
+- Recommandations:
+  - Changez le mot de passe par défaut (fichier `fs/rpc_auth.htdigest`)
+  - N’exposez pas l’UI sur Internet
+  - Utilisez des identifiants dédiés sur le broker MQTT
+
+—
+
+## 6. Firmware OTA & Reset
+
+- OTA: voir §3.4; après upload de `fw.zip`, l’appareil redémarre
+- Reset:
+  - Reset Wi-Fi: efface SSID/pass, réactive AP
+  - Factory Reset: réinitialise la configuration (niveau vendor)
+  - Reboot: redémarre
+
+—
+
+## 7. Détection EV (hystérésis)
+
+- `ev` est calculé à partir de la puissance active:
+  - EV présent si `power >= 150 W` sur 3 ticks consécutifs (1 tick ~ 60 s)
+  - EV absent si `power <= 80 W` sur 3 ticks consécutifs
+- Hystérésis pour éviter les oscillations et faux positifs
+- `ev` est publié dans `state` et exposé côté HA (binary_sensor `ev`), et aussi disponible dans `Wallbox.GetInfo`
+
+—
+
+## 8. Dépannage
+
+- `/update` renvoie 401:
+  - Utilisez HTTP Digest: `--digest -u admin:<password>`
+  - Assurez-vous que le navigateur relance la requête avec auth (Digest natif)
+- L’UI charge mais tous les champs sont vides:
+  - Attendu si vous n’êtes pas authentifié (Digest)
+- HA ne découvre pas la Wallbox:
+  - Vérifiez la connexion au broker MQTT, `mqtt.enable` et `mqtt.server`
+  - Vérifiez que HA Discovery est activé
+  - Consultez les logs de HA et de la Wallbox
+- `docker: command not found` en build:
+  - Lancez les commandes dans WSL (`wsl -e bash -lc '...'`) comme décrit dans `docs/BUILD-AND-FLASH.md`
+
+—
+
+## 9. Références
+
+- Guide build/flash: `docs/BUILD-AND-FLASH.md`
+- Plan d’implémentation: `docs/PLAN-L2-B-L3.md`
+- Documentation RPC: `doc/rpc.md`
