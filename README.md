@@ -16,6 +16,20 @@ Chemin du projet (Windows): C:\\Users\\I058304\\HomeAssistant\\shelly-ocpp-wallb
 
 —
 
+## 1bis. Aperçu (capture d'écran de l'UI)
+
+Pour illustrer la page de configuration, vous pouvez ajouter une capture d'écran.
+
+- Placez votre image à l'emplacement suivant (Windows):
+  - C:\\Users\\I058304\\HomeAssistant\\shelly-ocpp-wallbox\\docs\\images\\wallbox-ui-overview.png
+- Ce dépôt affichera l'image via le lien ci-dessous (relatif pour GitHub):
+
+![Wallbox UI Overview](docs/images/wallbox-ui-overview.png)
+
+Conseil pour produire la capture: ouvrez la page http://<ip-de-la-wallbox>/, connectez-vous (HTTP Digest), dépliez les sections (Wi-Fi, MQTT, Firmware, Administration) et capturez l'écran complet afin de montrer les champs et actions disponibles.
+
+—
+
 ## 2. Accéder à l’interface Web de la Wallbox
 
 1) Connectez la wallbox à votre réseau Wi-Fi (ou en AP/hotspot la première fois)
