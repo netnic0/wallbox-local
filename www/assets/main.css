@@ -506,6 +506,11 @@ h3 {
     fadeout 0.5s 3.5s;
 }
 
+/* Fine alignment: slightly lower the MQTT Reconnect button */
+#mqtt_reconnect_btn {
+  transform: translateY(2px);
+}
+
 @keyframes fadein {
   from {
     bottom: 0;
