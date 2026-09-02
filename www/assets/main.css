@@ -1,3 +1,25 @@
+/* Collapsed card rules (ensure summaries show, details hide) */
+.container.card-collapsed .form-control,
+.container.card-collapsed .form-actions,
+.container.card-collapsed .alert {
+  display: none !important;
+}
+.container.card-collapsed .summary {
+  display: block !important;
+}
+/* Hide general section content when collapsed, keep summary */
+.container.card-collapsed > h2,
+.container.card-collapsed > .banner,
+.container.card-collapsed > p,
+.container.card-collapsed > .flex-list,
+.container.card-collapsed > .footer,
+.container.card-collapsed > .dialog,
+.container.card-collapsed .form-separator {
+  display: none !important;
+}
+.container.card-collapsed .form > div > :not(.summary) {
+  display: none !important;
+}
 :root {
   --primary: #0b7dda;
   --primary-hover: #0969b1;

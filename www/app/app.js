@@ -578,9 +578,22 @@ document.getElementById("fw_upload_btn").onclick = updateFirmware;
   const css = `
     .status-ok { color: #0a8; font-weight: 600; }
     .status-bad { color: #c00; font-weight: 600; }
-    `;
-  const style = document.createElement("style");
-  style.type = "text/css";
+    /* Fallback CSS to ensure collapsing works even if main.css isn't loaded */
+    .container.card-collapsed .form-control,
+    .container.card-collapsed .form-actions,
+    .container.card-collapsed .alert,
+    .container.card-collapsed > h2,
+    .container.card-collapsed > .banner,
+    .container.card-collapsed > p,
+    .container.card-collapsed > .flex-list,
+    .container.card-collapsed > .footer,
+    .container.card-collapsed > .dialog,
+    .container.card-collapsed .form-separator { display: none !important; }
+    .container.card-collapsed .summary { display: block !important; }
+    .container.card-collapsed .form > div > :not(.summary) { display: none !important; }
+  `;
+  const style = document.createElement('style');
+  style.type = 'text/css';
   style.appendChild(document.createTextNode(css));
   document.head.appendChild(style);
 })();
@@ -637,13 +650,25 @@ showMqttPass.onclick = () => showPassword(mqttPass, showMqttPass);
 (function () {
   getInfo();
   getLogs();
-  // Generic chevron-based toggle for any card
-  document.querySelectorAll('[data-toggle="card"]').forEach(btn => {
+  // Robust: use event delegation for toggles, with debugging
+  document.addEventListener('click', function (e) {
+    const btn = e.target && e.target.closest ? e.target.closest('[data-toggle="card"]') : null;
+    if (!btn) return;
+    e.preventDefault();
     const targetId = btn.getAttribute('data-target');
-    const container = document.getElementById(targetId);
-    if (container) {
-      btn.onclick = () => container.classList.toggle('card-collapsed');
+    if (!targetId) {
+      console.debug('toggle: missing data-target on', btn);
+      return;
     }
-  });
+    const container = document.getElementById(targetId);
+    if (!container) {
+      console.debug('toggle: container not found for', targetId);
+      return;
+    }
+    const before = container.className;
+    container.classList.toggle('card-collapsed');
+    const after = container.className;
+    console.debug('toggle:', targetId, 'class:', before, '=>', after);
+  }, false);
   connectWs();
 })();
