@@ -27,16 +27,16 @@
   <body>
     <div class="container" id="main_container">
       <div class="header-bar">
-        <div>
-        <h1>Shelly Charging Station</h1>
+        <div class="header-left">
+          <h1>Shelly Charging Station</h1>
           <div class="sub">Local-only firmware (Shelly 1PM Gen1)</div>
-        </div>
-        <div class="header-actions">
-          <div class="sub">
-            <span>MQTT:</span>
-            <span id="chip_mqtt" class="chip">-</span>
+          <div class="header-actions header-actions--inline">
+            <div class="sub">
+              <span>MQTT:</span>
+              <span id="chip_mqtt" class="chip">-</span>
+            </div>
+            <button type="button" class="chevron" aria-label="Toggle" data-toggle="card" data-target="main_container">▾</button>
           </div>
-          <button type="button" class="chevron" aria-label="Toggle" data-toggle="card" data-target="main_container">▾</button>
         </div>
       </div>
       <h2>Information and status of the wallbox</h2>

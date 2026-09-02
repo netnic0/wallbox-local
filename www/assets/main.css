@@ -518,6 +518,10 @@ h3 {
   padding-right: 42px; /* leave room for the icon on the right */
 }
 
+/* Align header-left block: title, sub, then inline actions (MQTT status + toggle) */
+#main_container .header-left { display: flex; flex-direction: column; gap: 4px; }
+#main_container .header-actions--inline { display: inline-flex; align-items: center; gap: 8px; margin-top: 4px; }
+
 @keyframes fadein {
   from {
     bottom: 0;
