@@ -204,7 +204,6 @@ Notes for the implementer:
 - power_read_active_power()/power_read_voltage() return unsigned; cast to (int) exactly as
   wb_mqtt.cpp:216-217 does (frozen format string does not support %u; values fit signed int).
 - wb_power.h is already included at wb_rpc.cpp:19 (verified 2026-09-02). No include change needed.
-  current includes (wb_rpc.cpp currently includes wb_thermistor.h, wb_util.h, mgos.h,
 - mgos_gpio_read needs the gpio API - provided by mgos.h (already included).
 - Do NOT change the state topic, MQTT_STATE, or any other handler.
 
