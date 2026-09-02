@@ -7,6 +7,15 @@ Chemin du projet (Windows): C:\\Users\\I058304\\HomeAssistant\\shelly-ocpp-wallb
 —
 
 ## 1. Présentation
+## 1-ter. Check-list express (post-flash)
+
+- UI: ouvrir http://<ip-de-la-wallbox>/ (Digest admin / wallbox), consulter Informations
+- Wi-Fi: saisir SSID/pass (2 réseaux possibles) et Save; si besoin, Administration -> Reset Wi-Fi
+- MQTT: cocher Enable, renseigner Server (ex: 192.168.1.10:1883), User/Password si nécessaire, Save
+- Informations: vérifier MQTT Server (lecture seule) et MQTT Connected (Yes en vert)
+- HA: intégration MQTT active, discovery activée; vérifier que l’appareil et ses entités apparaissent
+- Test: Start/Stop, ResetEnergy; OTA via Firmware -> Upload build/fw.zip
+
 
 - Appareil: Shelly 1PM Gen1 (ESP8266 + BL0937/HLW8012)
 - Firmware: Mongoose OS

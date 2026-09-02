@@ -427,7 +427,10 @@ const renderInfo = data => {
         if (stateEl) stateEl.innerText = (data.state ? "Charging" : "Idle");
         if (evEl) evEl.innerText = (data.ev ? "Yes" : "No");
         if (mqttServerRO) mqttServerRO.innerText = (data.mqtt_server || "-");
-        if (mqttConnected) mqttConnected.innerText = (data.mqtt_connected ? "Yes" : "No");
+        if (mqttConnected) {
+            mqttConnected.innerText = (data.mqtt_connected ? "Yes" : "No");
+            mqttConnected.className = data.mqtt_connected ? "status-ok" : "status-bad";
+        }
     }
 };
 
@@ -475,6 +478,46 @@ const updateFirmware = evt => {
 };
 
 document.getElementById("fw_upload_btn").onclick = updateFirmware;
+(function addStyles(){
+    const css = `
+    .status-ok { color: #0a8; font-weight: 600; }
+    .status-bad { color: #c00; font-weight: 600; }
+    `;
+    const style = document.createElement('style');
+    style.type = 'text/css';
+    style.appendChild(document.createTextNode(css));
+    document.head.appendChild(style);
+})();
+
+document.getElementById("mqtt_reconnect_btn").onclick = () => {
+    showToast("Reconnecting MQTT...");
+    // Trigger a reconnect by toggling mqtt.enable in-memory via RPC if necessary.
+    // If a dedicated RPC existed, it would be used; as a workaround we can disable/enable quickly.
+    const current = mqttEnable.checked;
+    mqttSpinner.className = "spin";
+    // Save current server and credentials; send only non-empty password to avoid overwriting
+    const pass = (mqttPass && mqttPass.value) ? mqttPass.value : undefined;
+    const body = {
+        mqtt: {
+            enable: current,
+            server: mqttServer.value || "",
+            user: "",
+        }
+    };
+    if (pass !== undefined) {
+        body.mqtt.pass = pass;
+    }
+    rpc("Config.Set", body)
+        .then(() => {
+            showToast("MQTT reconnect requested");
+            // Re-fetch info after a short delay
+            setTimeout(getInfo, 1500);
+        })
+        .catch(handleError)
+        .then(() => {
+            mqttSpinner.className = "";
+        });
+};
 
 const showPassword = (input, cb) => {
     if (input.type === "text") {
