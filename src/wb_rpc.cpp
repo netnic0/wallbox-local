@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) 2020 SAP Labs France, d-shop Caen
  * All rights reserved
  *
@@ -41,7 +41,11 @@ const char *RPC_GETINFO =
     "intensity: %d,"
     "state: %B,"
     "mqtt_state: %B,"
-    "mqtt_server: %Q"
+    "mqtt_server: %Q,"
+    "power: %d,"
+    "voltage: %d,"
+    "current: %.2f,"
+    "charging: %B"
     "}";
 
 void rpc_init() {
@@ -79,7 +83,11 @@ void rpc_wallbox_get_info_handler(struct mg_rpc_request_info *ri,
                         mgos_sys_config_get_meter_intensity(),
                         mgos_gpio_read(mgos_sys_config_get_gpio_relay()),
                         mgos_sys_config_get_mqtt_enable(),
-                        mgos_sys_config_get_mqtt_server());
+                        mgos_sys_config_get_mqtt_server(),
+                        (int) power_read_active_power(),
+                        (int) power_read_voltage(),
+                        power_read_current(),
+                        mgos_gpio_read(mgos_sys_config_get_gpio_relay()));
 
   (void) cb_arg;
   (void) fi;
