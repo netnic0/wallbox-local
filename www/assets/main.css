@@ -511,6 +511,13 @@ h3 {
   transform: translateY(2px);
 }
 
+/* Align main card logo like other cards: right aligned, vertically centered */
+#main_container h1 {
+  background-position: right center !important;
+  background-repeat: no-repeat !important;
+  padding-right: 42px; /* leave room for the icon on the right */
+}
+
 @keyframes fadein {
   from {
     bottom: 0;
