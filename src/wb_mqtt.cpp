@@ -42,7 +42,7 @@ const char *MQTT_STATE =
     "uptime: %d,"
     "connected: %B,"
     "charging: %B,"
-    "energy: %d,"
+    "energy: %.1f,"
     "intensity: %d,"
     "tid: %d,"
     "temperature: %.1f,"
@@ -65,6 +65,7 @@ char mqtt_announce_topic[50];
 char mqtt_state_topic[50];
 char mqtt_system_topic[50];
 char mqtt_cmd_topic[60];
+char mqtt_availability_topic[55];
 
 /*
  * Handler for the MQTT command topic wallbox/<id>/cmd.
@@ -94,6 +95,9 @@ static void mqtt_cmd_handler(struct mg_connection *nc, const char *topic,
     mqtt_send_state_topic();
   } else if (strcmp(action, "stop") == 0) {
     mgos_gpio_write(mgos_sys_config_get_gpio_relay(), 0);
+    /* Charge just ended: persist the session energy now so an unexpected
+       power loss after unplugging does not drop the last accumulated Wh (#4). */
+    power_flush();
     mqtt_send_state_topic();
   } else if (strcmp(action, "reset_energy") == 0) {
     power_do_reset_energy();
@@ -105,11 +109,41 @@ static void mqtt_cmd_handler(struct mg_connection *nc, const char *topic,
   free(action);
 }
 
+/*
+ * Global MQTT event handler. On CONNACK (broker accepted the connection) we
+ * publish the retained "online" availability message. The matching "offline"
+ * message is registered as the broker-side Last-Will (see mqtt_init) and
+ * delivered automatically if the TCP connection drops ungracefully.
+ */
+static void mqtt_ev_handler(struct mg_connection *nc, int ev, void *ev_data,
+                            void *user_data) {
+  (void) nc;
+  (void) ev_data;
+  (void) user_data;
+  if (ev == MG_EV_MQTT_CONNACK) {
+    mgos_mqtt_pub(mqtt_availability_topic, "online", 6, 0 /* qos */, true /* retain */);
+    LOG(LL_INFO, ("MQTT availability: online"));
+  }
+}
+
 void mqtt_init() {
-  sprintf(mqtt_announce_topic, "wallbox/%s/announce", mgos_sys_config_get_device_id());
-  sprintf(mqtt_state_topic, "wallbox/%s/state", mgos_sys_config_get_device_id());
-  sprintf(mqtt_system_topic, "wallbox/%s/system", mgos_sys_config_get_device_id());
-  sprintf(mqtt_cmd_topic, "wallbox/%s/cmd", mgos_sys_config_get_device_id());
+  snprintf(mqtt_announce_topic, sizeof(mqtt_announce_topic), "wallbox/%s/announce", mgos_sys_config_get_device_id());
+  snprintf(mqtt_state_topic, sizeof(mqtt_state_topic), "wallbox/%s/state", mgos_sys_config_get_device_id());
+  snprintf(mqtt_system_topic, sizeof(mqtt_system_topic), "wallbox/%s/system", mgos_sys_config_get_device_id());
+  snprintf(mqtt_cmd_topic, sizeof(mqtt_cmd_topic), "wallbox/%s/cmd", mgos_sys_config_get_device_id());
+  snprintf(mqtt_availability_topic, sizeof(mqtt_availability_topic), "wallbox/%s/availability", mgos_sys_config_get_device_id());
+
+  /* Register the Last-Will "offline" (retained) BEFORE the MQTT connection is
+   * established. This build has no mgos_mqtt_set_will(); the LWT is carried by
+   * the built-in mqtt.will_* config keys. Set in-memory only (no config save):
+   * mqtt_init runs at app init, before the mqtt lib opens the connection, and
+   * we do not want to wear flash or persist a device-id-derived topic. */
+  mgos_sys_config_set_mqtt_will_topic(mqtt_availability_topic);
+  mgos_sys_config_set_mqtt_will_message("offline");
+  mgos_sys_config_set_mqtt_will_retain(1);
+
+  /* Publish "online" once the broker acknowledges the connection. */
+  mgos_mqtt_add_global_handler(mqtt_ev_handler, NULL);
 
   /* Subscribe to the command topic. The MQTT lib stores the subscription
    * and automatically re-subscribes on every reconnect — calling this
@@ -160,7 +194,7 @@ void mqtt_send_announce_topic() {
 
 void mqtt_send_state_topic() {
   if (mgos_mqtt_global_is_connected()) {
-    int energy = mgos_sys_config_get_meter_session_energy();
+    float energy = power_read_live_session_energy_float();
     int intensity = mgos_sys_config_get_meter_intensity();
     bool charging = mgos_gpio_read(mgos_sys_config_get_gpio_relay());
     double temperature = thermistor_read_celsius();

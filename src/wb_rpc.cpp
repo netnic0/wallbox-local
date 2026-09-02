@@ -41,8 +41,7 @@ const char *RPC_GETINFO =
     "intensity: %d,"
     "state: %B,"
     "mqtt_state: %B,"
-    "mqtt_server: %Q,"
-    "mqtt_user: %Q"
+    "mqtt_server: %Q"
     "}";
 
 void rpc_init() {
@@ -80,8 +79,7 @@ void rpc_wallbox_get_info_handler(struct mg_rpc_request_info *ri,
                         mgos_sys_config_get_meter_intensity(),
                         mgos_gpio_read(mgos_sys_config_get_gpio_relay()),
                         mgos_sys_config_get_mqtt_enable(),
-                        mgos_sys_config_get_mqtt_server(),
-                        mgos_sys_config_get_mqtt_user());
+                        mgos_sys_config_get_mqtt_server());
 
   (void) cb_arg;
   (void) fi;
@@ -159,6 +157,12 @@ void rpc_wallbox_set_relay_handler(struct mg_rpc_request_info *ri,
 
   LOG(LL_INFO, ("RPC SetRelay: %s", on ? "ON" : "OFF"));
   mgos_gpio_write(mgos_sys_config_get_gpio_relay(), on ? 1 : 0);
+
+  /* Turning the relay OFF ends a charge session: persist the meter counters
+     immediately so a subsequent power loss does not lose accumulated Wh (#4). */
+  if (!on) {
+    power_flush();
+  }
 
   /* NOTE: relay state is not persisted across reboots; at boot the
      relay is forced OFF for safety (see mgos_app_init). */

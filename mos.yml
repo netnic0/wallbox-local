@@ -19,6 +19,7 @@ includes:
 # List of dirs. Files from these dirs will be copied to the device filesystem
 filesystem:
   - dist
+  - fs
 
 # Custom configuration entries, settable via "device configuration"
 config_schema:
@@ -60,6 +61,9 @@ config_schema:
   - ["dns_sd.enable", true]
   - ["dns_sd.adv_only", true]
   - ["dns_sd.host_name", "wallbox"]
+  - ["rpc.auth_domain", "s", "wallbox", {title: "RPC digest auth realm"}]
+  - ["rpc.auth_file", "s", "rpc_auth.htdigest", {title: "RPC htdigest credential file"}]
+  - ["rpc.acl", "s", "[{\"method\":\"*\",\"ch_type\":\"UART\",\"acl\":\"*\"},{\"method\":\"*\",\"acl\":\"+admin\"}]", {title: "RPC ACL: UART open; all other channels require admin auth"}]
 
 libs:
   - origin: https://github.com/mongoose-os-libs/mbedtls

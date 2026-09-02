@@ -68,6 +68,9 @@ void process_loop(void *arg) {
   if (!healthcheck()) {
     // Reboot to avoid issues
     LOG(LL_INFO, ("Reboot caused by health check"));
+    /* Flush meter counters before the reboot so we do not lose the energy
+       accumulated since the last throttled save (#4). */
+    power_flush();
     mgos_system_restart();
     return;
   }

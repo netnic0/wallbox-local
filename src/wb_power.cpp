@@ -24,6 +24,10 @@
 
 static struct HLW8012 *hlw8012 = NULL;
 
+/* Flash-write throttle. process_loop() ticks every 60s; 10 ticks = ~10 min. */
+#define FLUSH_EVERY_TICKS 10
+static int save_tick_counter = 0;
+
 void power_init() {
   if ((hlw8012 = mgos_hlw8012_create()) == NULL) {
     LOG(LL_ERROR, ("Cannot initialize HLW8012"));
@@ -69,6 +73,15 @@ int power_read_energy() {
     return INT_MAX;
   }
   return (int) raw;
+}
+
+/* Live session energy in Wh as a float (1-decimal resolution for MQTT).
+   HLW8012 accumulates in Ws; divide by 3600 to get Wh. Kept in-memory only:
+   meter.session_energy stays an int (mos.yml schema), we just avoid rounding
+   the value we publish. */
+float power_read_live_session_energy_float() {
+  if (hlw8012 == NULL) return 0.0f;
+  return (float) power_read_energy() / 3600.0f;
 }
 
 int power_read_active_power() {
@@ -127,5 +140,21 @@ void power_update() {
   mgos_sys_config_set_meter_total_energy(new_total);
   mgos_sys_config_set_meter_intensity(intensity);
   mgos_sys_config_set_meter_uptime(uptime);
+
+  /* Flash-write throttle: process_loop() runs every 60s and each save wears
+     the SPIFFS sector. Persist only once every FLUSH_EVERY_TICKS ticks
+     (~10 min) instead of every tick. The worst case on an unexpected power
+     loss is losing the energy accumulated since the last flush; charge-stop
+     and planned reboots call power_flush() to bound that window. */
+  if (++save_tick_counter >= FLUSH_EVERY_TICKS) {
+    mgos_sys_config_save(&mgos_sys_config, false, NULL);
+    save_tick_counter = 0;
+  }
+}
+
+/* Force an immediate persistence, resetting the throttle counter.
+   Idempotent and safe to call at any time. */
+void power_flush() {
   mgos_sys_config_save(&mgos_sys_config, false, NULL);
+  save_tick_counter = 0;
 }

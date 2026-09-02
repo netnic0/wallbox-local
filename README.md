@@ -13,6 +13,49 @@ Local-only wallbox firmware for **Shelly 1PM Gen1** (ESP8266 + BL0937), designed
 - 🚗 EV charge detection (planned for v1.2.0)
 - 🛡️ Thermal & overcurrent protection (planned for v1.2.0)
 
+## Security — RPC authentication
+
+All RPC endpoints (HTTP, WebSocket, MQTT) require **HTTP Digest authentication**.
+Only the **UART/serial** channel is left open, for local bench debugging and recovery.
+This protects the open management surface (`Config.Set`, `FS.*`, `OTA.*`,
+`Wallbox.SetRelay`, `Wallbox.Reset`, ...) from unauthenticated access on the LAN.
+
+The policy is a compiled-in ACL (`rpc.acl` in `mos.yml`); it cannot be changed
+without reflashing:
+
+| Channel | Access |
+|---|---|
+| UART / serial | open (no auth) |
+| HTTP / WS / MQTT | requires authenticated user `admin` |
+
+### ⚠️ CHANGE THE DEFAULT PASSWORD BEFORE PUTTING THE DEVICE ON A NETWORK
+
+The firmware ships with a **fixed default credential** in
+[`fs/rpc_auth.htdigest`](./fs/rpc_auth.htdigest):
+
+```
+user:     admin
+realm:    wallbox
+password: wallbox        <-- DEFAULT, IDENTICAL ON EVERY BUILD — CHANGE IT
+```
+
+This default exists only so the device is reachable on first boot. It is a known,
+shared secret and provides **no real protection until you change it**. Do not expose
+the device to an untrusted network with the default in place.
+
+### Changing the password
+
+The credential file uses the standard Apache `htdigest` format:
+`user:realm:MD5(user:realm:password)`. Regenerate the hash and rebuild, or push the
+new file to the running device:
+
+```sh
+# realm MUST match rpc.auth_domain ("wallbox")
+htdigest -c rpc_auth.htdigest wallbox admin
+# then rebuild (fs/ is baked into SPIFFS) or upload the file via an authenticated
+# FS.Put RPC call, then reboot.
+```
+
 ## Versions
 
 | Version | Status | Highlights |
@@ -59,7 +102,7 @@ docker run --rm \
 OTA via the existing Web UI (recommended for an already-flashed Shelly):
 
 ```sh
-curl -v -F file=@build/fw.zip http://<wallbox-ip>/update
+curl -v -u admin:<password> -F file=@build/fw.zip http://<wallbox-ip>/update
 ```
 
 Initial flash via serial (USB-to-TTL adapter required for a stock Shelly):
@@ -71,8 +114,8 @@ mos --port COM8 flash
 ### Device configuration
 
 ```sh
-mos --port http://<wallbox-ip>/rpc config-get
-mos --port http://<wallbox-ip>/rpc config-set <key> <value>
+mos --port http://admin:<password>@<wallbox-ip>/rpc config-get
+mos --port http://admin:<password>@<wallbox-ip>/rpc config-set <key> <value>
 ```
 
 ### Console
