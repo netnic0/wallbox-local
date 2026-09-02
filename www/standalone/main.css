@@ -4,6 +4,8 @@ body { font-family: Arial, sans-serif; margin: 0; padding: 16px; }
 .header-bar { display: flex; align-items: center; justify-content: space-between; }
 .header-actions { display: flex; align-items: center; gap: 12px; }
 .chevron { background: #f5f5f5; border: 1px solid #ddd; border-radius: 16px; width: 32px; height: 32px; cursor: pointer; }
+.header-left { display: flex; flex-direction: column; gap: 4px; }
+.header-left h1 { margin: 0; font-size: 1.6rem; line-height: 1.1; min-height: 42px; }
 .summary { color: #555; font-size: 0.9rem; margin: 6px 0 10px; }
 .form { margin-top: 8px; }
 .form-control { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
@@ -29,3 +31,12 @@ body { font-family: Arial, sans-serif; margin: 0; padding: 16px; }
 /* Small helpers */
 .status-ok { color: #0a8; font-weight: 600; }
 .status-bad { color: #c00; font-weight: 600; }
+
+/* Demo: place a logo at the top-right of the header-bar using the project favicon */
+#main_container .header-bar,
+#wifi_container .header-bar {
+  background-image: url('../assets/favicon.png');
+  background-repeat: no-repeat;
+  background-position: right 8px top 8px;
+  padding-right: 42px; /* avoid overlap with the icon */
+}
