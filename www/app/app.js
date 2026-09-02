@@ -415,6 +415,8 @@ const renderInfo = data => {
         const intensityEl = document.getElementById("intensity");
         const stateEl = document.getElementById("state");
         const evEl = document.getElementById("ev");
+        const mqttServerRO = document.getElementById("mqtt_server_readonly");
+        const mqttConnected = document.getElementById("mqtt_connected");
 
         if (powerEl) powerEl.innerText = (data.power != null ? data.power + " W" : "-");
         if (voltageEl) voltageEl.innerText = (data.voltage != null ? data.voltage + " V" : "-");
@@ -424,6 +426,8 @@ const renderInfo = data => {
         if (intensityEl) intensityEl.innerText = (data.intensity != null ? data.intensity + " A" : "-");
         if (stateEl) stateEl.innerText = (data.state ? "Charging" : "Idle");
         if (evEl) evEl.innerText = (data.ev ? "Yes" : "No");
+        if (mqttServerRO) mqttServerRO.innerText = (data.mqtt_server || "-");
+        if (mqttConnected) mqttConnected.innerText = (data.mqtt_connected ? "Yes" : "No");
     }
 };
 

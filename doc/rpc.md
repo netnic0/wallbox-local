@@ -29,6 +29,7 @@ GET /rpc/Wallbox.GetInfo
     "state": false,
     "mqtt_state": false,
     "mqtt_server": "",
+    "mqtt_connected": true,
     "power": 3680,
     "voltage": 230,
     "current": 16.00,
@@ -55,6 +56,7 @@ Attributes:
 - state: `true` if the relay is closed (charging session on-going), else `false`
 - mqtt_state: `true` if MQTT publishing is enabled (`mqtt.enable`), else `false`
 - mqtt_server: the URL of the MQTT broker the wallbox is configured to use
+- mqtt_connected: `true` if the wallbox is connected to the configured MQTT broker
 - power: the instantaneous active power measured by the meter, in W
 - voltage: the instantaneous line voltage measured by the meter, in V
 - current: the instantaneous line current measured by the meter, in A (2 decimals)

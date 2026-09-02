@@ -56,6 +56,8 @@ L’UI est structurée en sections: Informations, Wi-Fi, MQTT, Firmware, Adminis
 - Energy delivered: Énergie de la session en cours (Wh)
 - Intensity: Intensité calculée (A) — issue du delta d’énergie et du temps à 230 V
 - Temperature: Température interne (°C)
+- MQTT Server: Adresse du broker configuré (lecture seule; cf. section MQTT)
+- MQTT Connected: `Yes/No` (état de connexion au broker)
 - Device/Serial/IP/MAC/Uptime: Informations système
 
 Actions:
@@ -213,6 +215,7 @@ Entités publiées via MQTT Discovery (toutes retained):
   - Attendu si vous n’êtes pas authentifié (Digest)
 - HA ne découvre pas la Wallbox:
   - Vérifiez la connexion au broker MQTT, `mqtt.enable` et `mqtt.server`
+  - Dans l'UI, vérifiez "MQTT Server" et "MQTT Connected"
   - Vérifiez que HA Discovery est activé
   - Consultez les logs de HA et de la Wallbox
 - `docker: command not found` en build:
@@ -221,6 +224,7 @@ Entités publiées via MQTT Discovery (toutes retained):
 —
 
 ## 9. Références
+- Script de vérification SPIFFS: `scripts/verify_fs.sh` (WSL)
 
 - Guide build/flash: `docs/BUILD-AND-FLASH.md`
 - Plan d’implémentation: `docs/PLAN.md`
