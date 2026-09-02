@@ -132,6 +132,15 @@ with a global http.auth_domain, the WebUI page load itself prompts for auth, so 
 caches Digest credentials BEFORE the first /rpc or /update call - exactly what Option A needs.
 This mos.yml change goes through Task(senior-plan-reviewer), then built and flashed before 2.1.
 
+
+### 2.0.1 Recovery / Bricking Prevention (read before flashing)
+- Default password during L2-B is "wallbox" (intentional, kept until further notice - see section 7).
+- If credentials are ever lost or the device locks out, reflash over UART:
+  mos flash --port /dev/ttyUSBx --firmware <firmware.zip>
+  UART is always unauthenticated per rpc.acl (mos.yml:66 - confirmed).
+- HA automation or REST scripts that call /rpc over HTTP will receive 401 after §2.0 lands.
+  Inventory all HA service calls to http://<wallbox_ip>/rpc before running the 2.1 browser test.
+  This does not block §2.0 coding but must be resolved before considering §2.1 complete.
 ### 2.1 VERIFY on-device (implementation-phase task - NOT a user action)
 > Test the IMPLEMENTING session runs on the flashed device while building L2-B.
 On Chrome AND Firefox: open dev tools, authenticate once against /rpc, then manually POST to
