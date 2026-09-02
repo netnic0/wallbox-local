@@ -476,9 +476,8 @@ h3 {
     no-repeat right center;
 }
 
-#logs_container h1 {
-  background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABGdBTUEAALGPC/xhBQAAAAFzUkdCAK7OHOkAAAAgY0hSTQAAeiYAAICEAAD6AAAAgOgAAHUwAADqYAAAOpgAABdwnLpRPAAAAAZiS0dEAAAAAAAA+UO7fwAAAAlwSFlzAAAASAAAAEgARslrPgAAAURJREFUWMPtljFOw0AQRd9snCo1nTvIAaI0+ARQE8IBaIhLOAi0puEA+AK+QdxEOUCgc0ebVAYPRVxEVhR7rUXCkF+tdkczf+aPZgeO+O+Q6sXoZXXSy02kcAEMHMXZKCTaL8Ll7fBj98GrWpbBrxwnOhCYkBuA64MEyswBMtC5m/gSAL7AZfXF22Ndll3ni7uzGxfhx89vryBT9khq3GTYHl4To3H0/oDouZVnlXQxO310QmAbXKZWBEQbmXVDAlfN2N0KjKJVYKTn2zgu9Ctbzoa1c6QRASNyD2rVhEYkBmoJdEOCQvXJiIltHBdaZM4INNGyLbohwc5ncgAat5kX3agAKmntbFdJf4xAk1+tLX6lBBtgABJsm88FJCgP61oCConABPCtd4BaHiT1BPpFSG4oF0hXa/kaIUE/Q6cJHfEn8A1H71iVwssv2AAAACV0RVh0ZGF0ZTpjcmVhdGUAMjAyMC0wNS0xNFQxMjo0ODoyMCswMDowMH35DLoAAAAldEVYdGRhdGU6bW9kaWZ5ADIwMjAtMDUtMTRUMTI6NDg6MjArMDA6MDAMpLQGAAAAKHRFWHRzdmc6YmFzZS11cmkAZmlsZTovLy90bXAvbWFnaWNrLXBkMzJueElyvVg9iAAAAABJRU5ErkJggg==)
-    no-repeat right center;
+#logs_container .header-bar {
+  background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABGdBTUEAALGPC/xhBQAAAAFzUkdCAK7OHOkAAAAgY0hSTQAAeiYAAICEAAD6AAAAgOgAAHUwAADqYAAAOpgAABdwnLpRPAAAAAZiS0dEAAAAAAAA+UO7fwAAAAlwSFlzAAAASAAAAEgARslrPgAAAURJREFUWMPtljFOw0AQRd9snCo1nTvIAaI0+ARQE8IBaIhLOAi0puEA+AK+QdxEOUCgc0ebVAYPRVxEVhR7rUXCkF+tdkczf+aPZgeO+O+Q6sXoZXXSy02kcAEMHMXZKCTaL8Ll7fBj98GrWpbBrxwnOhCYkBuA64MEyswBMtC5m/gSAL7AZfXF22Ndll3ni7uzGxfhx89vryBT9khq3GTYHl4To3H0/oDouZVnlXQxO310QmAbXKZWBEQbmXVDAlfN2N0KjKJVYKTn2zgu9Ctbzoa1c6QRASNyD2rVhEYkBmoJdEOCQvXJiIltHBdaZM4INNGyLbohwc5ncgAat5kX3agAKmntbFdJf4xAk1+tLX6lBBtgABJsm88FJCgP61oCConABPCtd4BaHiT1BPpFSG4oF0hXa/kaIUE/Q6cJHfEn8A1H71iVwssv2AAAACV0RVh0ZGF0ZTpjcmVhdGUAMjAyMC0wNS0xNFQxMjo0ODoyMCswMDowMH35DLoAAAAldEVYdGRhdGU6bW9kaWZ5ADIwMjAtMDUtMTRUMTI6NDg6MjArMDA6MDAMpLQGAAAAKHRFWHRzdmc6YmFzZS11cmkAZmlsZTovLy90bXAvbWFnaWNrLXBkMzJueElyvVg9iAAAAABJRU5ErkJggg==);
 }
 
 #toast {
@@ -512,10 +511,17 @@ h3 {
 }
 
 /* Align main card logo like other cards: right aligned, vertically centered */
-#main_container h1 {
-  background-position: right center !important;
+#main_container .header-bar,
+#wifi_container .header-bar,
+#mqtt_container .header-bar,
+#fw_container .header-bar,
+#admin_container .header-bar,
+#logs_container .header-bar {
+  /* Place card icons strictly at the top-right corner of the header bar */
+  background-position: right 8px top 8px !important;
   background-repeat: no-repeat !important;
-  padding-right: 42px; /* leave room for the icon on the right */
+  /* Ensure content does not overlap with the right-aligned icon */
+  padding-right: 42px;
 }
 
 /* Align header-left block: title, sub, then inline actions (MQTT status + toggle) */
@@ -523,9 +529,9 @@ h3 {
 #main_container .header-actions--inline { display: inline-flex; align-items: center; gap: 8px; margin-top: 4px; }
 
 /* Unify typography and spacing for all cards */
-.container .header-bar { display: flex; align-items: flex-start; justify-content: space-between; }
+.container .header-bar { display: flex; align-items: flex-start; justify-content: space-between; position: relative; }
 .container .header-left { display: flex; flex-direction: column; gap: 4px; }
-.container .header-left h1 { color: #333333; font-size: xx-large; font-weight: 600; margin: 0; }
+.container .header-left h1 { color: #333333; font-size: xx-large; font-weight: 600; margin: 0; line-height: 1.1; min-height: 42px; }
 .container .header-left .sub { color: #777; font-size: 0.95rem; }
 .container .header-actions--inline { display: inline-flex; align-items: center; gap: 8px; margin-top: 4px; }
 

@@ -5,18 +5,22 @@
   <title>Standalone Shelly Charging Station</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="./main.css">
+  <style>
+    /* Small demo chip */
+    .chip { display:inline-block; padding: 2px 8px; border-radius: 9999px; background:#eee; font-weight:600; }
+  </style>
 </head>
 <body>
   <!-- Minimal standalone reproduction of the cards with toggles -->
-  <div class="container card-collapsed" id="main_container">
+  <div class="container" id="main_container">
     <div class="header-bar">
-      <div>
+      <div class="header-left">
         <h1>Shelly Charging Station</h1>
         <div class="sub">Local-only firmware (Shelly 1PM Gen1)</div>
-      </div>
-      <div class="header-actions">
-        <div class="sub"><span>MQTT:</span> <span id="chip_mqtt" class="chip">-</span></div>
-        <button type="button" class="chevron" aria-label="Toggle" data-toggle="card" data-target="main_container">▾</button>
+        <div class="header-actions header-actions--inline">
+          <div class="sub"><span>MQTT:</span> <span id="chip_mqtt" class="chip">-</span></div>
+          <button type="button" class="chevron" aria-label="Toggle" data-toggle="card" data-target="main_container">▾</button>
+        </div>
       </div>
     </div>
     <h2>Information and status of the wallbox</h2>
@@ -34,8 +38,12 @@
 
   <div class="container" id="wifi_container">
     <div class="header-bar">
-      <h1 class="">Wi-Fi</h1>
-      <div class="header-actions"><button type="button" class="chevron" aria-label="Toggle" data-toggle="card" data-target="wifi_container">▾</button></div>
+      <div class="header-left">
+        <h1>Wi-Fi</h1>
+        <div class="header-actions header-actions--inline">
+          <button type="button" class="chevron" aria-label="Toggle" data-toggle="card" data-target="wifi_container">▾</button>
+        </div>
+      </div>
     </div>
     <div class="summary" id="summary_wifi">SSID1: <span id="sum_wifi0">-</span> | SSID2: <span id="sum_wifi1">-</span></div>
     <div class="form">
@@ -47,6 +55,10 @@
   </div>
 
   <script>
+  // Collapse all by default for demo
+  document.addEventListener('DOMContentLoaded', function(){
+    document.querySelectorAll('.container').forEach(function(c){ c.classList.add('card-collapsed'); });
+  });
   // Generic delegated toggle identical to app.js
   document.addEventListener('click', function (e) {
     var btn = e.target && e.target.closest ? e.target.closest('[data-toggle="card"]') : null;

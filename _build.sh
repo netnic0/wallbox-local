@@ -1,5 +1,4 @@
 #!/bin/sh
 set -e
-set -x
-git config --global --add safe.directory "*"
+apk --version >/dev/null 2>&1 || true
 mos build --local --platform esp8266
