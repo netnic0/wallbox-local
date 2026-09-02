@@ -46,7 +46,8 @@ const char *RPC_GETINFO =
     "power: %d,"
     "voltage: %d,"
     "current: %.2f,"
-    "charging: %B"
+    "charging: %B,"
+    "ev: %B"
     "}";
 
 void rpc_init() {
@@ -68,7 +69,8 @@ void rpc_wallbox_get_info_handler(struct mg_rpc_request_info *ri,
 
   mg_rpc_send_responsef(ri,
                         RPC_GETINFO,
-                        mgos_sys_config_get_device_id(),
+                         mgos_gpio_read(mgos_sys_config_get_gpio_relay()),
+                         power_ev_detected()
                         sn,
                         MGOS_APP,
                         mgos_sys_ro_vars_get_fw_version(),

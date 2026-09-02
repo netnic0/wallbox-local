@@ -405,6 +405,28 @@ const getLogs = () => {
     }).catch(handleError);
 };
 
+const renderInfo = data => {
+    if (data) {
+        const powerEl = document.getElementById("power");
+        const voltageEl = document.getElementById("voltage");
+        const currentEl = document.getElementById("current");
+        const temperatureEl = document.getElementById("temperature");
+        const energyEl = document.getElementById("energy");
+        const intensityEl = document.getElementById("intensity");
+        const stateEl = document.getElementById("state");
+        const evEl = document.getElementById("ev");
+
+        if (powerEl) powerEl.innerText = (data.power != null ? data.power + " W" : "-");
+        if (voltageEl) voltageEl.innerText = (data.voltage != null ? data.voltage + " V" : "-");
+        if (currentEl) currentEl.innerText = (data.current != null ? data.current.toFixed(2) + " A" : "-");
+        if (temperatureEl) temperatureEl.innerText = (data.temperature != null ? data.temperature.toFixed(1) + " °C" : "-");
+        if (energyEl) energyEl.innerText = (data.energy != null ? data.energy + " Wh" : "-");
+        if (intensityEl) intensityEl.innerText = (data.intensity != null ? data.intensity + " A" : "-");
+        if (stateEl) stateEl.innerText = (data.state ? "Charging" : "Idle");
+        if (evEl) evEl.innerText = (data.ev ? "Yes" : "No");
+    }
+};
+
 const getInfo = () => {
     rpc("Wallbox.GetInfo").then(data => {
         wifiSSID0.value = data.wifi_ssid;
