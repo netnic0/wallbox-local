@@ -47,4 +47,11 @@ unsigned int power_read_voltage();
 
 double power_read_current();
 
+/* Returns true if an EV is detected based on power threshold semantics.
+   Semantics (L3.2):
+   - EV considered present when active power >= EV_ON_W for EV_TICKS consecutive ticks
+   - EV considered absent when active power <= EV_OFF_W for EV_TICKS consecutive ticks
+   This introduces hysteresis and stability across ticks. */
+bool power_ev_detected();
+
 #endif /* wb_power_h */

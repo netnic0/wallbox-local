@@ -27,6 +27,13 @@ static struct HLW8012 *hlw8012 = NULL;
 /* Flash-write throttle. process_loop() ticks every 60s; 10 ticks = ~10 min. */
 #define FLUSH_EVERY_TICKS 10
 static int save_tick_counter = 0;
+/* EV detection hysteresis thresholds and counters (L3.2). */
+#define EV_ON_W   150   /* EV present when power >= 150 W for EV_TICKS */
+#define EV_OFF_W  80    /* EV absent when power <= 80 W  for EV_TICKS */
+#define EV_TICKS  3     /* consecutive ticks required */
+static int ev_on_count = 0;
+static int ev_off_count = 0;
+static bool ev_present = false;
 
 void power_init() {
   if ((hlw8012 = mgos_hlw8012_create()) == NULL) {
@@ -150,6 +157,32 @@ void power_update() {
     mgos_sys_config_save(&mgos_sys_config, false, NULL);
     save_tick_counter = 0;
   }
+
+  /* L3.2: EV detection hysteresis using active power. */
+  int p = power_read_active_power();
+  if (!ev_present) {
+    if (p >= EV_ON_W) {
+      if (++ev_on_count >= EV_TICKS) {
+        ev_present = true;
+        ev_on_count = 0;
+        ev_off_count = 0;
+        LOG(LL_INFO, ("EV detection: present (power=%d W)", p));
+      }
+    } else {
+      ev_on_count = 0;
+    }
+  } else {
+    if (p <= EV_OFF_W) {
+      if (++ev_off_count >= EV_TICKS) {
+        ev_present = false;
+        ev_on_count = 0;
+        ev_off_count = 0;
+        LOG(LL_INFO, ("EV detection: absent (power=%d W)", p));
+      }
+    } else {
+      ev_off_count = 0;
+    }
+  }
 }
 
 /* Force an immediate persistence, resetting the throttle counter.
@@ -158,3 +191,5 @@ void power_flush() {
   mgos_sys_config_save(&mgos_sys_config, false, NULL);
   save_tick_counter = 0;
 }
+
+bool power_ev_detected() { return ev_present; }
