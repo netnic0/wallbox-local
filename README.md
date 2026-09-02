@@ -223,5 +223,5 @@ Entités publiées via MQTT Discovery (toutes retained):
 ## 9. Références
 
 - Guide build/flash: `docs/BUILD-AND-FLASH.md`
-- Plan d’implémentation: `docs/PLAN-L2-B-L3.md`
+- Plan d’implémentation: `docs/PLAN.md`
 - Documentation RPC: `doc/rpc.md`
