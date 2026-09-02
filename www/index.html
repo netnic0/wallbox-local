@@ -1,274 +1,365 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
+  <head>
+    <title>Shelly Charging Station</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="description" content="Wallbox configuration" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Cache-Control"
+      content="no-cache, no-store, must-revalidate"
+    />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <link rel="shortcut icon" href="./favicon.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="./favicon.png" />
+    <!-- Fallback when opening this template directly (without webpack build): -->
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="./assets/favicon.png"
+    />
+  </head>
 
-<head>
-  <title>Wallbox</title>
-  <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
-  <meta charset="utf-8"/>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-  <meta name="description" content="Wallbox configuration">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-  <meta http-equiv="Pragma" content="no-cache" />
-  <meta http-equiv="Expires" content="0" />
-  <link rel="shortcut icon" href="./favicon.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="./favicon.png">
-  <!-- Fallback when opening this template directly (without webpack build): -->
-  <link rel="icon" type="image/png" sizes="16x16" href="./assets/favicon.png">
-</head>
-
-<body>
-
-  <div class="container" id="main_container">
-    <h1>Wallbox</h1>
-    <h2>Information and status of the wallbox</h2>
-    <div class="form">
-      <div class="">
-        <div class="form-control">
-          <label>Status:</label>
-          <span id="state" class=""></span>
+  <body>
+    <div class="container" id="main_container">
+      <div class="header-bar">
+        <div>
+        <h1>Shelly Charging Station</h1>
+          <div class="sub">Local-only firmware (Shelly 1PM Gen1)</div>
         </div>
-        <div class="form-control" id="power-control">
-          <label>Power:</label>
-          <span id="power"></span>
-        </div>
-        <div class="form-control" id="voltage-control">
-          <label>Voltage:</label>
-          <span id="voltage"></span>
-        </div>
-        <div class="form-control" id="current-control">
-          <label>Current:</label>
-          <span id="current"></span>
-        </div>
-        <div class="form-control" id="ev-control">
-          <label>EV detected:</label>
-          <span id="ev"></span>
-        </div>
-        <div class="form-control" id="energy-control">
-          <label>Energy delivered:</label>
-          <span id="energy"></span>
-        </div>
-        <div class="form-control" id="intensity-control">
-          <label>Intensity:</label>
-          <span id="intensity"></span>
-        </div>
-        <div class="form-control">
-          <label>Temperature:</label>
-          <span id="temperature"></span>
-        </div>
-        <div class="form-control">
-          <label>MQTT Server:</label>
-          <span id="mqtt_server_readonly"></span>
-        </div>
-        <div class="form-control">
-          <label>MQTT Connected:</label>
-          <span id="mqtt_connected"></span>
-          <button class="btn" id="mqtt_reconnect_btn" style="margin-left:12px;">Reconnect</button>
-        </div>
-        <div class="form-separator"></div>
-        <div class="form-actions">
-          <button class="btn" id="start_btn">
-            Start charge
-            <span id="start_spinner"></span>
-          </button>
-          <button class="btn" id="stop_btn">
-            Stop charge
-            <span id="stop_spinner"></span>
-          </button>
-          <button class="admin-btn" id="reset_energy_btn">
-            Reset energy
-            <span id="reset_energy_spinner"></span>
-          </button>
-        </div>
-        <div class="form-separator"></div>
-        <div class="form-control">
-          <label>Device:</label>
-          <span id="device_id"></span>
-        </div>
-        <div class="form-control">
-          <label>Serial number:</label>
-          <span id="device_sn"></span>
-        </div>
-        <div class="form-control">
-          <label>IP address:</label>
-          <span id="device_ip"></span>
-        </div>
-        <div class="form-control">
-          <label>MAC address:</label>
-          <span id="device_mac"></span>
-        </div>
-        <div class="form-control">
-          <label>Up time:</label>
-          <span id="uptime"></span>
+        <div class="header-actions">
+          <div class="sub">
+            <span>MQTT:</span>
+            <span id="chip_mqtt" class="chip">-</span>
+          </div>
+          <button class="chevron" aria-label="Toggle" data-toggle="card" data-target="main_container">▾</button>
         </div>
       </div>
-    </div>
-  </div>
-
-  <div class="container" id="wifi_container">
-    <h1 class="">Wi-Fi</h1>
-    <h2>Configuration of the Wi-Fi connections</h2>
-    <p>You may configure up to two Wi-Fi networks for two locations.</p>
-    <div class="form">
-      <div class="">
-        <form id="wifi_form">
-          <h3>Network 1</h3>
+      <h2>Information and status of the wallbox</h2>
+      <div id="device_banner" class="banner banner--idle">Device: Idle</div>
+      <div class="form">
+        <div class="">
+          <div class="summary" id="summary_main">Power: <span id="sum_power">-</span> | EV: <span id="sum_ev">-</span> | Temp: <span id="sum_temp">-</span></div>
           <div class="form-control">
-            <label>SSID:</label>
-            <input type="text" id="wifi_ssid_0" autocomplete="wifi ssid">
+            <label>Status:</label>
+            <span id="state" class=""></span>
+          </div>
+          <div class="form-control" id="power-control">
+            <label>Power:</label>
+            <span id="power"></span>
+          </div>
+          <div class="form-control" id="voltage-control">
+            <label>Voltage:</label>
+            <span id="voltage"></span>
+          </div>
+          <div class="form-control" id="current-control">
+            <label>Current:</label>
+            <span id="current"></span>
+          </div>
+          <div class="form-control" id="ev-control">
+            <label>EV detected:</label>
+            <span id="ev"></span>
+          </div>
+          <div class="form-control" id="energy-control">
+            <label>Energy delivered:</label>
+            <span id="energy"></span>
+          </div>
+          <div class="form-control" id="intensity-control">
+            <label>Intensity:</label>
+            <span id="intensity"></span>
           </div>
           <div class="form-control">
-            <label>Password:</label>
-            <input type="password" id="wifi_pass_0" autocomplete="wifi current-password">
+            <label>Temperature:</label>
+            <span id="temperature"></span>
           </div>
           <div class="form-control">
-            <label> </label>
-            <input type="checkbox" id="wifi_pass_show_0">
-            <label for="wifi_pass_show_0" id="wifi_pass_show_label" class="passhint">Show password</label>
-          </div>
-          <h3>Network 2</h3>
-          <div class="form-control">
-            <label>SSID:</label>
-            <input type="text" id="wifi_ssid_1" autocomplete="wifi ssid">
+            <label>MQTT Server:</label>
+            <span id="mqtt_server_readonly"></span>
           </div>
           <div class="form-control">
-            <label>Password:</label>
-            <input type="password" id="wifi_pass_1" autocomplete="wifi current-password">
-          </div>
-          <div class="form-control">
-            <label> </label>
-            <input type="checkbox" id="wifi_pass_show_1">
-            <label for="wifi_pass_show_1" id="wifi_pass_show_label" class="passhint">Show password</label>
-          </div>
-          <div class="form-actions">
-            <button id="wifi_save_btn">
-              Save
-              <span id="wifi_spinner"></span>
+            <label>MQTT Connected:</label>
+            <span id="mqtt_connected"></span>
+            <button
+              class="btn btn--outline"
+              id="mqtt_reconnect_btn"
+              style="margin-left: 12px"
+            >
+              Reconnect
             </button>
           </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <div class="container" id="mqtt_container">
-    <h1 class="">MQTT</h1>
-    <h2>Configuration of the connection to the MQTT server</h2>
-    <p>The wallbox publishes status information. You can track your wallbox in your IoT landscape.</p>
-    <div class="form">
-      <div class="">
-        <form id="mqtt_form">
-          <div class="form-control">
-            <label>Enable MQTT:</label>
-            <input type="checkbox" id="mqtt_enable">
+          <div id="alert_mqtt" class="alert">
+            <span class="title">MQTT disconnected</span>
+            <span class="desc"
+              >Please check the MQTT configuration and broker availability, then
+              click Reconnect.</span
+            >
           </div>
-          <div class="form-control">
-            <label>Server:</label>
-            <input type="text" id="mqtt_server" autocomplete="mqtt server">
-          </div>
-          <div class="form-control">
-            <label>Password:</label>
-            <input type="password" id="mqtt_pass" autocomplete="mqtt current-password">
-          </div>
-          <div class="form-control">
-            <label> </label>
-            <input type="checkbox" id="mqtt_pass_show">
-            <label for="mqtt_pass_show" id="mqtt_pass_show_label" class="passhint">Show password</label>
-          </div>
+          <div class="form-separator"></div>
           <div class="form-actions">
-            <button id="mqtt_save_btn">
-              Save
-              <span id="mqtt_spinner"></span>
+            <button class="btn" id="start_btn">
+              Start charge
+              <span id="start_spinner"></span>
+            </button>
+            <button class="btn" id="stop_btn">
+              Stop charge
+              <span id="stop_spinner"></span>
+            </button>
+            <button class="admin-btn" id="reset_energy_btn">
+              Reset energy
+              <span id="reset_energy_spinner"></span>
             </button>
           </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <div class="container" id="fw_container">
-    <h1 class="">Firmware</h1>
-    <h2>Information and configuration of the wallbox firmware</h2>
-    <p>You can check the firmware information and update your wallbox remotely.</p>
-    <div class="form">
-      <div class="">
-        <div class="form-control">
-          <label>App:</label>
-          <span id="app_name"></span>
-        </div>
-        <div class="form-control">
-          <label>Version:</label>
-          <span id="app_version"></span>
-        </div>
-        <div class="form-control">
-          <label>Date:</label>
-          <span id="app_date"></span>
-        </div>
-        <div class="form-control">
-          <label>Build number:</label>
-          <span id="app_build"></span>
-        </div>
-        <form id="fw_upload_form">
+          <div class="form-separator"></div>
           <div class="form-control">
-            <label>Update:</label>
-            <input type="file" id="fw_select_file" name="file" accept=".zip" />
+            <label>Device:</label>
+            <span id="device_id"></span>
           </div>
-          <div class="form-actions">
-            <button id="fw_upload_btn">
-              Upload
-              <span id="fw_spinner"></span>
-            </button>
+          <div class="form-control">
+            <label>Serial number:</label>
+            <span id="device_sn"></span>
           </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <div class="container" id="admin_container">
-    <h1 class="">Administration</h1>
-    <h2>Tasks for the administration of the wallbox</h2>
-    <p>You can reboot or reset your wallbox in case of issue.</p>
-    <div class="form">
-      <div class="">
-        <div class="form-actions">
-          <button class="btn" id="reboot_btn">
-            Reboot
-            <span id="reboot_spinner"></span>
-          </button>
-          <button class="admin-btn" id="reset_wifi_btn">
-            Reset Wi-Fi
-            <span id="reset_wifi_spinner"></span>
-          </button>
-          <button class="admin-btn" id="reset_btn">
-            Factory Reset
-            <span id="reset_spinner"></span>
-          </button>
+          <div class="form-control">
+            <label>IP address:</label>
+            <span id="device_ip"></span>
+          </div>
+          <div class="form-control">
+            <label>MAC address:</label>
+            <span id="device_mac"></span>
+          </div>
+          <div class="form-control">
+            <label>Up time:</label>
+            <span id="uptime"></span>
+          </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <div class="container" id="logs_container">
-    <h1 class="">Logs</h1>
-    <h2>Download Wallbox log files</h2>
-    <div id="logs" class="flex-list">
+    <div class="container" id="wifi_container">
+      <h1 class="">Wi-Fi</h1>
+      <div class="header-actions">
+        <button class="chevron" aria-label="Toggle" data-toggle="card" data-target="wifi_container">▾</button>
+      </div>
+      <h2>Configuration of the Wi-Fi connections</h2>
+      <div class="summary" id="summary_wifi">SSID1: <span id="sum_wifi0">-</span> | SSID2: <span id="sum_wifi1">-</span></div>
+      <p>You may configure up to two Wi-Fi networks for two locations.</p>
+      <div class="form">
+        <div class="">
+          <form id="wifi_form">
+            <h3>Network 1</h3>
+            <div class="form-control">
+              <label>SSID:</label>
+              <input type="text" id="wifi_ssid_0" autocomplete="wifi ssid" />
+            </div>
+            <div class="form-control">
+              <label>Password:</label>
+              <input
+                type="password"
+                id="wifi_pass_0"
+                autocomplete="wifi current-password"
+              />
+            </div>
+            <div class="form-control">
+              <label> </label>
+              <input type="checkbox" id="wifi_pass_show_0" />
+              <label
+                for="wifi_pass_show_0"
+                id="wifi_pass_show_label"
+                class="passhint"
+                >Show password</label
+              >
+            </div>
+            <h3>Network 2</h3>
+            <div class="form-control">
+              <label>SSID:</label>
+              <input type="text" id="wifi_ssid_1" autocomplete="wifi ssid" />
+            </div>
+            <div class="form-control">
+              <label>Password:</label>
+              <input
+                type="password"
+                id="wifi_pass_1"
+                autocomplete="wifi current-password"
+              />
+            </div>
+            <div class="form-control">
+              <label> </label>
+              <input type="checkbox" id="wifi_pass_show_1" />
+              <label
+                for="wifi_pass_show_1"
+                id="wifi_pass_show_label"
+                class="passhint"
+                >Show password</label
+              >
+            </div>
+            <div class="form-actions">
+              <button id="wifi_save_btn">
+                Save
+                <span id="wifi_spinner"></span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
-  </div>
 
-  <div class="footer"></div>
-
-  <div class="popup" id="info_container">
-    <div class="dialog">
-      <h1 id="info_title"></h1>
+    <div class="container" id="mqtt_container">
+      <h1 class="">MQTT</h1>
+      <div class="header-actions">
+        <button class="chevron" aria-label="Toggle" data-toggle="card" data-target="mqtt_container">▾</button>
+      </div>
+      <h2>Configuration of the connection to the MQTT server</h2>
+      <div class="summary" id="summary_mqtt">Server: <span id="sum_mqtt_server">-</span> | Connected: <span id="sum_mqtt_conn">-</span></div>
       <p>
-        <span id="info_spinner" class="spin reboot"></span>
-        <span id="info_message"></span>
+        The wallbox publishes status information. You can track your wallbox in
+        your IoT landscape.
       </p>
+      <div class="form">
+        <div class="">
+          <form id="mqtt_form">
+            <div class="form-control">
+              <label>Enable MQTT:</label>
+              <input type="checkbox" id="mqtt_enable" />
+            </div>
+            <div class="form-control">
+              <label>Server:</label>
+              <input type="text" id="mqtt_server" autocomplete="mqtt server" />
+            </div>
+            <div class="form-control">
+              <label>User:</label>
+              <input type="text" id="mqtt_user" autocomplete="username" />
+            </div>
+            <div class="form-control">
+              <label>Password:</label>
+              <input
+                type="password"
+                id="mqtt_pass"
+                autocomplete="mqtt current-password"
+              />
+            </div>
+            <div class="form-control">
+              <label> </label>
+              <input type="checkbox" id="mqtt_pass_show" />
+              <label
+                for="mqtt_pass_show"
+                id="mqtt_pass_show_label"
+                class="passhint"
+                >Show password</label
+              >
+            </div>
+            <div class="form-actions">
+              <button id="mqtt_save_btn" class="btn btn--warning">
+                Save
+                <span id="mqtt_spinner"></span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
-  </div>
 
-  <div id="toast"></div>
+    <div class="container" id="fw_container">
+      <h1 class="">Firmware</h1>
+      <div class="header-actions">
+        <button class="chevron" aria-label="Toggle" data-toggle="card" data-target="fw_container">▾</button>
+      </div>
+      <h2>Information and configuration of the wallbox firmware</h2>
+      <div class="summary" id="summary_fw">App: <span id="sum_app">-</span> | Version: <span id="sum_version">-</span> | Date: <span id="sum_date">-</span></div>
+      <p>
+        You can check the firmware information and update your wallbox remotely.
+      </p>
+      <div class="form">
+        <div class="">
+          <div class="form-control">
+            <label>App:</label>
+            <span id="app_name"></span>
+          </div>
+          <div class="form-control">
+            <label>Version:</label>
+            <span id="app_version"></span>
+          </div>
+          <div class="form-control">
+            <label>Date:</label>
+            <span id="app_date"></span>
+          </div>
+          <div class="form-control">
+            <label>Build number:</label>
+            <span id="app_build"></span>
+          </div>
+          <form id="fw_upload_form">
+            <div class="form-control">
+              <label>Update:</label>
+              <input
+                type="file"
+                id="fw_select_file"
+                name="file"
+                accept=".zip"
+              />
+            </div>
+            <div class="form-actions">
+              <button id="fw_upload_btn" class="btn btn--warning">
+                Upload
+                <span id="fw_spinner"></span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
 
-</body>
+    <div class="container" id="admin_container">
+      <h1 class="">Administration</h1>
+      <div class="header-actions">
+        <button class="chevron" aria-label="Toggle" data-toggle="card" data-target="admin_container">▾</button>
+      </div>
+      <h2>Tasks for the administration of the wallbox</h2>
+      <div class="summary" id="summary_admin">Admin actions available: Reboot, Reset Wi-Fi, Factory Reset</div>
+      <p>You can reboot or reset your wallbox in case of issue.</p>
+      <div class="form">
+        <div class="">
+          <div class="form-actions">
+            <button class="btn" id="reboot_btn">
+              Reboot
+              <span id="reboot_spinner"></span>
+            </button>
+            <button class="admin-btn" id="reset_wifi_btn">
+              Reset Wi-Fi
+              <span id="reset_wifi_spinner"></span>
+            </button>
+            <button class="admin-btn" id="reset_btn">
+              Factory Reset
+              <span id="reset_spinner"></span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
 
+    <div class="container" id="logs_container">
+      <h1 class="">Logs</h1>
+      <div class="header-actions">
+        <button class="chevron" aria-label="Toggle" data-toggle="card" data-target="logs_container">▾</button>
+      </div>
+      <h2>Download Wallbox log files</h2>
+      <div class="summary" id="summary_logs">Logs: <span id="sum_logs_count">0</span></div>
+      <div id="logs" class="flex-list"></div>
+    </div>
+
+    <div class="footer"></div>
+
+    <div class="popup" id="info_container">
+      <div class="dialog">
+        <h1 id="info_title"></h1>
+        <p>
+          <span id="info_spinner" class="spin reboot"></span>
+          <span id="info_message"></span>
+        </p>
+      </div>
+    </div>
+
+    <div id="toast"></div>
+  </body>
 </html>

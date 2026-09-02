@@ -1,6 +1,6 @@
 {
   "name": "shelly-ocpp-wallbox",
-  "version": "0.7.7",
+  "version": "1.0.0",
   "description": "Wallbox firmware for Shelly 1PM relay",
   "author": "SAP Labs France, d-shop Caen",
   "homepage": "https://github.com/sebastien-savalle/shelly-ocpp-wallbox#readme",
@@ -13,12 +13,14 @@
     "clean": "npm run mos-clean && npm run web-clean",
     "console": "mos --port udp://:1993/ console",
     "lint": "eslint .",
-    "lint:fix": "npm run lint -- --fix",
+    "lint:fix": "eslint . --fix",
+    "format:css": "npx prettier --plugin prettier-plugin-css --write \"www/assets/*.css\"",
+    "format": "npx prettier --write \"www/**/*.html\" \"www/**/*.js\" \"www/assets/*.css\"",
     "mos-build": "npm run mos-build:remote",
     "mos-build:local": "npm run mos-build:remote -- --local",
     "mos-build:remote": "mos build --platform esp8266 --build-var TARGET:development",
     "mos-clean": "rimraf build deps",
-    "web-build": "npm run lint && npm run webpack",
+    "web-build": "npm run lint && npm run format:css && npm run webpack",
     "web-clean": "rimraf dist",
     "webpack": "webpack --mode=production"
   },
@@ -39,7 +41,6 @@
   "engines": {
     "npm": ">=7"
   },
-  "dependencies": {},
   "devDependencies": {
     "@babel/core": "^7.24.7",
     "babel-loader": "^8.3.0",
