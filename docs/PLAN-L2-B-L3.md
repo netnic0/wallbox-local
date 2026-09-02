@@ -3,7 +3,7 @@
 > Audience: an implementing session (Sonnet). Read this fully before touching code.
 > Status at 2026-09-02: L1 (v1.0.0) done. L2-A (MQTT cmd topic) done. Code-review
 > Batches A/B/C + finding #7 done and BUILT successfully (build/fw.zip verified).
-> Remaining: L2-B (Web UI rewrite + GetInfo extension) then L3 (polish/safety).
+> Remaining: L2-B Web UI rewrite (§3.1-3.5) + §3.7 doc sync. §2.0 and §3.0 DONE (2026-09-02).
 > Reviewed by senior-plan-reviewer 2026-09-02: approve-with-changes.
 >
 > CODE-AUDIT CORRECTION 2026-09-02 (IMPORTANT - read before coding): an introspection of the
@@ -203,9 +203,8 @@ Notes for the implementer:
 - %.2f consumes a double; power_read_current() returns double (wb_power.h) - correct.
 - power_read_active_power()/power_read_voltage() return unsigned; cast to (int) exactly as
   wb_mqtt.cpp:216-217 does (frozen format string does not support %u; values fit signed int).
-- Add #include "wb_power.h" at the top of wb_rpc.cpp IF not already present. VERIFY the
+- wb_power.h is already included at wb_rpc.cpp:19 (verified 2026-09-02). No include change needed.
   current includes (wb_rpc.cpp currently includes wb_thermistor.h, wb_util.h, mgos.h,
-  mgos_rpc.h; wb_power.h is MISSING and must be added).
 - mgos_gpio_read needs the gpio API - provided by mgos.h (already included).
 - Do NOT change the state topic, MQTT_STATE, or any other handler.
 
