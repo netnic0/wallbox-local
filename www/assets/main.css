@@ -522,6 +522,13 @@ h3 {
 #main_container .header-left { display: flex; flex-direction: column; gap: 4px; }
 #main_container .header-actions--inline { display: inline-flex; align-items: center; gap: 8px; margin-top: 4px; }
 
+/* Unify typography and spacing for all cards */
+.container .header-bar { display: flex; align-items: flex-start; justify-content: space-between; }
+.container .header-left { display: flex; flex-direction: column; gap: 4px; }
+.container .header-left h1 { color: #333333; font-size: xx-large; font-weight: 600; margin: 0; }
+.container .header-left .sub { color: #777; font-size: 0.95rem; }
+.container .header-actions--inline { display: inline-flex; align-items: center; gap: 8px; margin-top: 4px; }
+
 @keyframes fadein {
   from {
     bottom: 0;
