@@ -8,8 +8,9 @@
   "scripts": {
     "start": "webpack serve --mode=development",
     "build": "npm run build:remote",
-    "build:local": "npm run web-build && npm run mos-build:local",
+    "build:local": "npm run gen-htdigest && npm run web-build && npm run mos-build:local",
     "build:fw": "node scripts/build_fw.mjs",
+    "gen-htdigest": "node scripts/gen_htdigest.mjs --user admin",
     "mock": "node scripts/mock_rpc.mjs",
     "mock:start": "node scripts/mock_rpc.mjs & node node_modules/webpack-cli/bin/cli.js serve --mode=development",
     "build:remote": "npm run web-build && npm run mos-build:remote",

@@ -1,0 +1,11 @@
+# HTTP/RPC digest credential file (htdigest format: user:realm:MD5(user:realm:pass)).
+# This .example is a template only. The real fs/rpc_auth.htdigest is gitignored
+# and generated at build time:
+#
+#   node scripts/gen_htdigest.mjs --user admin --pass <your-password>
+#
+# The realm MUST match http.auth_domain / rpc.auth_domain in mos.yml ("wallbox").
+# Never commit the real credential file. Rotate the password before deployment.
+#
+# Example line (DO NOT USE IN PRODUCTION - placeholder hash):
+# admin:wallbox:00000000000000000000000000000000

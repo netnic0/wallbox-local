@@ -20,7 +20,36 @@ Chemin du projet (Windows): C:\\Users\\I058304\\HomeAssistant\\shelly-ocpp-wallb
 - Firmware: Mongoose OS
 - Nom d’application (OTA): `Wallbox-Shelly1PM` (inévitable pour l’OTA stock)
 - Fonctionnement: local-only (pas d’OCPP), contrôle via UI (RPC), métriques via MQTT, auto-découverte HA
-- Sécurité: HTTP Digest (realm `wallbox`), utilisateur `admin`; mot de passe par défaut `wallbox` — à changer
+- Sécurité: HTTP Digest (realm `wallbox`), utilisateur `admin`; AUCUN mot de passe par défaut — voir §1-quater
+
+—
+
+## 1-quater. Identifiants Digest (sécurité)
+
+Le fichier `fs/rpc_auth.htdigest` protège l'UI Web, `/rpc` et `/update` (OTA) par
+HTTP Digest. Il **n'est plus versionné** (aucun mot de passe par défaut n'est livré)
+et doit être **généré localement avant le build** :
+
+```
+# via npm (utilisateur "admin", réalm "wallbox" par défaut)
+set WALLBOX_ADMIN_PASS=VotreMotDePasseFort   # PowerShell: $env:WALLBOX_ADMIN_PASS="..."
+npm run gen-htdigest
+
+# ou directement, sans variable d'environnement
+node scripts/gen_htdigest.mjs --user admin --pass VotreMotDePasseFort
+```
+
+Notes:
+- Le réalm doit rester `wallbox` (il doit correspondre à `http.auth_domain` /
+  `rpc.auth_domain` dans `mos.yml`).
+- `npm run build:local` appelle `gen-htdigest` automatiquement; définissez
+  `WALLBOX_ADMIN_PASS` au préalable, sinon la génération échoue volontairement
+  (pas de mot de passe par défaut).
+- Le fichier existant n'est pas écrasé sans `--force`, pour ne pas effacer un
+  identifiant déjà posé par un opérateur.
+- Un modèle est fourni: `docs/rpc_auth.htdigest.example` (hors de `fs/` pour ne pas
+  être embarqué dans l'image du firmware).
+- Ne committez jamais le vrai fichier `fs/rpc_auth.htdigest` (déjà dans `.gitignore`).
 
 —
 

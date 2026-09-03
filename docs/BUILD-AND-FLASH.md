@@ -92,8 +92,10 @@ wsl -e bash -lc 'cd /mnt/c/Users/I058304/HomeAssistant/shelly-ocpp-wallbox && py
 The device is already running our firmware, so update over the network.
 
 **IMPORTANT — RPC auth is now enabled (Batch B).** The `/update` endpoint and all
-`/rpc/*` calls on HTTP now require HTTP Digest auth (user `admin`, realm `wallbox`,
-default password `wallbox` until you change it — see README "Security").
+`/rpc/*` calls on HTTP now require HTTP Digest auth (user `admin`, realm `wallbox`).
+There is **no default password**: the credential file `fs/rpc_auth.htdigest` is
+generated locally before the build (`npm run gen-htdigest`, needs
+`WALLBOX_ADMIN_PASS`). See README §1-quater "Identifiants Digest".
 
 - Browser: open `http://<wallbox-ip>/` (or `http://wallbox.local/`), the browser
   prompts for credentials. Use the firmware-update file picker, choose `build/fw.zip`.
