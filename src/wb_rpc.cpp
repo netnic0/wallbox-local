@@ -71,8 +71,7 @@ void rpc_wallbox_get_info_handler(struct mg_rpc_request_info *ri,
 
   mg_rpc_send_responsef(ri,
                         RPC_GETINFO,
-                         mgos_gpio_read(mgos_sys_config_get_gpio_relay()),
-                         power_ev_detected()
+                        mgos_sys_config_get_device_id(),
                         sn,
                         MGOS_APP,
                         mgos_sys_ro_vars_get_fw_version(),
@@ -88,12 +87,13 @@ void rpc_wallbox_get_info_handler(struct mg_rpc_request_info *ri,
                         mgos_sys_config_get_meter_intensity(),
                         mgos_gpio_read(mgos_sys_config_get_gpio_relay()),
                         mgos_sys_config_get_mqtt_enable(),
-                         mgos_sys_config_get_mqtt_server(),
-                         mgos_mqtt_global_is_connected(),
+                        mgos_sys_config_get_mqtt_server(),
+                        mgos_mqtt_global_is_connected(),
                         (int) power_read_active_power(),
                         (int) power_read_voltage(),
                         power_read_current(),
-                        mgos_gpio_read(mgos_sys_config_get_gpio_relay()));
+                        mgos_gpio_read(mgos_sys_config_get_gpio_relay()),
+                        power_ev_detected());
 
   (void) cb_arg;
   (void) fi;
