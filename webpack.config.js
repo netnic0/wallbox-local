@@ -10,6 +10,7 @@ const CssMinimizerPlugin = require('css-minimizer-webpack-plugin');
 
 module.exports = (env, argv) => {
   const isProd = argv && argv.mode === 'production';
+  const mockPort = (env && env.MOCK_PORT) || 3001;
 
   const plugins = [
     new CleanWebpackPlugin(),
@@ -70,6 +71,19 @@ module.exports = (env, argv) => {
         directory: path.resolve(__dirname, 'dist'),
         serveIndex: true,
       },
+      proxy: [
+        {
+          context: ['/rpc'],
+          target: 'http://127.0.0.1:' + mockPort,
+          ws: true,
+          changeOrigin: false,
+        },
+        {
+          context: ['/update'],
+          target: 'http://127.0.0.1:' + mockPort,
+          changeOrigin: false,
+        },
+      ],
     },
   };
 };
