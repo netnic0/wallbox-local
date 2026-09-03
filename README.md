@@ -60,6 +60,11 @@ npm run build:local        # gen-htdigest -> web build -> mos build -> build/fw.
 `build:local` appelle automatiquement `gen-htdigest` en premier. Résultat :
 utilisateur `admin`, mot de passe `MonMotDePasseFort`.
 
+> **Le build firmware passe par Docker** (`mgos/mos:latest`), pas besoin d'installer
+> le CLI `mos` sur la machine. `npm run mos-build:local` exécute `mos build --local`
+> dans le conteneur (voir `scripts/mos_build.mjs`). Prérequis : Docker accessible
+> (via WSL sur Windows) et l'image en cache (`docker pull mgos/mos:latest`).
+
 > Le disque Windows `C:` est monté sous `/mnt/c` dans WSL. Le chemin
 > `C:\Users\I058304\HomeAssistant\shelly-ocpp-wallbox` devient
 > `/mnt/c/Users/I058304/HomeAssistant/shelly-ocpp-wallbox`.

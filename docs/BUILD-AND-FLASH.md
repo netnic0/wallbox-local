@@ -9,6 +9,9 @@
 - **WSL2** (Ubuntu) with **Docker** running. The Windows Git Bash shell has no
   `docker` binary; all builds run inside WSL.
 - Node.js >= 18 and npm inside WSL (used to build the Web UI).
+- The native `mos` CLI is **NOT required**: `npm run mos-build:local` runs
+  `mos build --local` inside the `mgos/mos:latest` container
+  (`scripts/mos_build.mjs`). Docker is the only hard dependency for the firmware.
 - The Mongoose OS build image cached locally:
   ```bash
   docker images | grep mgos
@@ -45,33 +48,47 @@ Output: `dist/index.html.gz` (single self-contained gzipped page) + `dist/favico
 
 ## 2. Build the firmware (produces `build/fw.zip`)
 
-The nested Windows -> WSL -> bash -> docker -> sh quoting is fragile. Use a tiny
-build script inside the repo to avoid quote-escaping hell:
+Run the npm script from **inside WSL** — it builds the firmware in the
+`mgos/mos:latest` container, no native `mos` needed:
 
 ```bash
-wsl -e bash -lc '
-R=/mnt/c/Users/I058304/HomeAssistant/shelly-ocpp-wallbox
-cat > "$R/_build.sh" <<SH
-#!/bin/sh
-set -e
-git config --global --add safe.directory "*"
-mos build --local --platform esp8266
-SH
-chmod +x "$R/_build.sh"
-docker run --rm --entrypoint /bin/sh \
-  -v /var/run/docker.sock:/var/run/docker.sock \
-  -v "$R:$R" -w "$R" \
-  mgos/mos:latest "$R/_build.sh"
-rm -f "$R/_build.sh"
-'
+cd /mnt/c/Users/I058304/HomeAssistant/shelly-ocpp-wallbox
+export WALLBOX_ADMIN_PASS="<your-password>"   # see README §1-quater
+npm run build:local        # gen-htdigest -> web build -> mos build (Docker) -> build/fw.zip
+```
+
+To (re)build only the firmware step:
+
+```bash
+npm run mos-build:local    # node scripts/mos_build.mjs (runs mos in Docker)
 ```
 
 Success line: `Firmware saved to .../build/fw.zip`
 Expected size: ~905 KB (`fw.zip`), `fs.bin` = 262144 bytes.
 
+### Under the hood (what the script does / manual fallback)
+
+`scripts/mos_build.mjs` translates the repo path to `/mnt/<drive>/...`, then runs,
+inside the container:
+
+```sh
+git config --global --add safe.directory "*"
+mos build --local --platform esp8266 --build-var TARGET:development
+```
+
 `git config --global --add safe.directory "*"` is required because the repo lives on
 the Windows-mounted filesystem (`/mnt/c`), which the container sees as a different
 owner — without it `mos build` aborts on "dubious ownership".
+
+If you ever need to run it by hand (debugging), the equivalent manual command is:
+
+```bash
+R=/mnt/c/Users/I058304/HomeAssistant/shelly-ocpp-wallbox
+docker run --rm --entrypoint /bin/sh \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v "$R:$R" -w "$R" \
+  mgos/mos:latest -c 'git config --global --add safe.directory "*" && mos build --local --platform esp8266'
+```
 
 ## 3. Verify the package (before flashing)
 
@@ -141,8 +158,9 @@ response (removed by finding #7).
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| `unexpected EOF while looking for matching '` | nested quote escaping | use the `_build.sh` pattern in §2 |
-| `fatal: detected dubious ownership` | repo on `/mnt/c` | keep the `safe.directory "*"` line |
+| `unexpected EOF while looking for matching '` | nested quote escaping when running by hand | use `npm run mos-build:local` (it handles quoting), or the manual fallback in §2 |
+| `mos: command not found` / `Permission denied` | native `mos` not installed | not needed — use `npm run mos-build:local` (builds in Docker) |
+| `fatal: detected dubious ownership` | repo on `/mnt/c` | handled by the script; if building by hand keep the `safe.directory "*"` line |
 | `/update` returns 401 | Batch B auth enabled | add `--digest -u admin:<password>` |
 | Web UI loads but all fields empty / errors | app.js RPC calls get 401 | expected until L2-B adds front auth |
 | `docker: command not found` | running in Git Bash, not WSL | prefix everything with `wsl -e bash -lc` |
