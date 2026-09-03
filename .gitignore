@@ -18,3 +18,5 @@ dest/
 dist/
 
 .DS_Store
+config.local.json
+.env

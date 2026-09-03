@@ -9,6 +9,7 @@
     "start": "webpack serve --mode=development",
     "build": "npm run build:remote",
     "build:local": "npm run web-build && npm run mos-build:local",
+    "build:fw": "node scripts/build_fw.mjs",
     "build:remote": "npm run web-build && npm run mos-build:remote",
     "clean": "npm run mos-clean && npm run web-clean",
     "console": "mos --port udp://:1993/ console",

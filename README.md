@@ -110,6 +110,131 @@ Remarques:
   ```
 - Succès: le dispositif redémarre automatiquement
 
+
+---
+
+## 3.4-bis. Build d'un firmware pre-configure (build:fw)
+
+Le script `scripts/build_fw.mjs` produit un bundle `.zip` flashable avec la configuration Wi-Fi /
+MQTT / device **baked-in** dans la couche utilisateur `conf9` (la couche de plus haute priorite,
+appliquee au boot). Le dispositif demarre directement provisionne: aucune saisie manuelle dans l'UI.
+
+### Principe technique
+
+La configuration est injectee en tant que **partition `conf9` separee** dans le manifeste du bundle
+via `mos create-fw-bundle`; l'image SPIFFS (fs.bin) n'est PAS modifiee. Au boot, Mongoose OS applique
+la couche `conf9` par-dessus les valeurs par defaut (`conf0`) et toutes les couches vendor.
+
+**Mapping Wi-Fi verifie contre la lib mongoose-os-libs/wifi:**
+
+| Flag            | Cle conf9              | Slot      |
+|-----------------|------------------------|-----------|
+| `--wifi-ssid`   | `wifi.sta.ssid/pass`   | Reseau 1  |
+| `--wifi-ssid2`  | `wifi.sta1.ssid/pass`  | Reseau 2  |
+| (jamais)        | `wifi.sta2`            | AP-fallback — NE PAS ecrire |
+
+### Prerequis
+
+- Node.js >= 18 (pour `node:util` parseArgs)
+- Docker installe dans WSL2 (`docker run` accessible depuis WSL)
+- Image MOS: `mgos/mos:latest` (telechargee automatiquement au premier run)
+
+### Utilisation
+
+```bash
+node scripts/build_fw.mjs [options]
+```
+
+Options disponibles:
+
+| Option              | Description                                         | Cle conf9         |
+|---------------------|-----------------------------------------------------|-------------------|
+| `--wifi-ssid <s>`   | SSID du reseau 1                                    | wifi.sta.ssid     |
+| `--wifi-pass <s>`   | Mot de passe reseau 1                               | wifi.sta.pass     |
+| `--wifi-ssid2 <s>`  | SSID du reseau 2                                    | wifi.sta1.ssid    |
+| `--wifi-pass2 <s>`  | Mot de passe reseau 2                               | wifi.sta1.pass    |
+| `--mqtt-enable`     | Active MQTT                                         | mqtt.enable       |
+| `--mqtt-server <s>` | URL du broker (ex: `mqtt://192.168.1.10:1883`)      | mqtt.server       |
+| `--mqtt-user <s>`   | Identifiant MQTT                                    | mqtt.user         |
+| `--mqtt-pass <s>`   | Mot de passe MQTT                                   | mqtt.pass         |
+| `--device-id <s>`   | Identifiant de l'appareil                           | device.id         |
+| `--out <path>`      | Chemin de sortie (defaut: `build/fw_conf.zip`)      |                   |
+| `--no-build`        | Reutilise `build/fw.zip` existant (skip build)      |                   |
+| `--keep-conf`       | Conserve `build/conf9.json` apres le bundle         |                   |
+| `--dry-run`         | Affiche la config prevue sans rien produire         |                   |
+| `-h, --help`        | Affiche l'aide                                      |                   |
+
+Ou via npm:
+
+```bash
+npm run build:fw -- --wifi-ssid "MonReseau" --wifi-pass "monpass"      --mqtt-enable --mqtt-server "mqtt://192.168.1.10:1883"      --mqtt-user "ha" --mqtt-pass "hapass"      --device-id "wallbox-salon"
+```
+
+### Valeurs par defaut (config.local.json ou .env)
+
+Pour eviter de retaper les flags a chaque build, creez un fichier `config.local.json` (ou `.env`)
+a la racine du depot (les deux sont gitignores):
+
+**config.local.json:**
+```json
+{
+  "wifiSsid": "MonReseau",
+  "wifiPass": "monpass",
+  "wifiSsid2": "Hotspot",
+  "wifiPass2": "hotpass",
+  "mqttEnable": true,
+  "mqttServer": "mqtt://192.168.1.10:1883",
+  "mqttUser": "ha",
+  "mqttPass": "hapass",
+  "deviceId": "wallbox-salon"
+}
+```
+
+**ou .env:**
+```env
+WIFI_SSID=MonReseau
+WIFI_PASS=monpass
+WIFI_SSID2=Hotspot
+WIFI_PASS2=hotpass
+MQTT_ENABLE=true
+MQTT_SERVER=mqtt://192.168.1.10:1883
+MQTT_USER=ha
+MQTT_PASS=hapass
+DEVICE_ID=wallbox-salon
+```
+
+Les flags CLI ont priorite sur les fichiers. L'ordre de priorite: CLI > .env > config.local.json.
+
+### Tester sans builder (dry-run)
+
+```bash
+node scripts/build_fw.mjs --wifi-ssid "Test" --mqtt-enable --dry-run
+```
+
+Affiche la conf9 prevue (mots de passe masques) sans rien ecrire sur le disque.
+
+### Flasher le bundle produit
+
+```bash
+curl --digest -u admin:<motdepasse>      -F file=@build/fw_conf.zip      http://<ip-de-la-wallbox>/update
+```
+
+Le dispositif redемarre et demarre directement avec la configuration.
+
+### IMPORTANT — Reset et conf9
+
+La couche `conf9` est **effacee par tout factory reset** (6 reboots consecutifs OU RPC `Wallbox.Reset`).
+Apres un reset, le dispositif perd la configuration baked-in. La recuperation est de re-flasher un
+bundle produit par ce script.
+
+### Securite
+
+- `build/fw_conf.zip` et `build/conf9.json` contiennent des **credentials en clair**.
+- Ils sont couverts par `.gitignore` (`build/` est ignore) — ne pas les committer ni les partager.
+- `build/conf9.json` est supprime automatiquement apres le bundling (sauf `--keep-conf`).
+- `config.local.json` et `.env` sont gitignores — ne pas les committer.
+
+
 ### 3.5 Administration
 
 - Reboot: redémarre l’appareil (désarme le timer de sécurité avant reboot)
