@@ -39,30 +39,39 @@ Le script `scripts/gen_htdigest.mjs` calcule la ligne htdigest
 `fs/rpc_auth.htdigest`. **Le mot de passe qui protégera l'appareil est exactement
 celui que vous fournissez à ce script.**
 
-### Étape 1 — définir le mot de passe puis builder
+> **⚠️ Où lancer le build ? Depuis WSL, pas PowerShell.**
+> Le projet se construit sous **WSL2 (Ubuntu) + Docker** : `node_modules` y est
+> installé pour Linux et l'outil `mos` tourne dans un conteneur. Si vous lancez
+> `npm run build:local` depuis **PowerShell/cmd** avec un `node_modules` installé
+> sous WSL, vous obtiendrez `'eslint' n'est pas reconnu ...` (il manque les shims
+> `.cmd` que npm génère uniquement lors d'un `npm install` fait sous Windows).
+> Suivez `docs/BUILD-AND-FLASH.md` et lancez toutes les commandes dans WSL.
 
-Windows (PowerShell) :
+### Étape 1 — définir le mot de passe puis builder (dans WSL)
 
-```powershell
-$env:WALLBOX_ADMIN_PASS = "MonMotDePasseFort"
-npm run build:local        # génère le htdigest, puis build web + firmware -> build/fw.zip
-```
-
-Windows (cmd.exe) :
-
-```cmd
-set WALLBOX_ADMIN_PASS=MonMotDePasseFort
-npm run build:local
-```
-
-Linux / macOS :
+Ouvrir un terminal WSL (taper `wsl` depuis PowerShell, ou lancer « Ubuntu »), puis :
 
 ```bash
-WALLBOX_ADMIN_PASS="MonMotDePasseFort" npm run build:local
+cd /mnt/c/Users/I058304/HomeAssistant/shelly-ocpp-wallbox
+export WALLBOX_ADMIN_PASS="MonMotDePasseFort"
+npm run build:local        # gen-htdigest -> web build -> mos build -> build/fw.zip
 ```
 
 `build:local` appelle automatiquement `gen-htdigest` en premier. Résultat :
 utilisateur `admin`, mot de passe `MonMotDePasseFort`.
+
+> Le disque Windows `C:` est monté sous `/mnt/c` dans WSL. Le chemin
+> `C:\Users\I058304\HomeAssistant\shelly-ocpp-wallbox` devient
+> `/mnt/c/Users/I058304/HomeAssistant/shelly-ocpp-wallbox`.
+
+Pour valider uniquement l'UI (lint + webpack), sans l'étape firmware `mos` :
+
+```bash
+cd /mnt/c/Users/I058304/HomeAssistant/shelly-ocpp-wallbox
+export WALLBOX_ADMIN_PASS="MonMotDePasseFort"
+npm run gen-htdigest -- --force   # écrase l'ancien htdigest avec CE mot de passe
+npm run web-build                 # lint + format:css + webpack -> dist/
+```
 
 ### Générer le htdigest seul (sans builder)
 

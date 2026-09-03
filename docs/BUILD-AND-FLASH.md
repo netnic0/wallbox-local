@@ -21,6 +21,15 @@
 Repository path (Windows) : `C:\Users\I058304\HomeAssistant\shelly-ocpp-wallbox`
 Same path seen from WSL    : `/mnt/c/Users/I058304/HomeAssistant/shelly-ocpp-wallbox`
 
+> **Run every npm/build command inside WSL, never from PowerShell/cmd.**
+> `node_modules` is installed for Linux (its `.bin` shims have no `.cmd`
+> launchers), so running `npm run build:local` from PowerShell fails with
+> `'eslint' n'est pas reconnu ...` / `'webpack' is not recognized`. If you really
+> must build from Windows natively, reinstall deps under Windows first
+> (`rmdir /s node_modules & npm install`) — but the recommended path is WSL.
+> Set the digest password in the same WSL shell before building:
+> `export WALLBOX_ADMIN_PASS="..."` (see README §1-quater).
+
 ## 1. Build the Web UI (produces `dist/`)
 
 The firmware bakes `dist/` (Web UI) **and** `fs/` (hand-authored FS files, incl.
