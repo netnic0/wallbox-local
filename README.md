@@ -24,32 +24,88 @@ Chemin du projet (Windows): C:\\Users\\I058304\\HomeAssistant\\shelly-ocpp-wallb
 
 —
 
-## 1-quater. Identifiants Digest (sécurité)
+## 1-quater. Identifiants Digest (sécurité) — définir le mot de passe au build
 
-Le fichier `fs/rpc_auth.htdigest` protège l'UI Web, `/rpc` et `/update` (OTA) par
-HTTP Digest. Il **n'est plus versionné** (aucun mot de passe par défaut n'est livré)
-et doit être **généré localement avant le build** :
+L'UI Web, `/rpc` et `/update` (OTA) sont protégés par HTTP Digest
+(utilisateur **`admin`**, réalm **`wallbox`**). **Il n'existe aucun mot de passe
+par défaut** : c'est **vous qui le choisissez au moment du build**. Le mot de passe
+est figé dans le fichier `fs/rpc_auth.htdigest`, généré localement puis embarqué
+dans l'image du firmware.
 
+### D'où vient le mot de passe ?
+
+Le script `scripts/gen_htdigest.mjs` calcule la ligne htdigest
+`admin:wallbox:MD5(admin:wallbox:<mot-de-passe>)` et l'écrit dans
+`fs/rpc_auth.htdigest`. **Le mot de passe qui protégera l'appareil est exactement
+celui que vous fournissez à ce script.**
+
+### Étape 1 — définir le mot de passe puis builder
+
+Windows (PowerShell) :
+
+```powershell
+$env:WALLBOX_ADMIN_PASS = "MonMotDePasseFort"
+npm run build:local        # génère le htdigest, puis build web + firmware -> build/fw.zip
 ```
-# via npm (utilisateur "admin", réalm "wallbox" par défaut)
-set WALLBOX_ADMIN_PASS=VotreMotDePasseFort   # PowerShell: $env:WALLBOX_ADMIN_PASS="..."
-npm run gen-htdigest
 
-# ou directement, sans variable d'environnement
-node scripts/gen_htdigest.mjs --user admin --pass VotreMotDePasseFort
+Windows (cmd.exe) :
+
+```cmd
+set WALLBOX_ADMIN_PASS=MonMotDePasseFort
+npm run build:local
 ```
 
-Notes:
-- Le réalm doit rester `wallbox` (il doit correspondre à `http.auth_domain` /
+Linux / macOS :
+
+```bash
+WALLBOX_ADMIN_PASS="MonMotDePasseFort" npm run build:local
+```
+
+`build:local` appelle automatiquement `gen-htdigest` en premier. Résultat :
+utilisateur `admin`, mot de passe `MonMotDePasseFort`.
+
+### Générer le htdigest seul (sans builder)
+
+```bash
+# via la variable d'environnement (recommandé : le mot de passe n'apparaît pas dans l'historique shell)
+WALLBOX_ADMIN_PASS="MonMotDePasseFort" npm run gen-htdigest
+
+# ou en passant le mot de passe en argument
+node scripts/gen_htdigest.mjs --user admin --pass MonMotDePasseFort
+```
+
+### Si vous oubliez de définir le mot de passe
+
+`gen-htdigest` **échoue volontairement** (`No password provided...`) et stoppe le
+build — c'est voulu, pour ne jamais livrer d'identifiant par défaut. Définissez
+`WALLBOX_ADMIN_PASS` (ou `--pass`) puis relancez.
+
+### Quel mot de passe s'applique selon l'installation ?
+
+| Situation | Mot de passe demandé |
+|---|---|
+| **1ʳᵉ installation** par flash série (`mos --port ... flash`) | **Aucun** — le canal UART est ouvert par l'ACL (`rpc.acl`) |
+| Accès UI Web / OTA **après** cette installation | Celui du build (`WALLBOX_ADMIN_PASS`) |
+| OTA sur un appareil qui tourne **déjà** ce firmware | L'ancien mot de passe (pour autoriser `/update`), le nouveau prend effet après reboot |
+
+### Changer le mot de passe plus tard
+
+Régénérez le fichier avec `--force`, puis reflashez (OTA ou série) :
+
+```bash
+WALLBOX_ADMIN_PASS="NouveauMotDePasse" node scripts/gen_htdigest.mjs --force
+npm run build:local
+```
+
+### Notes
+
+- Le réalm doit rester `wallbox` (doit correspondre à `http.auth_domain` /
   `rpc.auth_domain` dans `mos.yml`).
-- `npm run build:local` appelle `gen-htdigest` automatiquement; définissez
-  `WALLBOX_ADMIN_PASS` au préalable, sinon la génération échoue volontairement
-  (pas de mot de passe par défaut).
-- Le fichier existant n'est pas écrasé sans `--force`, pour ne pas effacer un
-  identifiant déjà posé par un opérateur.
-- Un modèle est fourni: `docs/rpc_auth.htdigest.example` (hors de `fs/` pour ne pas
-  être embarqué dans l'image du firmware).
-- Ne committez jamais le vrai fichier `fs/rpc_auth.htdigest` (déjà dans `.gitignore`).
+- Sans `--force`, un `fs/rpc_auth.htdigest` déjà présent n'est pas écrasé (on ne
+  perd pas un identifiant posé par un opérateur).
+- Modèle fourni : `docs/rpc_auth.htdigest.example` (hors de `fs/` pour ne pas être
+  embarqué dans l'image).
+- Ne committez jamais `fs/rpc_auth.htdigest` (déjà dans `.gitignore`).
 
 —
 
