@@ -221,8 +221,10 @@ void mqtt_send_state_topic() {
     bool charging = mgos_gpio_read(mgos_sys_config_get_gpio_relay()) &&
                     power_ev_detected();
     double temperature = thermistor_read_celsius();
-    unsigned int power = power_read_active_power();
-    unsigned int voltage = power_read_voltage();
+    /* Use signed int: power_read_active_power() is already clamped to [0, INT_MAX]
+       and the frozen format below emits %d. Avoids signed/unsigned mixing. */
+    int power = power_read_active_power();
+    int voltage = (int) power_read_voltage();
     double current = power_read_current();
     bool ev = power_ev_detected();
 

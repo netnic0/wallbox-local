@@ -93,7 +93,11 @@ float power_read_live_session_energy_float() {
 
 int power_read_active_power() {
   if (hlw8012 == NULL) return 0;
-  return mgos_hlw8012_readActivePower(hlw8012);
+  /* The HLW8012 lib returns unsigned int. Clamp into a sane signed range so a
+     transient spurious reading (> INT_MAX) cannot wrap to a negative value and
+     then be published as a bogus figure in MQTT/HA or Wallbox.GetInfo. */
+  unsigned int p = mgos_hlw8012_readActivePower(hlw8012);
+  return (p > (unsigned int) INT_MAX) ? INT_MAX : (int) p;
 }
 
 unsigned int power_read_voltage() {
