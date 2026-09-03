@@ -7,6 +7,7 @@ Chemin du projet (Windows): C:\\Users\\I058304\\HomeAssistant\\shelly-ocpp-wallb
 —
 
 ## 1. Présentation
+
 ## 1-ter. Check-list express (post-flash)
 
 - UI: ouvrir http://<ip-de-la-wallbox>/ (Digest admin / wallbox), consulter Informations
@@ -15,8 +16,6 @@ Chemin du projet (Windows): C:\\Users\\I058304\\HomeAssistant\\shelly-ocpp-wallb
 - Informations: vérifier MQTT Server (lecture seule) et MQTT Connected (Yes en vert)
 - HA: intégration MQTT active, discovery activée; vérifier que l’appareil et ses entités apparaissent
 - Test: Start/Stop, ResetEnergy; OTA via Firmware -> Upload build/fw.zip
-
-
 - Appareil: Shelly 1PM Gen1 (ESP8266 + BL0937/HLW8012)
 - Firmware: Mongoose OS
 - Nom d’application (OTA): `Wallbox-Shelly1PM` (inévitable pour l’OTA stock)
@@ -34,8 +33,6 @@ Pour illustrer la page de configuration, vous pouvez ajouter une capture d'écra
 - Ce dépôt affichera l'image via le lien ci-dessous (relatif pour GitHub):
 
 ![Wallbox UI Overview](docs/images/wallbox-ui-overview.png)
-
-Conseil pour produire la capture: ouvrez la page http://<ip-de-la-wallbox>/, connectez-vous (HTTP Digest), dépliez les sections (Wi-Fi, MQTT, Firmware, Administration) et capturez l'écran complet afin de montrer les champs et actions disponibles.
 
 —
 
@@ -70,6 +67,7 @@ L’UI est structurée en sections: Informations, Wi-Fi, MQTT, Firmware, Adminis
 - Device/Serial/IP/MAC/Uptime: Informations système
 
 Actions:
+
 - Start charge: Ferme le relais (démarre la charge) — `Wallbox.SetRelay {on:true}`
 - Stop charge: Ouvre le relais (arrête la charge) — `Wallbox.SetRelay {on:false}`
   - À l’arrêt, les compteurs d’énergie sont persistés immédiatement (sécurité en cas de coupure)
@@ -78,12 +76,14 @@ Actions:
 ### 3.2 Wi-Fi (configuration)
 
 Vous pouvez configurer jusqu’à deux réseaux (lieux différents):
+
 - Network 1 / Network 2:
   - SSID: nom du réseau
   - Password: mot de passe du réseau (bouton “Show password” pour visibilité)
 - Sauvegarde: bouton “Save” pour appliquer — la wallbox bascule automatiquement vers un réseau disponible
 
 Remarques:
+
 - En cas de perte du Wi-Fi (station disconnect), le timer de sécurité est désarmé automatiquement pour éviter des coupures intempestives.
 - “Reset Wi-Fi” (section Administration) efface les stations et réactive le mode AP pour reprovisionnement.
 
@@ -98,6 +98,7 @@ Le broker MQTT est optionnel pour l’UI, mais nécessaire pour Home Assistant (
 - Save: enregistre et applique la configuration
 
 Remarques:
+
 - Le Last Will & Testament (LWT) est configuré pour publier `offline` sur `wallbox/<id>/availability` en cas de déconnexion.
 - La découverte HA est activée par défaut (`mqtt.ha_discovery=true`).
 
@@ -109,7 +110,6 @@ Remarques:
   curl -v --digest -u admin:<motdepasse> -F file=@build/fw.zip http://<ip-de-la-wallbox>/update
   ```
 - Succès: le dispositif redémarre automatiquement
-
 
 ---
 
@@ -127,11 +127,11 @@ la couche `conf9` par-dessus les valeurs par defaut (`conf0`) et toutes les couc
 
 **Mapping Wi-Fi verifie contre la lib mongoose-os-libs/wifi:**
 
-| Flag            | Cle conf9              | Slot      |
-|-----------------|------------------------|-----------|
-| `--wifi-ssid`   | `wifi.sta.ssid/pass`   | Reseau 1  |
-| `--wifi-ssid2`  | `wifi.sta1.ssid/pass`  | Reseau 2  |
-| (jamais)        | `wifi.sta2`            | AP-fallback — NE PAS ecrire |
+| Flag             | Cle conf9               | Slot                         |
+| ---------------- | ----------------------- | ---------------------------- |
+| `--wifi-ssid`  | `wifi.sta.ssid/pass`  | Reseau 1                     |
+| `--wifi-ssid2` | `wifi.sta1.ssid/pass` | Reseau 2                     |
+| (jamais)         | `wifi.sta2`           | AP-fallback — NE PAS ecrire |
 
 ### Prerequis
 
@@ -147,22 +147,22 @@ node scripts/build_fw.mjs [options]
 
 Options disponibles:
 
-| Option              | Description                                         | Cle conf9         |
-|---------------------|-----------------------------------------------------|-------------------|
-| `--wifi-ssid <s>`   | SSID du reseau 1                                    | wifi.sta.ssid     |
-| `--wifi-pass <s>`   | Mot de passe reseau 1                               | wifi.sta.pass     |
-| `--wifi-ssid2 <s>`  | SSID du reseau 2                                    | wifi.sta1.ssid    |
-| `--wifi-pass2 <s>`  | Mot de passe reseau 2                               | wifi.sta1.pass    |
-| `--mqtt-enable`     | Active MQTT                                         | mqtt.enable       |
-| `--mqtt-server <s>` | URL du broker (ex: `mqtt://192.168.1.10:1883`)      | mqtt.server       |
-| `--mqtt-user <s>`   | Identifiant MQTT                                    | mqtt.user         |
-| `--mqtt-pass <s>`   | Mot de passe MQTT                                   | mqtt.pass         |
-| `--device-id <s>`   | Identifiant de l'appareil                           | device.id         |
-| `--out <path>`      | Chemin de sortie (defaut: `build/fw_conf.zip`)      |                   |
-| `--no-build`        | Reutilise `build/fw.zip` existant (skip build)      |                   |
-| `--keep-conf`       | Conserve `build/conf9.json` apres le bundle         |                   |
-| `--dry-run`         | Affiche la config prevue sans rien produire         |                   |
-| `-h, --help`        | Affiche l'aide                                      |                   |
+| Option                | Description                                     | Cle conf9      |
+| --------------------- | ----------------------------------------------- | -------------- |
+| `--wifi-ssid <s>`   | SSID du reseau 1                                | wifi.sta.ssid  |
+| `--wifi-pass <s>`   | Mot de passe reseau 1                           | wifi.sta.pass  |
+| `--wifi-ssid2 <s>`  | SSID du reseau 2                                | wifi.sta1.ssid |
+| `--wifi-pass2 <s>`  | Mot de passe reseau 2                           | wifi.sta1.pass |
+| `--mqtt-enable`     | Active MQTT                                     | mqtt.enable    |
+| `--mqtt-server <s>` | URL du broker (ex:`mqtt://192.168.1.10:1883`) | mqtt.server    |
+| `--mqtt-user <s>`   | Identifiant MQTT                                | mqtt.user      |
+| `--mqtt-pass <s>`   | Mot de passe MQTT                               | mqtt.pass      |
+| `--device-id <s>`   | Identifiant de l'appareil                       | device.id      |
+| `--out <path>`      | Chemin de sortie (defaut:`build/fw_conf.zip`) |                |
+| `--no-build`        | Reutilise`build/fw.zip` existant (skip build) |                |
+| `--keep-conf`       | Conserve`build/conf9.json` apres le bundle    |                |
+| `--dry-run`         | Affiche la config prevue sans rien produire     |                |
+| `-h, --help`        | Affiche l'aide                                  |                |
 
 Ou via npm:
 
@@ -176,6 +176,7 @@ Pour eviter de retaper les flags a chaque build, creez un fichier `config.local.
 a la racine du depot (les deux sont gitignores):
 
 **config.local.json:**
+
 ```json
 {
   "wifiSsid": "MonReseau",
@@ -191,6 +192,7 @@ a la racine du depot (les deux sont gitignores):
 ```
 
 **ou .env:**
+
 ```env
 WIFI_SSID=MonReseau
 WIFI_PASS=monpass
@@ -234,7 +236,6 @@ bundle produit par ce script.
 - `build/conf9.json` est supprime automatiquement apres le bundling (sauf `--keep-conf`).
 - `config.local.json` et `.env` sont gitignores — ne pas les committer.
 
-
 ### 3.5 Administration
 
 - Reboot: redémarre l’appareil (désarme le timer de sécurité avant reboot)
@@ -266,6 +267,7 @@ bundle produit par ce script.
 ### 4.3 Entités HA attendues
 
 Entités publiées via MQTT Discovery (toutes retained):
+
 - Sensors:
   - `power` (W) — mesure instantanée
   - `voltage` (V)
@@ -358,8 +360,8 @@ Entités publiées via MQTT Discovery (toutes retained):
 —
 
 ## 9. Références
-- Script de vérification SPIFFS: `scripts/verify_fs.sh` (WSL)
 
+- Script de vérification SPIFFS: `scripts/verify_fs.sh` (WSL)
 - Guide build/flash: `docs/BUILD-AND-FLASH.md`
 - Plan d’implémentation: `docs/PLAN.md`
 - Documentation RPC: `doc/rpc.md`
