@@ -53,7 +53,7 @@ const showFormControl = (ctrl, show) => {
   }
 };
 
-const showToast = (message) => {
+const showToast = message => {
   toast.innerHTML = message;
   toast.className = "show";
   setTimeout(() => {
@@ -61,7 +61,7 @@ const showToast = (message) => {
   }, 4000);
 };
 
-const handleError = (err) => {
+const handleError = err => {
   console.error(err);
   showToast(err && err.message ? err.message : String(err));
 };
@@ -78,11 +78,11 @@ const rpc = (method, params) => {
     opts.headers = { "Content-Type": "application/json" };
     opts.body = JSON.stringify(params);
   }
-  return fetch(host + "/rpc/" + method, opts).then((res) => {
+  return fetch(host + "/rpc/" + method, opts).then(res => {
     if (!res.ok) {
       throw new Error(res.status + " " + res.statusText);
     }
-    return res.text().then((text) => (text ? JSON.parse(text) : {}));
+    return res.text().then(text => (text ? JSON.parse(text) : {}));
   });
 };
 
@@ -107,7 +107,7 @@ const intervalToLevels = (interval, levels) => {
   return result[0];
 };
 
-const secondsToString = (interval) => intervalToLevels(interval, TimeLevels);
+const secondsToString = interval => intervalToLevels(interval, TimeLevels);
 
 const stopRefresh = () => {
   if (refreshTimer) {
@@ -117,7 +117,7 @@ const stopRefresh = () => {
 };
 
 /* Render only the live-changing metrics (used by the WS/poll refresh). */
-const renderLive = (data) => {
+const renderLive = data => {
   document.getElementById("energy").innerText =
     (data.energy ? data.energy : 0).toFixed(0) + " Wh";
   document.getElementById("intensity").innerText =
@@ -133,7 +133,6 @@ const renderLive = (data) => {
     : "-";
   document.getElementById("temperature").innerText =
     (data.temperature ? data.temperature.toFixed(1) : "-") + " °C";
-  const mqttServerRO = document.getElementById("mqtt_server_readonly");
   const mqttConnected = document.getElementById("mqtt_connected");
   const chipMqtt = document.getElementById("chip_mqtt");
   const alertMqtt = document.getElementById("alert_mqtt");
@@ -193,7 +192,7 @@ const hideInfoDialog = () => {
 };
 
 /* Render the device info fields (static per boot). */
-const renderInfo = (data) => {
+const renderInfo = data => {
   document.getElementById("device_id").innerText = data.id;
   document.getElementById("device_sn").innerText = data.sn;
   document.getElementById("device_mac").innerText = data.mac;
@@ -207,9 +206,9 @@ const renderInfo = (data) => {
   const sumPower = document.getElementById("sum_power");
   const sumEv = document.getElementById("sum_ev");
   const sumTemp = document.getElementById("sum_temp");
-  if (sumPower) sumPower.innerText = (data.power != null ? data.power + " W" : "-");
-  if (sumEv) sumEv.innerText = (data.ev ? "Yes" : "No");
-  if (sumTemp) sumTemp.innerText = (data.temperature != null ? data.temperature.toFixed(1) + " °C" : "-");
+  if (sumPower) { sumPower.innerText = (data.power != null ? data.power + " W" : "-"); }
+  if (sumEv) { sumEv.innerText = (data.ev ? "Yes" : "No"); }
+  if (sumTemp) { sumTemp.innerText = (data.temperature != null ? data.temperature.toFixed(1) + " °C" : "-"); }
 };
 
 /* ---- Live data: WebSocket first, fetch-polling fallback ---- */
@@ -263,7 +262,7 @@ const connectWs = () => {
     refreshTimer = setInterval(pollWs, WS_POLL_MS);
   };
 
-  socket.onmessage = (evt) => {
+  socket.onmessage = evt => {
     try {
       const msg = JSON.parse(evt.data);
       if (msg && msg.result) {
@@ -396,10 +395,8 @@ const setRelay = (on, spinner) => {
     });
 };
 
-document.getElementById("start_btn").onclick = () =>
-  setRelay(true, startSpinner);
-document.getElementById("stop_btn").onclick = () =>
-  setRelay(false, stopSpinner);
+document.getElementById("start_btn").onclick = () => setRelay(true, startSpinner);
+document.getElementById("stop_btn").onclick = () => setRelay(false, stopSpinner);
 
 document.getElementById("reset_energy_btn").onclick = () => {
   if (
@@ -498,12 +495,12 @@ document.getElementById("reboot_btn").onclick = () => {
 
 const getLogs = () => {
   rpc("FS.List")
-    .then((data) => {
+    .then(data => {
       if (data && data.length > 0) {
         data.sort();
         data.reverse();
         let logCount = 0;
-        data.forEach((filename) => {
+        data.forEach(filename => {
           if (filename.startsWith("log_")) {
             const a = document.createElement("a");
             a.appendChild(document.createTextNode(filename));
@@ -524,18 +521,18 @@ const getLogs = () => {
 
 const getInfo = () => {
   rpc("Wallbox.GetInfo")
-    .then((data) => {
+    .then(data => {
       wifiSSID0.value = data.wifi_ssid;
       wifiSSID1.value = data.wifi_ssid1;
       mqttEnable.checked = data.mqtt_state === true;
       mqttServer.value = data.mqtt_server;
-      if (mqttUser) mqttUser.value = ""; // user not exposed by GetInfo (keep blank)
+      if (mqttUser) { mqttUser.value = ""; } // user not exposed by GetInfo (keep blank)
       renderInfo(data);
     })
     .catch(handleError);
 };
 
-const updateFirmware = (evt) => {
+const updateFirmware = evt => {
   evt.preventDefault();
   const selectedFile = document.getElementById("fw_select_file").files[0];
   if (!selectedFile) {
@@ -552,7 +549,7 @@ const updateFirmware = (evt) => {
     credentials: "include",
     body: formData,
   })
-    .then((res) => {
+    .then(res => {
       if (!res.ok) {
         throw new Error(res.status + " " + res.statusText);
       }
@@ -565,7 +562,7 @@ const updateFirmware = (evt) => {
         true,
       );
     })
-    .catch((err) => {
+    .catch(err => {
       firmwareSpinner.className = "";
       console.error(err);
       hideInfoDialog();
@@ -596,7 +593,7 @@ document.getElementById("fw_upload_btn").onclick = updateFirmware;
   style.type = 'text/css';
   style.appendChild(document.createTextNode(css));
   document.head.appendChild(style);
-})();
+}());
 
 document.getElementById("mqtt_reconnect_btn").onclick = () => {
   showToast("Reconnecting MQTT...");
@@ -661,7 +658,7 @@ showMqttPass.onclick = () => showPassword(mqttPass, showMqttPass);
   // Robust: use event delegation for toggles, with debugging
   document.addEventListener('click', function (e) {
     const btn = e.target && e.target.closest ? e.target.closest('[data-toggle="card"]') : null;
-    if (!btn) return;
+    if (!btn) { return; }
     e.preventDefault();
     const targetId = btn.getAttribute('data-target');
     if (!targetId) {
@@ -679,4 +676,4 @@ showMqttPass.onclick = () => showPassword(mqttPass, showMqttPass);
     console.debug('toggle:', targetId, 'class:', before, '=>', after);
   }, false);
   connectWs();
-})();
+}());
