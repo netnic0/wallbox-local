@@ -35,6 +35,10 @@
  * ----------------------------------------------------------------------- */
 static mgos_timer_id s_timer_id      = MGOS_INVALID_TIMER_ID;
 static int           s_overcurrent_count = 0;  /* consecutive over-limit ticks */
+/* Latched once a safety trip fires. Blocks any relay re-close / re-arm until a
+   reboot clears it (an over-temp trip schedules a reboot; over-current does not
+   auto-reboot, so the latch protects against an immediate network re-start). */
+static bool          s_tripped = false;
 
 /* -----------------------------------------------------------------------
  * Forward declaration
@@ -51,6 +55,10 @@ static void safety_trip_relay(const char *reason);
  */
 static void safety_trip_relay(const char *reason) {
   LOG(LL_WARN, ("SAFETY TRIP: %s - turning relay OFF", reason));
+
+  /* Latch the tripped state so no network command can re-close the relay or
+     re-arm the timer until the device reboots. */
+  s_tripped = true;
 
   /* Turn relay off */
   mgos_gpio_write(mgos_sys_config_get_gpio_relay(), 0);
@@ -115,9 +123,21 @@ static void safety_tick_cb(void *arg) {
 void safety_init() {
   s_timer_id         = MGOS_INVALID_TIMER_ID;
   s_overcurrent_count = 0;
+  s_tripped           = false;
+}
+
+bool safety_is_tripped() {
+  return s_tripped;
 }
 
 void safety_arm() {
+  /* Refuse to arm (and, by extension, to consider charging safe) while a trip
+     is latched. The relay itself must not be re-closed by callers either. */
+  if (s_tripped) {
+    LOG(LL_WARN, ("Safety: arm refused - trip latched, reboot required"));
+    return;
+  }
+
   /* Idempotent: if already armed, clear first to avoid double timers */
   if (s_timer_id != MGOS_INVALID_TIMER_ID) {
     mgos_clear_timer(s_timer_id);

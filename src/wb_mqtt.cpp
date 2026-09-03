@@ -94,6 +94,13 @@ static void mqtt_cmd_handler(struct mg_connection *nc, const char *topic,
   LOG(LL_INFO, ("MQTT cmd: action=%s", action));
 
   if (strcmp(action, "start") == 0) {
+    /* Refuse to energize while a safety trip is latched (reboot required). */
+    if (safety_is_tripped()) {
+      LOG(LL_WARN, ("MQTT cmd start refused: safety trip latched, reboot required"));
+      mqtt_send_state_topic();
+      free(action);
+      return;
+    }
     mgos_gpio_write(mgos_sys_config_get_gpio_relay(), 1);
     safety_arm();
     mqtt_send_state_topic();
@@ -208,7 +215,11 @@ void mqtt_send_state_topic() {
   if (mgos_mqtt_global_is_connected()) {
     float energy = power_read_live_session_energy_float();
     int intensity = mgos_sys_config_get_meter_intensity();
-    bool charging = mgos_gpio_read(mgos_sys_config_get_gpio_relay());
+    /* charging = relay closed AND an EV actually drawing current (EV hysteresis).
+       Relay-on with no EV plugged is NOT charging. Kept consistent with
+       Wallbox.GetInfo (wb_rpc.cpp). */
+    bool charging = mgos_gpio_read(mgos_sys_config_get_gpio_relay()) &&
+                    power_ev_detected();
     double temperature = thermistor_read_celsius();
     unsigned int power = power_read_active_power();
     unsigned int voltage = power_read_voltage();

@@ -35,4 +35,11 @@ void safety_init();
 void safety_arm();
 void safety_disarm();
 
+/*
+ * Returns true once a safety trip (over-temp / over-current) has fired.
+ * Latched until the next reboot. Callers that close the relay (RPC SetRelay,
+ * MQTT "start") MUST check this and refuse to energize when tripped.
+ */
+bool safety_is_tripped();
+
 #endif /* wb_safety_h */
