@@ -64,7 +64,28 @@ npm run mos-build:local    # node scripts/mos_build.mjs (runs mos in Docker)
 ```
 
 Success line: `Firmware saved to .../build/fw.zip`
-Expected size: ~905 KB (`fw.zip`), `fs.bin` = 262144 bytes.
+Expected size: ~905-911 KB (`fw.zip`), `fs.bin` = 262144 bytes.
+
+### ⚠️ Flash / OTA budget (Shelly 1PM Gen1, 2 MB, dual-bank)
+
+The ESP8266 OTA is dual-bank: the app must fit in one application slot, and two
+copies coexist during an update. From the firmware `manifest.json` layout:
+
+| Region | Slot 0 addr | Slot 1 addr |
+|---|---|---|
+| app (`fw`) | 32768 | 1081344 |
+| filesystem (`fs`) | 765952 | 1814528 |
+
+- **App slot size** = 765952 − 32768 = **733184 bytes (~716 KB)**.
+- **Current app** (`Wallbox-Shelly1PM.bin`) = **664960 bytes (~649 KB)**.
+- **Free margin ≈ 66 KB (~9 %)** — the app uses ~91 % of its slot.
+
+**Watch this after adding any Mongoose OS lib or large C++ feature.** If the app
+approaches ~716 KB the OTA will fail (build may still succeed, but the device
+refuses/corrupts the update). Ways to reclaim space if it gets tight: disable
+`file-logger` in production, drop `rpc-ws` if the UI can rely on fetch-polling,
+`MGOS_MBEDTLS_ENABLE_ATCA:0` is already set (saves ~12 K). The 256 KB `fs.bin`
+(SPIFFS) is fixed and separate from the app slot.
 
 ### Under the hood (what the script does / manual fallback)
 
