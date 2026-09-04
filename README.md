@@ -375,12 +375,17 @@ Entités publiées via MQTT Discovery (toutes retained):
   - `temperature` (°C)
   - `uptime` (s) — state_class: total_increasing
 - Binary sensors:
-  - `charging` — reflète l’état du relais (Close/Open)
+  - `charging` — relais fermé **ET** VE détecté (hysteresis courant). Un relais
+    fermé sans VE branché n’est PAS « charging » (voir §7)
   - `ev` — détection EV via hysteresis (voir §7)
 - Switch:
   - `relay` — commande Start/Stop via MQTT (topic `wallbox/<id>/cmd`)
 - Availability:
   - `wallbox/<id>/availability` (online/offline)
+
+Pour une **carte Lovelace prête à l’emploi** (Mushroom + card-mod) affichant ces
+entités de façon moderne (mesures live, état de charge, bouton Start/Stop), voir
+[`docs/HA-LOVELACE-CARD.md`](docs/HA-LOVELACE-CARD.md).
 
 ### 4.4 Topics MQTT principaux
 
