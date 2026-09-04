@@ -383,23 +383,6 @@ Entités publiées via MQTT Discovery (toutes retained):
 - Availability:
   - `wallbox/<id>/availability` (online/offline)
 
-### 4.5 Carte & dashboard Lovelace (prêts à l’emploi)
-
-Un guide complet est fourni dans [`docs/HA-LOVELACE-CARD.md`](docs/HA-LOVELACE-CARD.md) :
-
-- **Carte moderne** (Mushroom + card-mod + stack-in-card) : en-tête d’état
-  dynamique (Charging / EV plugged / Idle avec couleur + badge offline), chips
-  live power/current/voltage, session + température, bouton Start/Stop.
-- **Dashboard complet** : vue dédiée « Wallbox » avec la carte de contrôle **et**
-  les graphes d’historique — soit en `history-graph` natif (zéro dépendance),
-  soit en `apexcharts-card` (plus joli, via HACS) pour la puissance et l’énergie.
-- Prérequis HACS, méthode pour retrouver vos `entity_id` (placeholder
-  `wallbox_XXXX` à remplacer), variante sans stack-in-card, astuce kWh, et
-  dépannage.
-
-> Ces cartes sont de la pure config Lovelace : **aucun impact sur le firmware**
-> ni sur la flash de l’appareil.
-
 ### 4.4 Topics MQTT principaux
 
 - `wallbox/<id>/state` — JSON métriques live:
@@ -425,6 +408,23 @@ Un guide complet est fourni dans [`docs/HA-LOVELACE-CARD.md`](docs/HA-LOVELACE-C
   { "action": "reset_energy" }
   ```
 - `wallbox/<id>/availability` — retained: `online` / `offline`
+
+### 4.5 Carte & dashboard Lovelace (prêts à l’emploi)
+
+Un guide complet est fourni dans [`docs/HA-LOVELACE-CARD.md`](docs/HA-LOVELACE-CARD.md) :
+
+- **Carte moderne** (Mushroom + card-mod + stack-in-card) : en-tête d’état
+  dynamique (Charging / EV plugged / Idle avec couleur + badge offline), chips
+  live power/current/voltage, session + température, bouton Start/Stop.
+- **Dashboard complet** : vue dédiée « Wallbox » avec la carte de contrôle **et**
+  les graphes d’historique — soit en `history-graph` natif (zéro dépendance),
+  soit en `apexcharts-card` (plus joli, via HACS) pour la puissance et l’énergie.
+- Prérequis HACS, méthode pour retrouver vos `entity_id` (placeholder
+  `wallbox_XXXX` à remplacer), variante sans stack-in-card, astuce kWh, et
+  dépannage.
+
+> Ces cartes sont de la pure config Lovelace : **aucun impact sur le firmware**
+> ni sur la flash de l’appareil.
 
 —
 
