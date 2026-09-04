@@ -122,7 +122,25 @@ cards:
         entity: sensor.wallbox_XXXX_temperature
         name: Temp
         icon: mdi:thermometer
-        icon_color: >-
+        icon_color: orange
+        # For a dynamic colour (red above 60 C), replace "orange" with the
+        # template shown right under this code block.
+
+  # --- Start / Stop control ---------------------------------------------
+  - type: custom:mushroom-entity-card
+    entity: switch.wallbox_XXXX_charge
+    name: Charge
+    icon: mdi:power
+    tap_action:
+      action: toggle
+```
+
+For the temperature colour, set the `icon_color` of the Temp card to this
+template (turns red above 60 C, green otherwise):
+
+    {​{ 'red' if states('sensor.wallbox_XXXX_temperature') | float(0) > 60 else 'green' }}
+
+
 
 ## 4. Variant without `stack-in-card` (Mushroom + card-mod only)
 
@@ -149,6 +167,95 @@ template chip that divides by 1000 and rounds to 2 decimals.
 - **The switch does not react** -> confirm the command topic works: publish
   `{"action":"start"}` / `{"action":"stop"}` to `wallbox/<id>/cmd`.
 
+## 7. Full dashboard (control + live + history)
+
+A dedicated Wallbox view: the control card at the top, then history graphs.
+Two options for the graphs.
+
+### 7.a Native history (no extra dependency)
+
+Uses the built-in `history-graph` card. Add these below the card from section 3:
+
+```yaml
+- type: history-graph
+  title: Power (last 24 h)
+  hours_to_show: 24
+  entities:
+    - entity: sensor.wallbox_XXXX_power
+      name: Power
+
+- type: history-graph
+  title: Current & Temperature (last 24 h)
+  hours_to_show: 24
+  entities:
+    - entity: sensor.wallbox_XXXX_current
+      name: Current
+    - entity: sensor.wallbox_XXXX_temperature
+      name: Temperature
+
+- type: history-graph
+  title: Charging / EV (last 24 h)
+  hours_to_show: 24
+  entities:
+    - entity: binary_sensor.wallbox_XXXX_charging
+      name: Charging
+    - entity: binary_sensor.wallbox_XXXX_ev
+      name: EV plugged
+```
+
+### 7.b Nicer graphs with ApexCharts (HACS: `apexcharts-card`)
+
+Install **apexcharts-card** (HACS -> Frontend), then:
+
+```yaml
+- type: custom:apexcharts-card
+  header:
+    show: true
+    title: Charging power
+    show_states: true
+    colorize_states: true
+  graph_span: 24h
+  yaxis:
+    - min: 0
+      apex_config:
+        title:
+          text: W
+  series:
+    - entity: sensor.wallbox_XXXX_power
+      name: Power
+      type: area
+      stroke_width: 2
+      color: "#2196f3"
+      group_by:
+        func: avg
+        duration: 5min
+
+- type: custom:apexcharts-card
+  header:
+    show: true
+    title: Session energy
+  graph_span: 7d
+  series:
+    - entity: sensor.wallbox_XXXX_session_energy
+      name: Session energy
+      type: column
+      color: "#3f51b5"
+      group_by:
+        func: max
+        duration: 1d
+```
+
+### 7.c Assembling the dedicated view
+
+1. Dashboard -> Edit -> **+ Add view** -> name it `Wallbox`, icon `mdi:ev-station`.
+2. In that view, add the **control card** (section 3) first.
+3. Then add the graph cards (7.a or 7.b).
+4. Optional: wrap everything in a `type: vertical-stack` (or
+   `custom:stack-in-card`) for a single rounded container.
+
+Recommended layout (top to bottom): status header -> live chips -> session/temp
+-> Start/Stop -> power graph -> current+temperature graph -> charging/EV timeline.
+
 ## Notes
 
 - `charging` is **relay ON AND EV drawing current** (hysteresis). A closed relay
@@ -156,23 +263,5 @@ template chip that divides by 1000 and rounds to 2 decimals.
   intentional (see firmware `wb_mqtt.cpp` / `wb_rpc.cpp`).
 - All entity ids use the placeholder `wallbox_XXXX`; replace with your real device
   id (see section 2) with a single find/replace.
-- This card is pure Lovelace config -- **no firmware impact**, nothing on the
+- These cards are pure Lovelace config -- **no firmware impact**, nothing on the
   device's limited flash.
-
-          {{ 'red' if states('sensor.wallbox_XXXX_temperature') | float(0) > 60
-             else 'green' }}
-
-  # --- Start / Stop control ---------------------------------------------
-  - type: custom:mushroom-entity-card
-    entity: switch.wallbox_XXXX_charge
-    name: Charge
-    icon: mdi:power
-    tap_action:
-      action: toggle
-    card_mod:
-      style: |
-        ha-card {
-          --card-primary-color: {% if is_state('switch.wallbox_XXXX_charge','on') %}
-            var(--rgb-green) {% else %} var(--rgb-grey) {% endif %};
-        }
-```
