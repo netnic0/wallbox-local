@@ -1,4 +1,4 @@
-author: netnic0 (fork of SAP Labs France, d-shop Caen -- see NOTICE)
+﻿author: netnic0 (fork of SAP Labs France, d-shop Caen -- see NOTICE)
 name: Wallbox-Shelly1PM
 description: Local-only wallbox firmware for Shelly 1PM with Home Assistant MQTT integration
 version: 1.0.0
@@ -19,6 +19,7 @@ includes:
 # List of dirs. Files from these dirs will be copied to the device filesystem
 filesystem:
   - dist
+  - fs
 
 # Custom configuration entries, settable via "device configuration"
 config_schema:
@@ -57,9 +58,17 @@ config_schema:
   - ["mqtt.server", ""]
   - ["mqtt.user", ""]
   - ["mqtt.pass", ""]
+  - ["mqtt.ha_discovery", "b", true, {title: "Publish Home Assistant MQTT discovery configs on connect"}]
   - ["dns_sd.enable", true]
   - ["dns_sd.adv_only", true]
   - ["dns_sd.host_name", "wallbox"]
+  - ["rpc.auth_domain", "s", "wallbox", {title: "RPC digest auth realm"}]
+  - ["rpc.auth_file", "s", "rpc_auth.htdigest", {title: "RPC htdigest credential file"}]
+  - ["rpc.acl", "s", "[{\"method\":\"*\",\"ch_type\":\"UART\",\"acl\":\"*\"},{\"method\":\"*\",\"acl\":\"+admin\"}]", {title: "RPC ACL: UART open; all other channels require admin auth"}]
+  - ["http.auth_domain", "s", "wallbox", {title: "HTTP digest auth realm (matches RPC realm)"}]
+  - ["http.auth_file", "s", "rpc_auth.htdigest", {title: "HTTP htdigest file (shared with RPC auth)"}]
+  - ["http.auth_algo", "i", 0, {title: "htdigest hash algorithm: 0=MD5 (matches rpc_auth.htdigest)"}]
+  - ["update.commit_timeout", "i", 300, {title: "OTA auto-rollback timeout in seconds (0=disabled). 300s gives enough time for first-boot checks."}]
 
 libs:
   - origin: https://github.com/mongoose-os-libs/mbedtls

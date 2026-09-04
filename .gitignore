@@ -18,3 +18,10 @@ dest/
 dist/
 
 .DS_Store
+config.local.json
+.env
+
+# Secrets: HTTP/RPC digest credentials must never be committed.
+# Generated locally at build time by scripts/gen_htdigest.mjs.
+# A template is versioned instead: docs/rpc_auth.htdigest.example
+fs/rpc_auth.htdigest

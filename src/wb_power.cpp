@@ -24,6 +24,17 @@
 
 static struct HLW8012 *hlw8012 = NULL;
 
+/* Flash-write throttle. process_loop() ticks every 60s; 10 ticks = ~10 min. */
+#define FLUSH_EVERY_TICKS 10
+static int save_tick_counter = 0;
+/* EV detection hysteresis thresholds and counters (L3.2). */
+#define EV_ON_W   150   /* EV present when power >= 150 W for EV_TICKS */
+#define EV_OFF_W  80    /* EV absent when power <= 80 W  for EV_TICKS */
+#define EV_TICKS  3     /* consecutive ticks required */
+static int ev_on_count = 0;
+static int ev_off_count = 0;
+static bool ev_present = false;
+
 void power_init() {
   if ((hlw8012 = mgos_hlw8012_create()) == NULL) {
     LOG(LL_ERROR, ("Cannot initialize HLW8012"));
@@ -71,9 +82,22 @@ int power_read_energy() {
   return (int) raw;
 }
 
+/* Live session energy in Wh as a float (1-decimal resolution for MQTT).
+   HLW8012 accumulates in Ws; divide by 3600 to get Wh. Kept in-memory only:
+   meter.session_energy stays an int (mos.yml schema), we just avoid rounding
+   the value we publish. */
+float power_read_live_session_energy_float() {
+  if (hlw8012 == NULL) return 0.0f;
+  return (float) power_read_energy() / 3600.0f;
+}
+
 int power_read_active_power() {
   if (hlw8012 == NULL) return 0;
-  return mgos_hlw8012_readActivePower(hlw8012);
+  /* The HLW8012 lib returns unsigned int. Clamp into a sane signed range so a
+     transient spurious reading (> INT_MAX) cannot wrap to a negative value and
+     then be published as a bogus figure in MQTT/HA or Wallbox.GetInfo. */
+  unsigned int p = mgos_hlw8012_readActivePower(hlw8012);
+  return (p > (unsigned int) INT_MAX) ? INT_MAX : (int) p;
 }
 
 unsigned int power_read_voltage() {
@@ -127,5 +151,49 @@ void power_update() {
   mgos_sys_config_set_meter_total_energy(new_total);
   mgos_sys_config_set_meter_intensity(intensity);
   mgos_sys_config_set_meter_uptime(uptime);
-  mgos_sys_config_save(&mgos_sys_config, false, NULL);
+
+  /* Flash-write throttle: process_loop() runs every 60s and each save wears
+     the SPIFFS sector. Persist only once every FLUSH_EVERY_TICKS ticks
+     (~10 min) instead of every tick. The worst case on an unexpected power
+     loss is losing the energy accumulated since the last flush; charge-stop
+     and planned reboots call power_flush() to bound that window. */
+  if (++save_tick_counter >= FLUSH_EVERY_TICKS) {
+    mgos_sys_config_save(&mgos_sys_config, false, NULL);
+    save_tick_counter = 0;
+  }
+
+  /* L3.2: EV detection hysteresis using active power. */
+  int p = power_read_active_power();
+  if (!ev_present) {
+    if (p >= EV_ON_W) {
+      if (++ev_on_count >= EV_TICKS) {
+        ev_present = true;
+        ev_on_count = 0;
+        ev_off_count = 0;
+        LOG(LL_INFO, ("EV detection: present (power=%d W)", p));
+      }
+    } else {
+      ev_on_count = 0;
+    }
+  } else {
+    if (p <= EV_OFF_W) {
+      if (++ev_off_count >= EV_TICKS) {
+        ev_present = false;
+        ev_on_count = 0;
+        ev_off_count = 0;
+        LOG(LL_INFO, ("EV detection: absent (power=%d W)", p));
+      }
+    } else {
+      ev_off_count = 0;
+    }
+  }
 }
+
+/* Force an immediate persistence, resetting the throttle counter.
+   Idempotent and safe to call at any time. */
+void power_flush() {
+  mgos_sys_config_save(&mgos_sys_config, false, NULL);
+  save_tick_counter = 0;
+}
+
+bool power_ev_detected() { return ev_present; }

@@ -37,12 +37,22 @@ float calculate_kelvin() {
   const int sampleCount = 5;
   float adcValue = 0.0f;
 
-  // Sampling
+  /* Burst-sample the ADC without sleeping. The previous version slept 5x100ms
+     (500 ms) which blocked the Mongoose OS cooperative event loop; this matters
+     because this path runs from the 1s safety tick, the MQTT publish, and the
+     GetInfo RPC. Consecutive mgos_adc_read() calls take only microseconds and
+     still average out short-term noise. */
   for (int i = 0; i < sampleCount; i++) {
-    adcValue = adcValue + mgos_adc_read(pin);
-    mgos_msleep(100);
+    adcValue += mgos_adc_read(pin);
   }
   adcValue = adcValue / sampleCount;
+
+  /* Guard against a 0 reading (disconnected/at-rail ADC): avoid a divide-by-zero
+     that would yield Inf/NaN and, after the safety comparison, a spurious trip. */
+  if (adcValue <= 0.0f) {
+    LOG(LL_WARN, ("Thermistor: ADC read 0, returning reference temperature"));
+    return referenceTemperature;
+  }
 
   // Log interpolation
   const float rValue = downstreamResistance / (adcMax / adcValue - 1.0);

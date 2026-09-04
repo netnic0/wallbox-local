@@ -1,6 +1,6 @@
 {
   "name": "shelly-ocpp-wallbox",
-  "version": "0.7.7",
+  "version": "1.0.0",
   "description": "Wallbox firmware for Shelly 1PM relay",
   "author": "SAP Labs France, d-shop Caen",
   "homepage": "https://github.com/sebastien-savalle/shelly-ocpp-wallbox#readme",
@@ -8,17 +8,23 @@
   "scripts": {
     "start": "webpack serve --mode=development",
     "build": "npm run build:remote",
-    "build:local": "npm run web-build && npm run mos-build:local",
+    "build:local": "npm run gen-htdigest && npm run web-build && npm run mos-build:local",
+    "build:fw": "node scripts/build_fw.mjs",
+    "gen-htdigest": "node scripts/gen_htdigest.mjs --user admin",
+    "mock": "node scripts/mock_rpc.mjs",
+    "mock:start": "node scripts/mock_rpc.mjs & node node_modules/webpack-cli/bin/cli.js serve --mode=development",
     "build:remote": "npm run web-build && npm run mos-build:remote",
     "clean": "npm run mos-clean && npm run web-clean",
     "console": "mos --port udp://:1993/ console",
     "lint": "eslint .",
-    "lint:fix": "npm run lint -- --fix",
+    "lint:fix": "eslint . --fix",
+    "format:css": "npx prettier --write \"www/assets/*.css\"",
+    "format": "npx prettier --write \"www/**/*.html\" \"www/**/*.js\" \"www/assets/*.css\"",
     "mos-build": "npm run mos-build:remote",
-    "mos-build:local": "npm run mos-build:remote -- --local",
+    "mos-build:local": "node scripts/mos_build.mjs --target development",
     "mos-build:remote": "mos build --platform esp8266 --build-var TARGET:development",
     "mos-clean": "rimraf build deps",
-    "web-build": "npm run lint && npm run webpack",
+    "web-build": "npm run lint && npm run format:css && npm run webpack",
     "web-clean": "rimraf dist",
     "webpack": "webpack --mode=production"
   },
@@ -39,9 +45,6 @@
   "engines": {
     "npm": ">=7"
   },
-  "dependencies": {
-    "axios": "^0.21.4"
-  },
   "devDependencies": {
     "@babel/core": "^7.24.7",
     "babel-loader": "^8.3.0",
@@ -55,10 +58,12 @@
     "html-inline-script-webpack-plugin": "^2.0.3",
     "html-webpack-plugin": "^5.6.0",
     "mini-css-extract-plugin": "^1.6.2",
+    "prettier": "^3.9.6",
     "rimraf": "^3.0.2",
     "tslib": "^2.6.3",
     "webpack": "^5.92.1",
     "webpack-cli": "^5.1.4",
-    "webpack-dev-server": "^5.0.4"
+    "webpack-dev-server": "^5.0.4",
+    "ws": "^8.17.1"
   }
 }

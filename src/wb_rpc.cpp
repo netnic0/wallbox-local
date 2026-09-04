@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) 2020 SAP Labs France, d-shop Caen
  * All rights reserved
  *
@@ -17,11 +17,13 @@
 
 #include "wb_rpc.h"
 #include "wb_power.h"
+#include "wb_safety.h"
 #include "wb_thermistor.h"
 #include "wb_util.h"
 
 #include "mgos.h"
 #include "mgos_rpc.h"
+#include "mgos_mqtt.h"
 
 const char *RPC_GETINFO =
     "{"
@@ -37,12 +39,17 @@ const char *RPC_GETINFO =
     "temperature: %.1f,"
     "wifi_ssid: %Q,"
     "wifi_ssid1: %Q,"
-    "energy: %d,"
+    "energy: %.1f,"
     "intensity: %d,"
     "state: %B,"
     "mqtt_state: %B,"
     "mqtt_server: %Q,"
-    "mqtt_user: %Q"
+    "mqtt_connected: %B,"
+    "power: %d,"
+    "voltage: %d,"
+    "current: %.2f,"
+    "charging: %B,"
+    "ev: %B"
     "}";
 
 void rpc_init() {
@@ -76,12 +83,22 @@ void rpc_wallbox_get_info_handler(struct mg_rpc_request_info *ri,
                         thermistor_read_celsius(),
                         mgos_sys_config_get_wifi_sta_ssid(),
                         mgos_sys_config_get_wifi_sta1_ssid(),
-                        mgos_sys_config_get_meter_session_energy(),
+                        power_read_live_session_energy_float(),
                         mgos_sys_config_get_meter_intensity(),
                         mgos_gpio_read(mgos_sys_config_get_gpio_relay()),
                         mgos_sys_config_get_mqtt_enable(),
                         mgos_sys_config_get_mqtt_server(),
-                        mgos_sys_config_get_mqtt_user());
+                        mgos_mqtt_global_is_connected(),
+                        (int) power_read_active_power(),
+                        (int) power_read_voltage(),
+                        power_read_current(),
+                        /* charging = relay closed AND an EV is actually drawing
+                           current (EV hysteresis). Relay-on with no EV plugged
+                           is NOT reported as charging. Raw relay state is still
+                           exposed via the "state" field above. */
+                        (mgos_gpio_read(mgos_sys_config_get_gpio_relay()) &&
+                         power_ev_detected()),
+                        power_ev_detected());
 
   (void) cb_arg;
   (void) fi;
@@ -93,6 +110,9 @@ void rpc_wallbox_reboot_handler(struct mg_rpc_request_info *ri,
                                 struct mg_rpc_frame_info *fi,
                                 struct mg_str args) {
   LOG(LL_INFO, ("RPC request to reboot"));
+
+  /* Disarm safety timer before reboot so it does not fire during the 10s window */
+  safety_disarm();
 
   /* Schedule a reboot in 10s, leaving time for the response to be sent. */
   mgos_system_restart_after(10000);
@@ -158,7 +178,28 @@ void rpc_wallbox_set_relay_handler(struct mg_rpc_request_info *ri,
   }
 
   LOG(LL_INFO, ("RPC SetRelay: %s", on ? "ON" : "OFF"));
+
+  /* Refuse to energize while a safety trip is latched (over-temp/over-current).
+     Turning OFF is always allowed. */
+  if (on && safety_is_tripped()) {
+    LOG(LL_WARN, ("RPC SetRelay ON refused: safety trip latched, reboot required"));
+    mg_rpc_send_errorf(ri, 409, "safety trip latched, reboot required");
+    (void) cb_arg;
+    (void) fi;
+    (void) args;
+    return;
+  }
+
   mgos_gpio_write(mgos_sys_config_get_gpio_relay(), on ? 1 : 0);
+
+  if (on) {
+    safety_arm();
+  } else {
+    safety_disarm();
+    /* Turning the relay OFF ends a charge session: persist the meter counters
+       immediately so a subsequent power loss does not lose accumulated Wh (#4). */
+    power_flush();
+  }
 
   /* NOTE: relay state is not persisted across reboots; at boot the
      relay is forced OFF for safety (see mgos_app_init). */

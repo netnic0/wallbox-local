@@ -32,10 +32,26 @@ void power_update();
 
 int power_read_energy();
 
+/* Live session energy in Wh as a float (1-decimal resolution for MQTT).
+   Reads the HLW8012 counter directly; does NOT touch persisted config. */
+float power_read_live_session_energy_float();
+
+/* Force an immediate persistence of the meter.* counters, bypassing the
+   tick throttle. Call at charge-stop and before a planned reboot to avoid
+   losing up to the throttle window of accumulated energy on power loss. */
+void power_flush();
+
 int power_read_active_power();
 
 unsigned int power_read_voltage();
 
 double power_read_current();
+
+/* Returns true if an EV is detected based on power threshold semantics.
+   Semantics (L3.2):
+   - EV considered present when active power >= EV_ON_W for EV_TICKS consecutive ticks
+   - EV considered absent when active power <= EV_OFF_W for EV_TICKS consecutive ticks
+   This introduces hysteresis and stability across ticks. */
+bool power_ev_detected();
 
 #endif /* wb_power_h */

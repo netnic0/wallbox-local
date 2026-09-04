@@ -16,13 +16,16 @@
  */
 
 #include "wb_mqtt.h"
+#include "wb_discovery.h"
 #include "wb_power.h"
 #include "wb_rpc.h"
+#include "wb_safety.h"
 #include "wb_thermistor.h"
 
 #include "mgos.h"
 #include "mgos_app.h"
 #include "mgos_system.h"
+#include "mgos_wifi.h"
 #ifdef MGOS_HAVE_OTA_COMMON
 #include "mgos_ota.h"
 #endif
@@ -68,6 +71,9 @@ void process_loop(void *arg) {
   if (!healthcheck()) {
     // Reboot to avoid issues
     LOG(LL_INFO, ("Reboot caused by health check"));
+    /* Flush meter counters before the reboot so we do not lose the energy
+       accumulated since the last throttled save (#4). */
+    power_flush();
     mgos_system_restart();
     return;
   }
@@ -117,6 +123,21 @@ void reset_reboot_counter(void *arg) {
 }
 
 /*
+ * Wi-Fi event handler: disarm the safety timer if we lose station connectivity.
+ * Without a network the broker is unreachable and we cannot publish a tripped
+ * state — better to leave the relay alone and wait for reconnect.
+ * The timer is re-armed by the user explicitly (Start command) after reconnect.
+ */
+static void wifi_ev_handler(int ev, void *ev_data, void *user_data) {
+  (void) ev_data;
+  (void) user_data;
+  if (ev == MGOS_WIFI_EV_STA_DISCONNECTED) {
+    LOG(LL_WARN, ("Wi-Fi lost: disarming safety timer"));
+    safety_disarm();
+  }
+}
+
+/*
  * Mongoose OS app init
  */
 enum mgos_app_init_result mgos_app_init(void) {
@@ -158,6 +179,15 @@ enum mgos_app_init_result mgos_app_init(void) {
 
   // MQTT setup and announce
   mqtt_init();
+
+  // Home Assistant MQTT discovery (published on MQTT connect)
+  discovery_init();
+
+  // Safety module (over-temp / over-current protection)
+  safety_init();
+
+  // WiFi event handler: disarm safety timer on station disconnect
+  mgos_event_add_handler(MGOS_WIFI_EV_STA_DISCONNECTED, wifi_ev_handler, NULL);
 
   return MGOS_APP_INIT_SUCCESS;
 }

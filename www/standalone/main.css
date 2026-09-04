@@ -1,0 +1,42 @@
+/* Minimal styles to validate card toggling */
+body { font-family: Arial, sans-serif; margin: 0; padding: 16px; }
+.container { border: 1px solid #ddd; border-radius: 8px; padding: 12px 12px 16px; margin: 12px 0; }
+.header-bar { display: flex; align-items: center; justify-content: space-between; }
+.header-actions { display: flex; align-items: center; gap: 12px; }
+.chevron { background: #f5f5f5; border: 1px solid #ddd; border-radius: 16px; width: 32px; height: 32px; cursor: pointer; }
+.header-left { display: flex; flex-direction: column; gap: 4px; }
+.header-left h1 { margin: 0; font-size: 1.6rem; line-height: 1.1; min-height: 42px; }
+.summary { color: #555; font-size: 0.9rem; margin: 6px 0 10px; }
+.form { margin-top: 8px; }
+.form-control { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+.form-actions { display: flex; gap: 8px; margin: 10px 0; }
+.btn { padding: 6px 12px; border-radius: 16px; border: none; background: #0074d9; color: #fff; cursor: pointer; }
+.btn.btn--warning { background: #ff851b; }
+.banner { padding: 8px 12px; border-radius: 6px; margin: 6px 0; background: #f0f6ff; }
+
+/* Collapsed card behavior */
+.container.card-collapsed .form-control,
+.container.card-collapsed .form-actions,
+.container.card-collapsed .alert { display: none !important; }
+.container.card-collapsed .summary { display: block !important; }
+.container.card-collapsed > h2,
+.container.card-collapsed > .banner,
+.container.card-collapsed > p,
+.container.card-collapsed > .flex-list,
+.container.card-collapsed > .footer,
+.container.card-collapsed > .dialog,
+.container.card-collapsed .form-separator { display: none !important; }
+.container.card-collapsed .form > div > :not(.summary) { display: none !important; }
+
+/* Small helpers */
+.status-ok { color: #0a8; font-weight: 600; }
+.status-bad { color: #c00; font-weight: 600; }
+
+/* Demo: place a logo at the top-right of the header-bar using the project favicon */
+#main_container .header-bar,
+#wifi_container .header-bar {
+  background-image: url('../assets/favicon.png');
+  background-repeat: no-repeat;
+  background-position: right 8px top 8px;
+  padding-right: 42px; /* avoid overlap with the icon */
+}
