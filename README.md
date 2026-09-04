@@ -428,14 +428,50 @@ Un guide complet est fourni dans [`docs/HA-LOVELACE-CARD.md`](docs/HA-LOVELACE-C
 
 —
 
-## 5. Sécurité
+## 5. Sécurité (logicielle)
 
-- HTTP/WS/MQTT protégés par HTTP Digest (`admin`, `wallbox` par défaut)
+- HTTP/WS/MQTT protégés par HTTP Digest (`admin`, mot de passe défini au build — voir §1-quater)
 - UART/serial (port de service) reste ouvert (pas d’auth) — réservé aux usages locaux/atelier
 - Recommandations:
-  - Changez le mot de passe par défaut (fichier `fs/rpc_auth.htdigest`)
+  - Définissez un vrai mot de passe au build (aucun mot de passe par défaut)
   - N’exposez pas l’UI sur Internet
   - Utilisez des identifiants dédiés sur le broker MQTT
+
+—
+
+## 5bis. Sécurité électrique & limites du montage (À LIRE avant de brancher un VE)
+
+> ⚠️ **Ce montage n’est PAS une borne de recharge Mode 3.** Le Shelly 1PM ne pilote
+> qu’un **relais tout-ou-rien 230 V** ; il n’a **pas de Control Pilot (CP/PWM)**
+> IEC 61851. Il ne dialogue pas avec le véhicule et ne module pas le courant. Son
+> seul rôle ici est de **couper/rétablir le 230 V en amont**.
+
+### Usage supporté
+- **Mode 2 uniquement** : câble de recharge avec **boîtier de contrôle intégré (ICCB)**
+  côté prise domestique. C’est le boîtier du câble — pas le Shelly — qui assure le
+  pilote et la sécurité côté VE.
+- **Courant limité** : configuration testée ~**1.6 kW (~7 A)**, très en dessous des
+  ~16 A nominaux du Shelly 1PM → marge thermique confortable pour une charge longue.
+- Un vrai **câble/borne Mode 3 (Type 2) ne fonctionnera pas** (le VE attend le signal
+  pilote, absent ici).
+
+### Obligations d’installation (sous votre responsabilité)
+- **Disjoncteur dédié** + **différentiel type A 30 mA** en amont du circuit.
+- **Bornier bien serré** (un contact desserré est la 1re cause d’échauffement, même à 7 A
+  pendant plusieurs heures), **section de câble adaptée**, **pas de multiprise/rallonge**.
+- Shelly **ventilé** (pas enfermé hermétiquement). Prise murale correcte (idéalement renforcée).
+- En cas de doute : **faites appel à un électricien qualifié** (230 V continu plusieurs heures).
+
+### Rôle des protections firmware (garde-fous, PAS des protections réglementaires)
+- Coupure **surchauffe à 80 °C** (relais OFF + reboot), avec **latch** empêchant toute
+  refermeture réseau tant que le défaut est verrouillé (jusqu’au redémarrage).
+- Coupure **sur-courant à 12 A** après quelques secondes.
+- Ces seuils sont un **filet logiciel** ; ils **ne remplacent pas** le disjoncteur/différentiel.
+
+### Rappel flashage
+- **Ne jamais connecter le port série ET le 230 V simultanément** sur un Shelly 1PM :
+  le GND peut être sur la phase → destruction du PC/Shelly, risque d’électrocution.
+  Faites l’OTA (réseau) sous tension, ou le flash série **secteur débranché**.
 
 —
 
